@@ -19,13 +19,13 @@ namespace stupid
             return rb;
         }
 
-        public World(Bounds worldBounds)
+        public World(Bounds worldBounds, IBroadphase broadphase)
         {
             counter = 0;
             this.worldBounds = worldBounds;
             Rigidbodies = new List<Rigidbody>(128);
 
-            Broadphase = new GridBasedBroadphase(sfloat.one);
+            Broadphase = broadphase;
         }
 
         void AddGravity(sfloat deltaTime)
