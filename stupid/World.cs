@@ -96,10 +96,13 @@ namespace stupid
             return pairs;
         }
 
+        public Dictionary<Rigidbody, Vector3S> VelocityBuffer = new Dictionary<Rigidbody, Vector3S>();
+
+        public Dictionary<Rigidbody, Vector3S> PositionBuffer = new Dictionary<Rigidbody, Vector3S>();
         void NaiveNarrowPhase(List<ContactPair> pairs)
         {
-            var velocityChanges = new Dictionary<Rigidbody, Vector3S>();
-            var positionChanges = new Dictionary<Rigidbody, Vector3S>();
+            VelocityBuffer.Clear();
+            PositionBuffer.Clear();
 
             foreach (var pair in pairs)
             {
@@ -128,13 +131,13 @@ namespace stupid
                     // Apply impulse
                     Vector3S impulse = j * contact.normal;
 
-                    if (!velocityChanges.ContainsKey(a))
-                        velocityChanges[a] = Vector3S.zero;
-                    if (!velocityChanges.ContainsKey(b))
-                        velocityChanges[b] = Vector3S.zero;
+                    if (!VelocityBuffer.ContainsKey(a))
+                        VelocityBuffer[a] = Vector3S.zero;
+                    if (!VelocityBuffer.ContainsKey(b))
+                        VelocityBuffer[b] = Vector3S.zero;
 
-                    velocityChanges[a] -= (sfloat.one / a.mass) * impulse;
-                    velocityChanges[b] += (sfloat.one / b.mass) * impulse;
+                    VelocityBuffer[a] -= (sfloat.one / a.mass) * impulse;
+                    VelocityBuffer[b] += (sfloat.one / b.mass) * impulse;
 
                     // Friction impulse
                     Vector3S tangent = (relativeVelocity - (velocityAlongNormal * contact.normal)).Normalize();
@@ -153,8 +156,8 @@ namespace stupid
                         frictionImpulse = -j * mu * tangent;
                     }
 
-                    velocityChanges[a] -= (sfloat.one / a.mass) * frictionImpulse;
-                    velocityChanges[b] += (sfloat.one / b.mass) * frictionImpulse;
+                    VelocityBuffer[a] -= (sfloat.one / a.mass) * frictionImpulse;
+                    VelocityBuffer[b] += (sfloat.one / b.mass) * frictionImpulse;
 
                     // Positional correction to avoid sinking
                     sfloat percent = (sfloat)0.2f; // usually 20% to 80%
@@ -162,24 +165,24 @@ namespace stupid
 
                     Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / ((sfloat.one / a.mass) + (sfloat.one / b.mass)) * percent * contact.normal;
 
-                    if (!positionChanges.ContainsKey(a))
-                        positionChanges[a] = Vector3S.zero;
-                    if (!positionChanges.ContainsKey(b))
-                        positionChanges[b] = Vector3S.zero;
+                    if (!PositionBuffer.ContainsKey(a))
+                        PositionBuffer[a] = Vector3S.zero;
+                    if (!PositionBuffer.ContainsKey(b))
+                        PositionBuffer[b] = Vector3S.zero;
 
-                    positionChanges[a] -= (sfloat.one / a.mass) * correction;
-                    positionChanges[b] += (sfloat.one / b.mass) * correction;
+                    PositionBuffer[a] -= (sfloat.one / a.mass) * correction;
+                    PositionBuffer[b] += (sfloat.one / b.mass) * correction;
                 }
             }
 
             // Apply changes to velocities
-            foreach (var change in velocityChanges)
+            foreach (var change in VelocityBuffer)
             {
                 change.Key.velocity += change.Value;
             }
 
             // Apply changes to positions
-            foreach (var change in positionChanges)
+            foreach (var change in PositionBuffer)
             {
                 change.Key.position += change.Value;
             }

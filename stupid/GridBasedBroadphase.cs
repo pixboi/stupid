@@ -11,26 +11,48 @@ namespace stupid
     public class GridBasedBroadphase : IBroadphase
     {
         private sfloat cellSize;
-        private Dictionary<Vector3S, List<Rigidbody>> grid;
+        private Dictionary<Vector3S, CustomList<Rigidbody>> grid;
         private Dictionary<(int, int), bool> checkedPairs;
-        private List<ContactPair> pairs;
-        private Stack<List<Rigidbody>> listPool;
+        private CustomList<ContactPair> pairs;
+        private Stack<CustomList<Rigidbody>> listPool;
         private Vector3S minCell;
         private Vector3S maxCell;
+        private int maxRigidbodies;
 
-        public GridBasedBroadphase(sfloat cellSize)
+        public GridBasedBroadphase(sfloat cellSize, int initialCapacity = 100)
         {
             this.cellSize = cellSize;
-            this.grid = new Dictionary<Vector3S, List<Rigidbody>>();
-            this.checkedPairs = new Dictionary<(int, int), bool>();
-            this.pairs = new List<ContactPair>();
-            this.listPool = new Stack<List<Rigidbody>>();
+            this.grid = new Dictionary<Vector3S, CustomList<Rigidbody>>(initialCapacity);
+            this.checkedPairs = new Dictionary<(int, int), bool>(initialCapacity);
+            this.pairs = new CustomList<ContactPair>(initialCapacity);
+            this.listPool = new Stack<CustomList<Rigidbody>>(initialCapacity);
             this.minCell = new Vector3S();
             this.maxCell = new Vector3S();
+            this.maxRigidbodies = initialCapacity;
+
+            // Preallocate lists in pool
+            for (int i = 0; i < initialCapacity; i++)
+            {
+                listPool.Push(new CustomList<Rigidbody>(initialCapacity));
+            }
         }
 
         public List<ContactPair> ComputePairs(List<Rigidbody> rigidbodies)
         {
+            // Adjust capacity if necessary
+            if (rigidbodies.Count > maxRigidbodies)
+            {
+                maxRigidbodies = rigidbodies.Count;
+                pairs = new CustomList<ContactPair>(maxRigidbodies);
+                listPool.Clear();
+
+                // Preallocate lists in pool
+                for (int i = 0; i < maxRigidbodies; i++)
+                {
+                    listPool.Push(new CustomList<Rigidbody>(maxRigidbodies));
+                }
+            }
+
             // Clear previous state
             foreach (var cell in grid.Values)
             {
@@ -57,7 +79,7 @@ namespace stupid
                             var cell = new Vector3S((sfloat)x, (sfloat)y, (sfloat)z);
                             if (!grid.TryGetValue(cell, out var cellBodies))
                             {
-                                cellBodies = listPool.Count > 0 ? listPool.Pop() : new List<Rigidbody>();
+                                cellBodies = listPool.Count > 0 ? listPool.Pop() : new CustomList<Rigidbody>(maxRigidbodies);
                                 grid[cell] = cellBodies;
                             }
                             cellBodies.Add(body);
@@ -76,8 +98,8 @@ namespace stupid
                         var a = cell[i];
                         var b = cell[j];
 
-                        int idA = a.GetHashCode();
-                        int idB = b.GetHashCode();
+                        int idA = a.index;
+                        int idB = b.index;
                         if (idA > idB)
                         {
                             (idA, idB) = (idB, idA);
@@ -97,9 +119,19 @@ namespace stupid
                         checkedPairs[(idA, idB)] = true;
                     }
                 }
+
+                // Reuse the list for the next cell
+                ReturnReusableList(cell);
             }
 
-            return pairs;
+            // Convert pairs to a List<ContactPair> to return
+            List<ContactPair> result = new List<ContactPair>(pairs.Count);
+            for (int i = 0; i < pairs.Count; i++)
+            {
+                result.Add(pairs[i]);
+            }
+
+            return result;
         }
 
         private void GetCell(Vector3S position, ref Vector3S cell)
@@ -107,6 +139,12 @@ namespace stupid
             cell.x = MathS.Floor(position.x / cellSize);
             cell.y = MathS.Floor(position.y / cellSize);
             cell.z = MathS.Floor(position.z / cellSize);
+        }
+
+        private void ReturnReusableList(CustomList<Rigidbody> list)
+        {
+            list.Clear();
+            listPool.Push(list);
         }
     }
 }

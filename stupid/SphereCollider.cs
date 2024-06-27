@@ -1,4 +1,5 @@
 using SoftFloat;
+using System.Drawing;
 
 namespace stupid
 {
@@ -7,9 +8,12 @@ namespace stupid
         public sfloat radius;
         public Rigidbody attachedRigidbody {  get; private set; }
 
+        Vector3S _size;
+
         public SphereCollider(sfloat radius)
         {
             this.radius = radius;
+            _size = new Vector3S(radius, radius, radius);
         }
 
         public void Attach(Rigidbody rigidbody)
@@ -19,8 +23,7 @@ namespace stupid
 
         public Bounds GetBounds(Vector3S position)
         {
-            Vector3S size = new Vector3S(radius, radius, radius);
-            return new Bounds(position - size, position + size);
+            return new Bounds(position - _size, position + _size);
         }
 
         public bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact)
