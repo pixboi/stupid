@@ -12,27 +12,41 @@ namespace stupid
     {
         private sfloat cellSize;
         private Dictionary<Vector3S, List<Rigidbody>> grid;
-        private HashSet<(Rigidbody, Rigidbody)> checkedPairs;
+        private Dictionary<(int, int), bool> checkedPairs;
+        private List<ContactPair> pairs;
+        private Stack<List<Rigidbody>> listPool;
+        private Vector3S minCell;
+        private Vector3S maxCell;
 
         public GridBasedBroadphase(sfloat cellSize)
         {
             this.cellSize = cellSize;
             this.grid = new Dictionary<Vector3S, List<Rigidbody>>();
-            this.checkedPairs = new HashSet<(Rigidbody, Rigidbody)>();
+            this.checkedPairs = new Dictionary<(int, int), bool>();
+            this.pairs = new List<ContactPair>();
+            this.listPool = new Stack<List<Rigidbody>>();
+            this.minCell = new Vector3S();
+            this.maxCell = new Vector3S();
         }
 
         public List<ContactPair> ComputePairs(List<Rigidbody> rigidbodies)
         {
+            // Clear previous state
+            foreach (var cell in grid.Values)
+            {
+                cell.Clear();
+                listPool.Push(cell);
+            }
             grid.Clear();
             checkedPairs.Clear();
-            var pairs = new List<ContactPair>();
+            pairs.Clear();
 
             // Place each rigidbody in the grid
             foreach (var body in rigidbodies)
             {
                 var bounds = body.collider.GetBounds(body.position);
-                var minCell = GetCell(bounds.Min);
-                var maxCell = GetCell(bounds.Max);
+                GetCell(bounds.Min, ref minCell);
+                GetCell(bounds.Max, ref maxCell);
 
                 for (int x = (int)minCell.x; x <= (int)maxCell.x; x++)
                 {
@@ -41,28 +55,35 @@ namespace stupid
                         for (int z = (int)minCell.z; z <= (int)maxCell.z; z++)
                         {
                             var cell = new Vector3S((sfloat)x, (sfloat)y, (sfloat)z);
-                            if (!grid.ContainsKey(cell))
+                            if (!grid.TryGetValue(cell, out var cellBodies))
                             {
-                                grid[cell] = new List<Rigidbody>();
+                                cellBodies = listPool.Count > 0 ? listPool.Pop() : new List<Rigidbody>();
+                                grid[cell] = cellBodies;
                             }
-                            grid[cell].Add(body);
+                            cellBodies.Add(body);
                         }
                     }
                 }
             }
 
             // Check for collisions within the same cell
-            foreach (var cell in grid)
+            foreach (var cell in grid.Values)
             {
-                var cellBodies = cell.Value;
-                for (int i = 0; i < cellBodies.Count; i++)
+                for (int i = 0; i < cell.Count; i++)
                 {
-                    for (int j = i + 1; j < cellBodies.Count; j++)
+                    for (int j = i + 1; j < cell.Count; j++)
                     {
-                        var a = cellBodies[i];
-                        var b = cellBodies[j];
+                        var a = cell[i];
+                        var b = cell[j];
 
-                        if (checkedPairs.Contains((a, b)) || checkedPairs.Contains((b, a)))
+                        int idA = a.GetHashCode();
+                        int idB = b.GetHashCode();
+                        if (idA > idB)
+                        {
+                            (idA, idB) = (idB, idA);
+                        }
+
+                        if (checkedPairs.ContainsKey((idA, idB)))
                             continue;
 
                         var aBounds = a.collider.GetBounds(a.position);
@@ -70,11 +91,10 @@ namespace stupid
 
                         if (aBounds.Intersects(bBounds))
                         {
-                            var cp = new ContactPair { bodyA = a, bodyB = b };
-                            pairs.Add(cp);
+                            pairs.Add(new ContactPair { bodyA = a, bodyB = b });
                         }
 
-                        checkedPairs.Add((a, b));
+                        checkedPairs[(idA, idB)] = true;
                     }
                 }
             }
@@ -82,14 +102,11 @@ namespace stupid
             return pairs;
         }
 
-        private Vector3S GetCell(Vector3S position)
+        private void GetCell(Vector3S position, ref Vector3S cell)
         {
-            return new Vector3S(
-                MathS.Floor(position.x / cellSize),
-                MathS.Floor(position.y / cellSize),
-                MathS.Floor(position.z / cellSize)
-            );
+            cell.x = MathS.Floor(position.x / cellSize);
+            cell.y = MathS.Floor(position.y / cellSize);
+            cell.z = MathS.Floor(position.z / cellSize);
         }
     }
 }
-
