@@ -93,11 +93,11 @@ namespace SoftFloat
         private const uint RawLog2OfE = 0;
 
 
-        public static sfloat Zero => new sfloat(0);
+        public static sfloat zero => new sfloat(0);
         public static sfloat PositiveInfinity => new sfloat(RawPositiveInfinity);
         public static sfloat NegativeInfinity => new sfloat(RawNegativeInfinity);
         public static sfloat NaN => new sfloat(RawNaN);
-        public static sfloat One => new sfloat(RawOne);
+        public static sfloat one => new sfloat(RawOne);
         public static sfloat MinusOne => new sfloat(RawMinusOne);
         public static sfloat MaxValue => new sfloat(RawMaxValue);
         public static sfloat MinValue => new sfloat(RawMinValue);
@@ -160,7 +160,7 @@ namespace SoftFloat
         {
             if (value == 0)
             {
-                return Zero;
+                return zero;
             }
 
             if (value == int.MinValue)
@@ -270,7 +270,7 @@ namespace SoftFloat
                 int absMan = Math.Abs(man);
                 if (absMan == 0)
                 {
-                    return Zero;
+                    return zero;
                 }
 
                 int rawExp = rawExp1 - 6;
@@ -301,7 +301,7 @@ namespace SoftFloat
                         return new sfloat(raw);
                     }
 
-                    return Zero;
+                    return zero;
                 }
             }
             else
@@ -646,7 +646,7 @@ namespace SoftFloat
                     if (f1.IsZero())
                     {
                         // 0 / Infinity
-                        return Zero;
+                        return zero;
                     }
 
                     if ((int)f1.rawValue >= 0)

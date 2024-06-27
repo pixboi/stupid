@@ -352,9 +352,9 @@ namespace SoftFloat
                     switch (m)
                     {
                         case 0:
-                            return sfloat.Zero; /* atan(+...,+INF) */
+                            return sfloat.zero; /* atan(+...,+INF) */
                         case 1:
-                            return -sfloat.Zero; /* atan(-...,+INF) */
+                            return -sfloat.zero; /* atan(-...,+INF) */
                         case 2:
                             return sfloat.FromRaw(pi); /* atan(+...,-INF) */
                         case 3:
@@ -372,7 +372,7 @@ namespace SoftFloat
 
             /* z = atan(|y/x|) with correct underflow */
             sfloat z = (m & 2) != 0 && iy + (26 << 23) < ix
-                ? sfloat.Zero /*|y/x| < 0x1p-26, x < 0 */
+                ? sfloat.zero /*|y/x| < 0x1p-26, x < 0 */
                 : atanf(sfloat.Abs(y / x));
 
             switch (m)
@@ -427,7 +427,7 @@ namespace SoftFloat
                         return (sfloat)2.0f * sfloat.FromRaw(PIO2_HI_U32) + x1p_120;
                     }
 
-                    return sfloat.Zero;
+                    return sfloat.zero;
                 }
 
                 return sfloat.NaN;

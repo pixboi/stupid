@@ -14,13 +14,12 @@ namespace stupid
 
         public static sfloat Floor(sfloat value)
         {
-            // Assuming SoftFloat supports floor operation. If not, we might need a custom implementation.
             return libm.floorf(value);
         }
 
         public static sfloat Abs(sfloat value)
         {
-            return value < sfloat.Zero ? -value : value;
+            return value < sfloat.zero ? -value : value;
 
         }
     }

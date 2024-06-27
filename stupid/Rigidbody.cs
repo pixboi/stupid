@@ -10,7 +10,7 @@ namespace stupid
 
         public Vector3S velocity;
 
-        public sfloat mass = sfloat.One;
+        public sfloat mass = sfloat.one;
 
         public bool useGravity = true;
 

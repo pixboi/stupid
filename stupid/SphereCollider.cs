@@ -5,7 +5,7 @@ namespace stupid
     public class SphereCollider : ICollider
     {
         public sfloat radius;
-        public Rigidbody attachedRigidbody;
+        public Rigidbody attachedRigidbody {  get; private set; }
 
         public SphereCollider(sfloat radius)
         {

@@ -86,7 +86,7 @@ namespace SoftFloat
                     if (hx >= 0x42cff1b5)
                     {
                         /* x <= -103.972084f */
-                        return sfloat.Zero;
+                        return sfloat.zero;
                     }
                 }
             }
@@ -118,19 +118,19 @@ namespace SoftFloat
                 /* |x| > 2**-14 */
                 k = 0;
                 hi = x;
-                lo = sfloat.Zero;
+                lo = sfloat.zero;
             }
             else
             {
                 /* raise inexact */
                 //force_eval!(x1p127 + x);
-                return sfloat.One + x;
+                return sfloat.one + x;
             }
 
             /* x is now in primary range */
             sfloat xx = x * x;
             sfloat c = x - xx * (sfloat.FromRaw(P1_U32) + xx * sfloat.FromRaw(P2_U32));
-            sfloat y = sfloat.One + (x * c / ((sfloat)2.0f - c) - lo + hi);
+            sfloat y = sfloat.one + (x * c / ((sfloat)2.0f - c) - lo + hi);
             return k == 0 ? y : scalbnf(y, k);
         }
 
@@ -178,7 +178,7 @@ namespace SoftFloat
             }
             else if (ix == 0x3f800000)
             {
-                return sfloat.Zero;
+                return sfloat.zero;
             }
 
             /* reduce x into [sqrt(2)/2, sqrt(2)] */
@@ -187,7 +187,7 @@ namespace SoftFloat
             ix = (ix & 0x007fffff) + 0x3f3504f3;
             x = sfloat.FromRaw(ix);
 
-            sfloat f = x - sfloat.One;
+            sfloat f = x - sfloat.one;
             sfloat s = f / ((sfloat)2.0f + f);
             sfloat z = s * s;
             sfloat w = z * z;
@@ -259,7 +259,7 @@ namespace SoftFloat
             }
             else if (ix == 0x3f800000)
             {
-                return sfloat.Zero;
+                return sfloat.zero;
             }
 
             /* reduce x into [sqrt(2)/2, sqrt(2)] */
@@ -269,7 +269,7 @@ namespace SoftFloat
             ui = ix;
             x = sfloat.FromRaw(ui);
 
-            f = x - sfloat.One;
+            f = x - sfloat.one;
             s = f / ((sfloat)2.0f + f);
             z = s * s;
             w = z * z;
@@ -358,13 +358,13 @@ namespace SoftFloat
             /* x**0 = 1, even if x is NaN */
             if (iy == 0)
             {
-                return sfloat.One;
+                return sfloat.one;
             }
 
             /* 1**y = 1, even if y is NaN */
             if (hx == 0x3f800000)
             {
-                return sfloat.One;
+                return sfloat.one;
             }
 
             /* NaN if either arg is NaN */
@@ -403,24 +403,24 @@ namespace SoftFloat
                 if (ix == 0x3f800000)
                 {
                     /* (-1)**+-inf is 1 */
-                    return sfloat.One;
+                    return sfloat.one;
                 }
                 else if (ix > 0x3f800000)
                 {
                     /* (|x|>1)**+-inf = inf,0 */
-                    return hy >= 0 ? y : sfloat.Zero;
+                    return hy >= 0 ? y : sfloat.zero;
                 }
                 else
                 {
                     /* (|x|<1)**+-inf = 0,inf */
-                    return hy >= 0 ? sfloat.Zero : -y;
+                    return hy >= 0 ? sfloat.zero : -y;
                 }
             }
 
             if (iy == 0x3f800000)
             {
                 /* y is +-1 */
-                return hy >= 0 ? x : sfloat.One / x;
+                return hy >= 0 ? x : sfloat.one / x;
             }
 
             if (hy == 0x40000000)
@@ -446,7 +446,7 @@ namespace SoftFloat
                 if (hy < 0)
                 {
                     /* z = (1/|x|) */
-                    z = sfloat.One / z;
+                    z = sfloat.one / z;
                 }
 
                 if (hx < 0)
@@ -464,7 +464,7 @@ namespace SoftFloat
                 return z;
             }
 
-            sn = sfloat.One; /* sign of result */
+            sn = sfloat.one; /* sign of result */
             if (hx < 0)
             {
                 if (yisint == 0)
@@ -477,7 +477,7 @@ namespace SoftFloat
                 if (yisint == 1)
                 {
                     /* (x<0)**(odd int) */
-                    sn = -sfloat.One;
+                    sn = -sfloat.one;
                 }
             }
 
@@ -502,7 +502,7 @@ namespace SoftFloat
 
                 /* now |1-x| is TINY <= 2**-20, suffice to compute
                 log(x) by x-x^2/2+x^3/3-x^4/4 */
-                t = ax - sfloat.One; /* t has 20 trailing zeros */
+                t = ax - sfloat.one; /* t has 20 trailing zeros */
                 w = (t * t) * (sfloat.FromRaw(0x3f000000) - t * (sfloat.FromRaw(0x3eaaaaab) - t * sfloat.FromRaw(0x3e800000)));
                 u = sfloat.FromRaw(IVLN2_H_U32) * t; /* IVLN2_H has 16 sig. bits */
                 v = t * sfloat.FromRaw(IVLN2_L_U32) - w * sfloat.FromRaw(IVLN2_U32);
@@ -553,7 +553,7 @@ namespace SoftFloat
 
                 /* compute s = s_h+s_l = (x-1)/(x+1) or (x-1.5)/(x+1.5) */
                 u = ax - sfloat.FromRaw(k == 0 ? BP_0_U32 : BP_1_U32); /* bp[0]=1.0, bp[1]=1.5 */
-                v = sfloat.One / (ax + sfloat.FromRaw(k == 0 ? BP_0_U32 : BP_1_U32));
+                v = sfloat.one / (ax + sfloat.FromRaw(k == 0 ? BP_0_U32 : BP_1_U32));
                 s = u * v;
                 s_h = s;
                 iS = (int)s_h.RawValue;
@@ -658,7 +658,7 @@ namespace SoftFloat
             t = z * z;
             t1 = z - t * (sfloat.FromRaw(P1_U32) + t * (sfloat.FromRaw(P2_U32) + t * (sfloat.FromRaw(P3_U32) + t * (sfloat.FromRaw(P4_U32) + t * sfloat.FromRaw(P5_U32)))));
             r = (z * t1) / (t1 - sfloat.FromRaw(0x40000000)) - (w + z * w);
-            z = sfloat.One - (r - z);
+            z = sfloat.one - (r - z);
             j = (int)z.RawValue;
             j += n << 23;
             if ((j >> 23) <= 0)

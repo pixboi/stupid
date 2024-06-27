@@ -174,7 +174,7 @@ namespace SoftFloat
                 if (uxi << 1 == uyi << 1)
                 {
                     //return 0.0 * x;
-                    return sfloat.Zero;
+                    return sfloat.zero;
                 }
 
                 return x;
@@ -224,7 +224,7 @@ namespace SoftFloat
                     if (i == 0)
                     {
                         //return 0.0 * x;
-                        return sfloat.Zero;
+                        return sfloat.zero;
                     }
 
                     uxi = i;
@@ -241,7 +241,7 @@ namespace SoftFloat
                 if (i == 0)
                 {
                     //return 0.0 * x;
-                    return sfloat.Zero;
+                    return sfloat.zero;
                 }
 
                 uxi = i;
@@ -288,7 +288,7 @@ namespace SoftFloat
             {
                 //force_eval!(x + TOINT);
                 //return 0.0 * x;
-                return sfloat.Zero;
+                return sfloat.zero;
             }
 
             if (i >> 31 != 0)
@@ -300,11 +300,11 @@ namespace SoftFloat
 
             if (y > (sfloat)0.5f)
             {
-                y = y + x - sfloat.One;
+                y = y + x - sfloat.one;
             }
             else if (y <= (sfloat)(-0.5f))
             {
-                y = y + x + sfloat.One;
+                y = y + x + sfloat.one;
             }
             else
             {
@@ -389,7 +389,7 @@ namespace SoftFloat
                 }
                 else if (ui << 1 != 0)
                 {
-                    return sfloat.One;
+                    return sfloat.one;
                 }
             }
 

@@ -37,14 +37,11 @@ namespace stupid
         public static readonly Vector3S back = new Vector3S(0f, 0f, -1f);
 
         public override string ToString() => $"({x}, {y}, {z})";
-
         public static sfloat Dot(Vector3S a, Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
-        public sfloat Dot(Vector3S other) => Dot(this, other);
-
-        public Vector3S Cross(Vector3S other) => new Vector3S(
-            y * other.z - z * other.y,
-            z * other.x - x * other.z,
-            x * other.y - y * other.x
+        public static Vector3S Cross(Vector3S a, Vector3S b) => new Vector3S(
+            a.y * b.z - a.z * b.y,
+            a.z * b.x - a.x * b.z,
+            a.x * b.y - a.y * b.x
         );
 
         public sfloat Magnitude() => libm.sqrtf(x * x + y * y + z * z);
@@ -56,7 +53,7 @@ namespace stupid
         public Vector3S Normalize()
         {
             var mag = Magnitude();
-            if (mag > (sfloat)0f)
+            if (mag > sfloat.zero)
                 return this / mag;
             return zero;
         }
