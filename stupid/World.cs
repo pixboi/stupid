@@ -102,10 +102,12 @@ namespace stupid
         }
 
         public Dictionary<Rigidbody, Vector3S> VelocityBuffer = new Dictionary<Rigidbody, Vector3S>();
-
         public Dictionary<Rigidbody, Vector3S> PositionBuffer = new Dictionary<Rigidbody, Vector3S>();
+
+
         void NaiveNarrowPhase(List<ContactPair> pairs)
         {
+            // Ensure buffers are clear
             VelocityBuffer.Clear();
             PositionBuffer.Clear();
 
@@ -132,8 +134,10 @@ namespace stupid
                     sfloat e = (sfloat)0.5f;
 
                     // Calculate impulse scalar
+                    sfloat invMassA = (sfloat.one / a.mass);
+                    sfloat invMassB = (sfloat.one / b.mass);
                     sfloat j = -(sfloat.one + e) * velocityAlongNormal;
-                    j /= (sfloat.one / a.mass) + (sfloat.one / b.mass);
+                    j /= invMassA + invMassB;
 
                     // Apply impulse
                     Vector3S impulse = j * contact.normal;
@@ -143,13 +147,13 @@ namespace stupid
                     if (!VelocityBuffer.ContainsKey(b))
                         VelocityBuffer[b] = Vector3S.zero;
 
-                    VelocityBuffer[a] -= (sfloat.one / a.mass) * impulse;
-                    VelocityBuffer[b] += (sfloat.one / b.mass) * impulse;
+                    VelocityBuffer[a] -= invMassA * impulse;
+                    VelocityBuffer[b] += invMassB * impulse;
 
                     // Friction impulse
                     Vector3S tangent = (relativeVelocity - (velocityAlongNormal * contact.normal)).Normalize();
                     sfloat jt = -Vector3S.Dot(relativeVelocity, tangent);
-                    jt /= (sfloat.one / a.mass) + (sfloat.one / b.mass);
+                    jt /= invMassA + invMassB;
 
                     // Coulomb's law of friction
                     sfloat mu = (sfloat)0.5f; // coefficient of friction
@@ -163,37 +167,37 @@ namespace stupid
                         frictionImpulse = -j * mu * tangent;
                     }
 
-                    VelocityBuffer[a] -= (sfloat.one / a.mass) * frictionImpulse;
-                    VelocityBuffer[b] += (sfloat.one / b.mass) * frictionImpulse;
+                    VelocityBuffer[a] -= invMassA * frictionImpulse;
+                    VelocityBuffer[b] += invMassB * frictionImpulse;
 
                     // Positional correction to avoid sinking
                     sfloat percent = (sfloat)0.2f; // usually 20% to 80%
                     sfloat slop = (sfloat)0.01f; // usually 0.01 to 0.1
 
-                    Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / ((sfloat.one / a.mass) + (sfloat.one / b.mass)) * percent * contact.normal;
+                    Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / (invMassA + invMassB) * percent * contact.normal;
 
                     if (!PositionBuffer.ContainsKey(a))
                         PositionBuffer[a] = Vector3S.zero;
                     if (!PositionBuffer.ContainsKey(b))
                         PositionBuffer[b] = Vector3S.zero;
 
-                    PositionBuffer[a] -= (sfloat.one / a.mass) * correction;
-                    PositionBuffer[b] += (sfloat.one / b.mass) * correction;
+                    PositionBuffer[a] -= invMassA * correction;
+                    PositionBuffer[b] += invMassB * correction;
                 }
             }
 
-            // Apply changes to velocities
+            // Apply changes to velocities and positions
             foreach (var change in VelocityBuffer)
             {
                 change.Key.velocity += change.Value;
             }
 
-            // Apply changes to positions
             foreach (var change in PositionBuffer)
             {
                 change.Key.position += change.Value;
             }
         }
+
 
         void Integrate(sfloat deltaTime)
         {

@@ -20,7 +20,7 @@ namespace stupid
 
         public bool isKinematic = false;
 
-        public sfloat sleepThreshold = (sfloat)0.1f; // non calced values can be reg floats?
+        public readonly sfloat sleepThreshold = (sfloat)0.05f; // non calced values can be reg floats?
         public bool isSleeping { get; private set; }
         public void WakeUp() => isSleeping = false;
         public void Sleep() => isSleeping = true;

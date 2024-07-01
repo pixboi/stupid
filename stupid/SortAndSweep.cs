@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using SoftFloat;
 
 namespace stupid
@@ -6,20 +9,20 @@ namespace stupid
     public class SortAndSweepBroadphase : IBroadphase
     {
         private AxisEndpoint[] endpointsX;
-        private AxisEndpoint[] endpointsY;
         private AxisEndpoint[] endpointsZ;
         private readonly List<ContactPair> pairs;
-        private readonly Dictionary<(int, int), bool> checkedPairs;
+        private readonly HashSet<BodyPair> checkedPairs;
+        private readonly List<Rigidbody> activeList;
         private int initialCapacity;
 
         public SortAndSweepBroadphase(int initialCapacity = 100)
         {
             this.initialCapacity = initialCapacity;
             this.endpointsX = new AxisEndpoint[initialCapacity * 2];
-            this.endpointsY = new AxisEndpoint[initialCapacity * 2];
             this.endpointsZ = new AxisEndpoint[initialCapacity * 2];
             this.pairs = new List<ContactPair>(initialCapacity);
-            this.checkedPairs = new Dictionary<(int, int), bool>(initialCapacity);
+            this.checkedPairs = new HashSet<BodyPair>(new BodyPairComparer());
+            this.activeList = new List<Rigidbody>(initialCapacity);
         }
 
         public List<ContactPair> ComputePairs(List<Rigidbody> rigidbodies)
@@ -30,19 +33,15 @@ namespace stupid
             EnsureCapacity(rigidbodies.Count);
 
             int endpointCountX = 0;
-            int endpointCountY = 0;
             int endpointCountZ = 0;
 
             PopulateEndpoints(rigidbodies, endpointsX, 0, ref endpointCountX);
-            PopulateEndpoints(rigidbodies, endpointsY, 1, ref endpointCountY);
             PopulateEndpoints(rigidbodies, endpointsZ, 2, ref endpointCountZ);
 
             InsertionSort(endpointsX, endpointCountX);
-            InsertionSort(endpointsY, endpointCountY);
             InsertionSort(endpointsZ, endpointCountZ);
 
             SweepAndPrune(endpointsX, endpointCountX);
-            SweepAndPrune(endpointsY, endpointCountY);
             SweepAndPrune(endpointsZ, endpointCountZ);
 
             return pairs;
@@ -54,8 +53,11 @@ namespace stupid
             if (endpointsX.Length < requiredCapacity)
             {
                 endpointsX = new AxisEndpoint[requiredCapacity];
-                endpointsY = new AxisEndpoint[requiredCapacity];
                 endpointsZ = new AxisEndpoint[requiredCapacity];
+            }
+            if (activeList.Capacity < rigidbodyCount)
+            {
+                activeList.Capacity = rigidbodyCount;
             }
         }
 
@@ -64,8 +66,8 @@ namespace stupid
             foreach (var body in rigidbodies)
             {
                 var bounds = body.collider.GetBounds();
-                var min = axis == 0 ? bounds.Min.x : (axis == 1 ? bounds.Min.y : bounds.Min.z);
-                var max = axis == 0 ? bounds.Max.x : (axis == 1 ? bounds.Max.y : bounds.Max.z);
+                var min = axis == 0 ? bounds.Min.x : bounds.Min.z;
+                var max = axis == 0 ? bounds.Max.x : bounds.Max.z;
 
                 endpoints[endpointCount++] = new AxisEndpoint { Value = min, IsMin = true, Body = body };
                 endpoints[endpointCount++] = new AxisEndpoint { Value = max, IsMin = false, Body = body };
@@ -89,7 +91,7 @@ namespace stupid
 
         private void SweepAndPrune(AxisEndpoint[] endpoints, int count)
         {
-            var activeList = new List<Rigidbody>();
+            activeList.Clear();
 
             for (int i = 0; i < count; i++)
             {
@@ -98,22 +100,19 @@ namespace stupid
                 {
                     foreach (var activeBody in activeList)
                     {
-                        int idA = endpoint.Body.index;
-                        int idB = activeBody.index;
-                        if (idA > idB)
-                        {
-                            (idA, idB) = (idB, idA);
-                        }
+                        if (endpoint.Body == activeBody) continue;
 
-                        if (checkedPairs.ContainsKey((idA, idB)))
+                        var idA = endpoint.Body.index;
+                        var idB = activeBody.index;
+                        var bodyPair = new BodyPair(idA, idB);
+
+                        if (!checkedPairs.Add(bodyPair))
                             continue;
 
                         if (endpoint.Body.collider.GetBounds().Intersects(activeBody.collider.GetBounds()))
                         {
                             pairs.Add(new ContactPair { bodyA = endpoint.Body, bodyB = activeBody });
                         }
-
-                        checkedPairs[(idA, idB)] = true;
                     }
                     activeList.Add(endpoint.Body);
                 }
@@ -129,6 +128,53 @@ namespace stupid
             public sfloat Value;
             public bool IsMin;
             public Rigidbody Body;
+        }
+
+        private struct BodyPair
+        {
+            public int BodyA;
+            public int BodyB;
+
+            public BodyPair(int bodyA, int bodyB)
+            {
+                if (bodyA > bodyB)
+                {
+                    BodyA = bodyB;
+                    BodyB = bodyA;
+                }
+                else
+                {
+                    BodyA = bodyA;
+                    BodyB = bodyB;
+                }
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj is BodyPair other)
+                {
+                    return BodyA == other.BodyA && BodyB == other.BodyB;
+                }
+                return false;
+            }
+
+            public override int GetHashCode()
+            {
+                return BodyA.GetHashCode() ^ BodyB.GetHashCode();
+            }
+        }
+
+        private class BodyPairComparer : IEqualityComparer<BodyPair>
+        {
+            public bool Equals(BodyPair x, BodyPair y)
+            {
+                return x.BodyA == y.BodyA && x.BodyB == y.BodyB;
+            }
+
+            public int GetHashCode(BodyPair obj)
+            {
+                return obj.BodyA.GetHashCode() ^ obj.BodyB.GetHashCode();
+            }
         }
     }
 }
