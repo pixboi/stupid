@@ -20,10 +20,12 @@ namespace stupid
             return rb;
         }
 
-        public World(Bounds worldBounds, IBroadphase broadphase)
+        bool _multiThread;
+        public World(Bounds worldBounds, IBroadphase broadphase, bool multiThread = false)
         {
             counter = 0;
             this.worldBounds = worldBounds;
+            this._multiThread = multiThread;
             Rigidbodies = new List<Rigidbody>(1000);
 
             Broadphase = broadphase;
@@ -112,7 +114,7 @@ namespace stupid
                 var a = pair.bodyA;
                 var b = pair.bodyB;
 
-                if (a.isSleeping && b.isSleeping) { continue; }
+                if (a.isSleeping && b.isSleeping) continue;
 
                 if (a.collider.Intersects(a.position, b.position, b.collider, out var contact))
                 {
@@ -205,65 +207,62 @@ namespace stupid
             }
         }
 
+        public void CheckSleep(Rigidbody body)
+        {
+            var v = body.velocity.MagnitudeSquared();
+            if (body.isSleeping)
+            {
+                if (v > body.sleepThreshold)
+                {
+                    body.WakeUp();
+                }
+            }
+            else
+            {
+                if (v <= body.sleepThreshold)
+                {
+                    body.Sleep();
+                }
+            }
+        }
+
         public void Simulate(sfloat deltaTime)
         {
             AddGravity(deltaTime);
             Integrate(deltaTime);
 
-            foreach (var body in Rigidbodies) body.collider.CalculateBounds(body.position);
-            /*
-           Parallel.For(0, Rigidbodies.Count, i =>
-           {
-               Rigidbodies[i].collider.CalculateBounds(Rigidbodies[i].position);
-           });
-            */
-
+            if (_multiThread)
+            {
+                Parallel.For(0, Rigidbodies.Count, i =>
+                {
+                    Rigidbodies[i].collider.CalculateBounds(Rigidbodies[i].position);
+                });
+            }
+            else
+            {
+                foreach (var body in Rigidbodies) body.collider.CalculateBounds(body.position);
+            }
 
             var pairs = Broadphase.ComputePairs(this.Rigidbodies);
             NaiveNarrowPhase(pairs);
 
             WorldCollision();
 
-            foreach (var body in Rigidbodies)
+
+            if (_multiThread)
             {
-                var v = body.velocity.MagnitudeSquared();
-                if (body.isSleeping)
+                Parallel.For(0, Rigidbodies.Count, i =>
                 {
-                    if (v > body.sleepThreshold)
-                    {
-                        body.WakeUp();
-                    }
-                }
-                else
+                    CheckSleep(Rigidbodies[i]);
+                });
+            }
+            else
+            {
+                foreach (var body in Rigidbodies)
                 {
-                    if (v <= body.sleepThreshold)
-                    {
-                        body.Sleep();
-                    }
+                    CheckSleep(body);
                 }
             }
-
-            /*
-            Parallel.For(0, Rigidbodies.Count, i =>
-            {
-                var body = Rigidbodies[i];
-                var v = body.velocity.MagnitudeSquared();
-                if (body.isSleeping)
-                {
-                    if (v > body.sleepThreshold)
-                    {
-                        body.WakeUp();
-                    }
-                }
-                else
-                {
-                    if (v <= body.sleepThreshold)
-                    {
-                        body.Sleep();
-                    }
-                }
-            });
-            */
 
         }
     }
