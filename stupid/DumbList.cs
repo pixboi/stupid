@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace stupid
 {
@@ -8,8 +6,9 @@ namespace stupid
     {
         private T[] items;
         private int count;
+        private const int DefaultCapacity = 4;
 
-        public CustomList(int capacity)
+        public CustomList(int capacity = DefaultCapacity)
         {
             items = new T[capacity];
             count = 0;
@@ -34,10 +33,10 @@ namespace stupid
 
         private void Resize()
         {
-            T[] newItems = new T[items.Length * 2];
-            System.Array.Copy(items, newItems, items.Length);
+            int newCapacity = items.Length > 0 ? items.Length * 3 / 2 : DefaultCapacity;
+            T[] newItems = new T[newCapacity];
+            items.AsSpan(0, count).CopyTo(newItems);
             items = newItems;
         }
     }
-
 }

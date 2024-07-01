@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using SoftFloat;
 
 namespace stupid
@@ -23,7 +24,7 @@ namespace stupid
         {
             counter = 0;
             this.worldBounds = worldBounds;
-            Rigidbodies = new List<Rigidbody>(128);
+            Rigidbodies = new List<Rigidbody>(1000);
 
             Broadphase = broadphase;
         }
@@ -32,6 +33,8 @@ namespace stupid
         {
             foreach (var rb in Rigidbodies)
             {
+                if (rb.isSleeping) continue;
+
                 if (rb.useGravity)
                 {
                     rb.velocity += new Vector3S(0f, -20f, 0f) * deltaTime;
@@ -43,7 +46,7 @@ namespace stupid
         {
             foreach (var rb in Rigidbodies)
             {
-                var bounds = rb.collider.GetBounds(rb.position);
+                var bounds = rb.collider.GetBounds();
                 if (worldBounds.ContainsBounds(bounds)) continue;
 
                 var sc = (SphereCollider)rb.collider;
@@ -82,8 +85,8 @@ namespace stupid
                     var a = Rigidbodies[i];
                     var b = Rigidbodies[j];
 
-                    var aBounds = a.collider.GetBounds(a.position);
-                    var bBounds = b.collider.GetBounds(b.position);
+                    var aBounds = a.collider.GetBounds();
+                    var bBounds = b.collider.GetBounds();
 
                     if (aBounds.Intersects(bBounds))
                     {
@@ -108,6 +111,8 @@ namespace stupid
             {
                 var a = pair.bodyA;
                 var b = pair.bodyB;
+
+                if (a.isSleeping && b.isSleeping) { continue; }
 
                 if (a.collider.Intersects(a.position, b.position, b.collider, out var contact))
                 {
@@ -188,13 +193,14 @@ namespace stupid
             }
         }
 
-
         void Integrate(sfloat deltaTime)
         {
             //The integration must be halved for like each iteration count
             for (int i = 0; i < Rigidbodies.Count; i++)
             {
                 var rb = Rigidbodies[i];
+                if (rb.isSleeping) continue;
+
                 rb.position += rb.velocity * deltaTime;
             }
         }
@@ -204,10 +210,61 @@ namespace stupid
             AddGravity(deltaTime);
             Integrate(deltaTime);
 
+            foreach (var body in Rigidbodies) body.collider.CalculateBounds(body.position);
+            /*
+           Parallel.For(0, Rigidbodies.Count, i =>
+           {
+               Rigidbodies[i].collider.CalculateBounds(Rigidbodies[i].position);
+           });
+            */
+
+
             var pairs = Broadphase.ComputePairs(this.Rigidbodies);
             NaiveNarrowPhase(pairs);
 
             WorldCollision();
+
+            foreach (var body in Rigidbodies)
+            {
+                var v = body.velocity.MagnitudeSquared();
+                if (body.isSleeping)
+                {
+                    if (v > body.sleepThreshold)
+                    {
+                        body.WakeUp();
+                    }
+                }
+                else
+                {
+                    if (v <= body.sleepThreshold)
+                    {
+                        body.Sleep();
+                    }
+                }
+            }
+
+            /*
+            Parallel.For(0, Rigidbodies.Count, i =>
+            {
+                var body = Rigidbodies[i];
+                var v = body.velocity.MagnitudeSquared();
+                if (body.isSleeping)
+                {
+                    if (v > body.sleepThreshold)
+                    {
+                        body.WakeUp();
+                    }
+                }
+                else
+                {
+                    if (v <= body.sleepThreshold)
+                    {
+                        body.Sleep();
+                    }
+                }
+            });
+            */
+
         }
     }
 }

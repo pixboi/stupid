@@ -19,9 +19,10 @@ namespace stupid
 
         public bool Intersects(Bounds other)
         {
-            return Min.x <= other.Max.x && Max.x >= other.Min.x &&
-                   Min.y <= other.Max.y && Max.y >= other.Min.y &&
-                   Min.z <= other.Max.z && Max.z >= other.Min.z;
+            if (Max.x < other.Min.x || Min.x > other.Max.x) return false;
+            if (Max.y < other.Min.y || Min.y > other.Max.y) return false;
+            if (Max.z < other.Min.z || Min.z > other.Max.z) return false;
+            return true;
         }
 
         public void Union(Bounds other)

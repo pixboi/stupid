@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using SoftFloat;
 
 namespace stupid
@@ -10,24 +11,20 @@ namespace stupid
 
     public class GridBasedBroadphase : IBroadphase
     {
-        private sfloat cellSize;
-        private Dictionary<Vector3S, CustomList<Rigidbody>> grid;
+        private int cellSize;
+        private Dictionary<(int, int, int), CustomList<Rigidbody>> grid;
         private Dictionary<(int, int), bool> checkedPairs;
         private CustomList<ContactPair> pairs;
         private Stack<CustomList<Rigidbody>> listPool;
-        private Vector3S minCell;
-        private Vector3S maxCell;
         private int maxRigidbodies;
 
-        public GridBasedBroadphase(sfloat cellSize, int initialCapacity = 100)
+        public GridBasedBroadphase(int cellSize, int initialCapacity = 100)
         {
             this.cellSize = cellSize;
-            this.grid = new Dictionary<Vector3S, CustomList<Rigidbody>>(initialCapacity);
+            this.grid = new Dictionary<(int, int, int), CustomList<Rigidbody>>(initialCapacity);
             this.checkedPairs = new Dictionary<(int, int), bool>(initialCapacity);
             this.pairs = new CustomList<ContactPair>(initialCapacity);
             this.listPool = new Stack<CustomList<Rigidbody>>(initialCapacity);
-            this.minCell = new Vector3S();
-            this.maxCell = new Vector3S();
             this.maxRigidbodies = initialCapacity;
 
             // Preallocate lists in pool
@@ -66,17 +63,17 @@ namespace stupid
             // Place each rigidbody in the grid
             foreach (var body in rigidbodies)
             {
-                var bounds = body.collider.GetBounds(body.position);
-                GetCell(bounds.Min, ref minCell);
-                GetCell(bounds.Max, ref maxCell);
+                var bounds = body.collider.GetBounds();
+                var minCell = GetCell(bounds.Min);
+                var maxCell = GetCell(bounds.Max);
 
-                for (int x = (int)minCell.x; x <= (int)maxCell.x; x++)
+                for (int x = minCell.x; x <= maxCell.x; x++)
                 {
-                    for (int y = (int)minCell.y; y <= (int)maxCell.y; y++)
+                    for (int y = minCell.y; y <= maxCell.y; y++)
                     {
-                        for (int z = (int)minCell.z; z <= (int)maxCell.z; z++)
+                        for (int z = minCell.z; z <= maxCell.z; z++)
                         {
-                            var cell = new Vector3S((sfloat)x, (sfloat)y, (sfloat)z);
+                            var cell = (x, y, z);
                             if (!grid.TryGetValue(cell, out var cellBodies))
                             {
                                 cellBodies = listPool.Count > 0 ? listPool.Pop() : new CustomList<Rigidbody>(maxRigidbodies);
@@ -108,8 +105,8 @@ namespace stupid
                         if (checkedPairs.ContainsKey((idA, idB)))
                             continue;
 
-                        var aBounds = a.collider.GetBounds(a.position);
-                        var bBounds = b.collider.GetBounds(b.position);
+                        var aBounds = a.collider.GetBounds();
+                        var bBounds = b.collider.GetBounds();
 
                         if (aBounds.Intersects(bBounds))
                         {
@@ -134,11 +131,13 @@ namespace stupid
             return result;
         }
 
-        private void GetCell(Vector3S position, ref Vector3S cell)
+        private (int x, int y, int z) GetCell(Vector3S position)
         {
-            cell.x = MathS.Floor(position.x / cellSize);
-            cell.y = MathS.Floor(position.y / cellSize);
-            cell.z = MathS.Floor(position.z / cellSize);
+            return (
+                ((int)position.x / cellSize),
+                ((int)position.y / cellSize),
+               ((int)position.z / cellSize)
+            );
         }
 
         private void ReturnReusableList(CustomList<Rigidbody> list)

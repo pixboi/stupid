@@ -22,19 +22,10 @@ namespace stupid
             this.z = (sfloat)z;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator +(Vector3S a, Vector3S b) => new Vector3S(a.x + b.x, a.y + b.y, a.z + b.z);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator -(Vector3S a, Vector3S b) => new Vector3S(a.x - b.x, a.y - b.y, a.z - b.z);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(Vector3S a, sfloat d) => new Vector3S(a.x * d, a.y * d, a.z * d);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator /(Vector3S a, sfloat d) => new Vector3S(a.x / d, a.y / d, a.z / d);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(sfloat d, Vector3S a) => new Vector3S(a.x * d, a.y * d, a.z * d);
 
         public static readonly Vector3S zero = new Vector3S(0f, 0f, 0f);
