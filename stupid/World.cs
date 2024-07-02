@@ -85,8 +85,8 @@ namespace stupid
 
             foreach (var pair in pairs)
             {
-                var a = Rigidbodies[pair.BodyA];
-                var b = Rigidbodies[pair.BodyB];
+                var a = Rigidbodies[pair.aIndex];
+                var b = Rigidbodies[pair.bIndex];
 
                 if (a.isSleeping && b.isSleeping) continue;
 

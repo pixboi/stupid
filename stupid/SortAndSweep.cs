@@ -19,25 +19,25 @@ namespace stupid
         public SortAndSweepBroadphase(int initialCapacity = 100)
         {
             endpointsX = new List<AxisEndpoint>(initialCapacity * 2);
-            endpointsY = new List<AxisEndpoint>(initialCapacity * 2);
-            endpointsZ = new List<AxisEndpoint>(initialCapacity * 2);
+            //  endpointsY = new List<AxisEndpoint>(initialCapacity * 2);
+            //  endpointsZ = new List<AxisEndpoint>(initialCapacity * 2);
             pairs = new HashSet<BodyPair>(initialCapacity * 2);
         }
 
         private void Rebuild(List<Rigidbody> rigidbodies)
         {
             endpointsX.Clear();
-            endpointsY.Clear();
-            endpointsZ.Clear();
+            //  endpointsY.Clear();
+            //  endpointsZ.Clear();
             foreach (var body in rigidbodies)
             {
                 var bounds = body.collider.GetBounds();
                 endpointsX.Add(new AxisEndpoint { Value = bounds.Min.x, IsMin = true, Body = body });
                 endpointsX.Add(new AxisEndpoint { Value = bounds.Max.x, IsMin = false, Body = body });
-                endpointsY.Add(new AxisEndpoint { Value = bounds.Min.y, IsMin = true, Body = body });
-                endpointsY.Add(new AxisEndpoint { Value = bounds.Max.y, IsMin = false, Body = body });
-                endpointsZ.Add(new AxisEndpoint { Value = bounds.Min.z, IsMin = true, Body = body });
-                endpointsZ.Add(new AxisEndpoint { Value = bounds.Max.z, IsMin = false, Body = body });
+                //  endpointsY.Add(new AxisEndpoint { Value = bounds.Min.y, IsMin = true, Body = body });
+                // endpointsY.Add(new AxisEndpoint { Value = bounds.Max.y, IsMin = false, Body = body });
+                // endpointsZ.Add(new AxisEndpoint { Value = bounds.Min.z, IsMin = true, Body = body });
+                // endpointsZ.Add(new AxisEndpoint { Value = bounds.Max.z, IsMin = false, Body = body });
             }
             rbCount = rigidbodies.Count;
         }
@@ -52,16 +52,16 @@ namespace stupid
             pairs.Clear();
 
             UpdateEndpoints(endpointsX, 0);
-            //UpdateEndpoints(endpointsY, 1);
-            //UpdateEndpoints(endpointsZ, 2);
+            // UpdateEndpoints(endpointsY, 1);
+            // UpdateEndpoints(endpointsZ, 2);
 
             InsertionSort(endpointsX);
-            //InsertionSort(endpointsY);
-            //InsertionSort(endpointsZ);
-
+            // InsertionSort(endpointsY);
+            // InsertionSort(endpointsZ);
+            //
             SweepAndPrune(endpointsX);
-            //SweepAndPrune(endpointsY);
-            //SweepAndPrune(endpointsZ);
+            // SweepAndPrune(endpointsY);
+            // SweepAndPrune(endpointsZ);
 
             return pairs;
         }

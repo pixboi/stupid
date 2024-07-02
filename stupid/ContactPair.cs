@@ -4,20 +4,20 @@ namespace stupid
 {
     public struct BodyPair
     {
-        public int BodyA;
-        public int BodyB;
+        public int aIndex;
+        public int bIndex;
 
         public BodyPair(int bodyA, int bodyB)
         {
             if (bodyA < bodyB)
             {
-                BodyA = bodyA;
-                BodyB = bodyB;
+                aIndex = bodyA;
+                bIndex = bodyB;
             }
             else
             {
-                BodyA = bodyB;
-                BodyB = bodyA;
+                aIndex = bodyB;
+                bIndex = bodyA;
             }
         }
 
@@ -25,14 +25,14 @@ namespace stupid
         {
             if (obj is BodyPair other)
             {
-                return BodyA == other.BodyA && BodyB == other.BodyB;
+                return aIndex == other.aIndex && bIndex == other.bIndex;
             }
             return false;
         }
 
         public override int GetHashCode()
         {
-            return BodyA.GetHashCode() ^ BodyB.GetHashCode();
+            return aIndex.GetHashCode() ^ bIndex.GetHashCode();
         }
     }
 
