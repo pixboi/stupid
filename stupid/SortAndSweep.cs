@@ -10,8 +10,8 @@ namespace stupid
 
     public class SortAndSweepBroadphase : IBroadphase
     {
-        private List<AxisEndpoint> endpoints;
-        private HashSet<BodyPair> pairs;
+        private readonly List<AxisEndpoint> endpoints;
+        private readonly HashSet<BodyPair> pairs;
         private int rbCount = 0;
 
         public SortAndSweepBroadphase(int initialCapacity = 100)
@@ -29,7 +29,6 @@ namespace stupid
                 endpoints.Add(new AxisEndpoint { Value = bounds.Min.x, IsMin = true, Body = body });
                 endpoints.Add(new AxisEndpoint { Value = bounds.Max.x, IsMin = false, Body = body });
             }
-
             rbCount = rigidbodies.Count;
         }
 
@@ -76,6 +75,14 @@ namespace stupid
             }
         }
 
+        private bool Intersects(Bounds a, Bounds b)
+        {
+            return !(a.Max.x <= b.Min.x || a.Min.x >= b.Max.x ||
+                     a.Max.y <= b.Min.y || a.Min.y >= b.Max.y ||
+                     a.Max.z <= b.Min.z || a.Min.z >= b.Max.z);
+        }
+
+
         private void SweepAndPrune(List<AxisEndpoint> endpoints)
         {
             for (int i = 0; i < endpoints.Count; i++)
@@ -90,7 +97,6 @@ namespace stupid
                     {
                         var other = endpoints[j];
 
-                        // We are ourself, stop
                         if (!other.IsMin && other.Body == me.Body)
                             break;
 
@@ -98,7 +104,7 @@ namespace stupid
                         {
                             var otherBounds = other.Body.collider.GetBounds();
 
-                            if (bounds.Intersects(otherBounds))
+                            if (Intersects(bounds,otherBounds))
                             {
                                 pairs.Add(new BodyPair(me.Body.index, other.Body.index));
                             }
