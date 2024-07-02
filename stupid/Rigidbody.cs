@@ -6,6 +6,10 @@ namespace stupid
     {
         //Runtime
         public readonly int index;
+        public override int GetHashCode()
+        {
+            return index;
+        }
 
         public Vector3S position;
 
@@ -20,10 +24,14 @@ namespace stupid
 
         public bool isKinematic = false;
 
-        public readonly sfloat sleepThreshold = (sfloat)0.05f; // non calced values can be reg floats?
+        public readonly sfloat sleepThreshold = (sfloat)0.1f; // non calced values can be reg floats?
         public bool isSleeping { get; private set; }
         public void WakeUp() => isSleeping = false;
-        public void Sleep() => isSleeping = true;
+        public void Sleep()
+        {
+            isSleeping = true;
+            this.velocity = Vector3S.zero;
+        }
 
         public Rigidbody(int index, Vector3S position = default, Vector3S velocity = default)
         {

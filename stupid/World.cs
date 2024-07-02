@@ -21,12 +21,12 @@ namespace stupid
         }
 
         bool _multiThread;
-        public World(Bounds worldBounds, IBroadphase broadphase, bool multiThread = false)
+        public World(Bounds worldBounds, IBroadphase broadphase, int startSize = 1000, bool multiThread = false)
         {
             counter = 0;
             this.worldBounds = worldBounds;
             this._multiThread = multiThread;
-            Rigidbodies = new List<Rigidbody>(1000);
+            Rigidbodies = new List<Rigidbody>(startSize);
 
             Broadphase = broadphase;
         }
@@ -105,7 +105,7 @@ namespace stupid
         public Dictionary<Rigidbody, Vector3S> PositionBuffer = new Dictionary<Rigidbody, Vector3S>();
 
 
-        void NaiveNarrowPhase(List<ContactPair> pairs)
+        void NaiveNarrowPhase(HashSet<BodyPair> pairs)
         {
             // Ensure buffers are clear
             VelocityBuffer.Clear();
@@ -113,8 +113,8 @@ namespace stupid
 
             foreach (var pair in pairs)
             {
-                var a = pair.bodyA;
-                var b = pair.bodyB;
+                var a = Rigidbodies[pair.BodyA];
+                var b = Rigidbodies[pair.BodyB];
 
                 if (a.isSleeping && b.isSleeping) continue;
 
@@ -251,7 +251,6 @@ namespace stupid
             NaiveNarrowPhase(pairs);
 
             WorldCollision();
-
 
             if (_multiThread)
             {

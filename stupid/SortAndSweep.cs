@@ -3,18 +3,21 @@ using System.Collections.Generic;
 
 namespace stupid
 {
+    public interface IBroadphase
+    {
+        HashSet<BodyPair> ComputePairs(List<Rigidbody> rigidbodies);
+    }
+
     public class SortAndSweepBroadphase : IBroadphase
     {
         private List<AxisEndpoint> endpoints;
-        private List<ContactPair> pairs;
-        private List<Rigidbody> activeList;
-        private int lastBodyCount = 0;
+        private HashSet<BodyPair> pairs;
+        private int rbCount = 0;
 
         public SortAndSweepBroadphase(int initialCapacity = 100)
         {
             endpoints = new List<AxisEndpoint>(initialCapacity * 2);
-            pairs = new List<ContactPair>(initialCapacity * 2);
-            activeList = new List<Rigidbody>(initialCapacity);
+            pairs = new HashSet<BodyPair>(initialCapacity * 2);
         }
 
         private void Init(List<Rigidbody> rigidbodies)
@@ -26,26 +29,17 @@ namespace stupid
                 endpoints.Add(new AxisEndpoint { Value = bounds.Min.x, IsMin = true, Body = body });
                 endpoints.Add(new AxisEndpoint { Value = bounds.Max.x, IsMin = false, Body = body });
             }
+
+            rbCount = rigidbodies.Count;
         }
 
-        private void UpdateEndpoints()
-        {
-            foreach (var endpoint in endpoints)
-            {
-                var bounds = endpoint.Body.collider.GetBounds();
-                endpoint.Value = endpoint.IsMin ? bounds.Min.x : bounds.Max.x;
-            }
-        }
-
-        public List<ContactPair> ComputePairs(List<Rigidbody> rigidbodies)
+        public HashSet<BodyPair> ComputePairs(List<Rigidbody> rigidbodies)
         {
             pairs.Clear();
-            activeList.Clear();
 
-            if (lastBodyCount != rigidbodies.Count)
+            if (rbCount != rigidbodies.Count)
             {
                 Init(rigidbodies);
-                lastBodyCount = rigidbodies.Count;
             }
 
             UpdateEndpoints();
@@ -53,6 +47,17 @@ namespace stupid
             SweepAndPrune(endpoints);
 
             return pairs;
+        }
+
+        private void UpdateEndpoints()
+        {
+            foreach (var endpoint in endpoints)
+            {
+                if (endpoint.Body.isSleeping) continue;
+
+                var bounds = endpoint.Body.collider.GetBounds();
+                endpoint.Value = endpoint.IsMin ? bounds.Min.x : bounds.Max.x;
+            }
         }
 
         private void InsertionSort(List<AxisEndpoint> endpoints)
@@ -75,24 +80,30 @@ namespace stupid
         {
             for (int i = 0; i < endpoints.Count; i++)
             {
-                var endpoint = endpoints[i];
-                if (endpoint.IsMin)
+                var me = endpoints[i];
+
+                if (me.IsMin)
                 {
-                    foreach (var activeBody in activeList)
+                    var bounds = me.Body.collider.GetBounds();
+
+                    for (int j = i + 1; j < endpoints.Count; j++)
                     {
-                        if (activeBody.collider.GetBounds().Max.x < endpoint.Value)
+                        var other = endpoints[j];
+
+                        // We are ourself, stop
+                        if (!other.IsMin && other.Body == me.Body)
                             break;
 
-                        if (endpoint.Body != activeBody && endpoint.Body.collider.GetBounds().Intersects(activeBody.collider.GetBounds()))
+                        if (other.IsMin)
                         {
-                            pairs.Add(new ContactPair { bodyA = endpoint.Body, bodyB = activeBody });
+                            var otherBounds = other.Body.collider.GetBounds();
+
+                            if (bounds.Intersects(otherBounds))
+                            {
+                                pairs.Add(new BodyPair(me.Body.index, other.Body.index));
+                            }
                         }
                     }
-                    activeList.Add(endpoint.Body);
-                }
-                else
-                {
-                    activeList.Remove(endpoint.Body);
                 }
             }
         }
