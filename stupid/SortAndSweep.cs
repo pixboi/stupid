@@ -112,24 +112,26 @@ namespace stupid
 
                 if (me.IsMin)
                 {
+                    //Lets start testing
                     var bounds = me.Body.collider.GetBounds();
 
                     for (int j = i + 1; j < endpoints.Count; j++)
                     {
                         var other = endpoints[j];
 
+                        //This is my bound, get out
                         if (!other.IsMin && other.Body == me.Body)
                             break;
+
+                        //We're asleep, no contact necessary
+                        if (other.Body.isSleeping && me.Body.isSleeping) continue;
 
                         if (other.IsMin)
                         {
                             var pair = new BodyPair(me.Body.index, other.Body.index);
-
-                            if (pairs.Contains(pair)) continue;
-
                             var otherBounds = other.Body.collider.GetBounds();
 
-                            if (Intersects(bounds, otherBounds))
+                            if (bounds.Intersects(otherBounds))
                             {
                                 pairs.Add(pair);
                             }
@@ -137,13 +139,6 @@ namespace stupid
                     }
                 }
             }
-        }
-
-        private bool Intersects(Bounds a, Bounds b)
-        {
-            return !(a.Max.x <= b.Min.x || a.Min.x >= b.Max.x ||
-                     a.Max.y <= b.Min.y || a.Min.y >= b.Max.y ||
-                     a.Max.z <= b.Min.z || a.Min.z >= b.Max.z);
         }
 
         private class AxisEndpoint
