@@ -14,7 +14,6 @@ namespace stupid
         private readonly List<AxisEndpoint> endpointsY;
         private readonly List<AxisEndpoint> endpointsZ;
         private readonly HashSet<BodyPair> pairs;
-        private readonly List<BodyPair> potentialPairs;
         private int[] overlapCount;
         private int rbCount = 0;
 
@@ -24,7 +23,6 @@ namespace stupid
             endpointsY = new List<AxisEndpoint>(initialCapacity * 2);
             endpointsZ = new List<AxisEndpoint>(initialCapacity * 2);
             pairs = new HashSet<BodyPair>(initialCapacity * initialCapacity, new BodyPairComparer());
-            potentialPairs = new List<BodyPair>(initialCapacity * initialCapacity);
         }
 
         private void Rebuild(List<Rigidbody> rigidbodies)
@@ -54,7 +52,6 @@ namespace stupid
             }
 
             pairs.Clear();
-            potentialPairs.Clear();
             System.Array.Clear(overlapCount, 0, overlapCount.Length);
 
             UpdateEndpoints(endpointsX, 'x');
@@ -64,27 +61,56 @@ namespace stupid
             InsertionSort(endpointsY);
             InsertionSort(endpointsZ);
 
-            FlagPairsInAxis(endpointsX);
-            FlagPairsInAxis(endpointsY);
-            FlagPairsInAxis(endpointsZ);
+            FlagPairsInAxis(endpointsX, 0);
+            FlagPairsInAxis(endpointsY, 1);
+            FlagPairsInAxis(endpointsZ, 2);
 
-            foreach (var pair in potentialPairs)
+            // Check overlap counts and perform detailed bounds checks
+            for (int i = 0; i < overlapCount.Length; i++)
             {
-                int index = GetPairIndex(pair.aIndex, pair.bIndex);
-                if (overlapCount[index] == 3) // Pair is flagged in all three axes
+                if (overlapCount[i] == 3)
                 {
-                    var bodyA = rigidbodies[pair.aIndex];
-                    var bodyB = rigidbodies[pair.bIndex];
+                    int aIndex = i / rbCount;
+                    int bIndex = i % rbCount;
+
+                    var bodyA = rigidbodies[aIndex];
+                    var bodyB = rigidbodies[bIndex];
 
                     if (bodyA.collider.GetBounds().Intersects(bodyB.collider.GetBounds()))
                     {
-                        pairs.Add(pair);
+                        pairs.Add(new BodyPair(aIndex, bIndex));
                     }
                 }
             }
 
             return pairs;
         }
+
+        private void FlagPairsInAxis(List<AxisEndpoint> endpoints, int axisIndex)
+        {
+            List<Rigidbody> activeList = new List<Rigidbody>();
+
+            for (int i = 0; i < endpoints.Count; i++)
+            {
+                var me = endpoints[i];
+
+                if (me.IsMin)
+                {
+                    foreach (var otherBody in activeList)
+                    {
+                        var pair = new BodyPair(me.Body.index, otherBody.index);
+                        int index = GetPairIndex(pair.aIndex, pair.bIndex);
+                        overlapCount[index]++;
+                    }
+                    activeList.Add(me.Body);
+                }
+                else
+                {
+                    activeList.Remove(me.Body);
+                }
+            }
+        }
+
 
         private void UpdateEndpoints(List<AxisEndpoint> endpoints, char axis)
         {
@@ -121,35 +147,6 @@ namespace stupid
                     j--;
                 }
                 endpoints[j + 1] = key;
-            }
-        }
-
-        private void FlagPairsInAxis(List<AxisEndpoint> endpoints)
-        {
-            List<Rigidbody> active = new List<Rigidbody>();
-
-            for (int i = 0; i < endpoints.Count; i++)
-            {
-                var me = endpoints[i];
-
-                if (me.IsMin)
-                {
-                    foreach (var otherBody in active)
-                    {
-                        var pair = new BodyPair(me.Body.index, otherBody.index);
-                        int index = GetPairIndex(pair.aIndex, pair.bIndex);
-                        if (overlapCount[index] == 0)
-                        {
-                            potentialPairs.Add(pair);
-                        }
-                        overlapCount[index]++;
-                    }
-                    active.Add(me.Body);
-                }
-                else
-                {
-                    active.Remove(me.Body);
-                }
             }
         }
 
