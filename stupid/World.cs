@@ -46,6 +46,8 @@ namespace stupid
             this.Gravity = gravity;
             this.Rigidbodies = new List<Rigidbody>(startSize);
             this.Broadphase = broadphase;
+            this.velocityBuffer = new Vector3S[startSize * 2];
+            this.positionBuffer = new Vector3S[startSize * 2];
         }
 
         public Rigidbody AddRigidbody(Vector3S position, Vector3S velocity)
@@ -95,14 +97,11 @@ namespace stupid
             }
         }
 
-        private Dictionary<Rigidbody, Vector3S> velocityBuffer = new Dictionary<Rigidbody, Vector3S>();
-        private Dictionary<Rigidbody, Vector3S> positionBuffer = new Dictionary<Rigidbody, Vector3S>();
+        private Vector3S[] velocityBuffer;
+        private Vector3S[] positionBuffer;
 
         private void NaiveNarrowPhase(HashSet<BodyPair> pairs)
         {
-            velocityBuffer.Clear();
-            positionBuffer.Clear();
-
             foreach (var pair in pairs)
             {
                 var a = Rigidbodies[pair.aIndex];
@@ -114,7 +113,16 @@ namespace stupid
                 }
             }
 
-            ApplyBuffers();
+
+            foreach (var rb in Rigidbodies)
+            {
+                rb.velocity += velocityBuffer[rb.index];
+                rb.position += positionBuffer[rb.index];
+
+                velocityBuffer[rb.index] = Vector3S.zero;
+                positionBuffer[rb.index] = Vector3S.zero;
+            }
+
         }
 
         private void ResolveCollision(Rigidbody a, Rigidbody b, Contact contact)
@@ -144,11 +152,8 @@ namespace stupid
 
         private void AddToBuffer(Rigidbody a, Rigidbody b, Vector3S impulse, sfloat invMassA, sfloat invMassB)
         {
-            if (!velocityBuffer.ContainsKey(a)) velocityBuffer[a] = Vector3S.zero;
-            if (!velocityBuffer.ContainsKey(b)) velocityBuffer[b] = Vector3S.zero;
-
-            velocityBuffer[a] -= invMassA * impulse;
-            velocityBuffer[b] += invMassB * impulse;
+            velocityBuffer[a.index] -= invMassA * impulse;
+            velocityBuffer[b.index] += invMassB * impulse;
         }
 
         private void CorrectPositions(Rigidbody a, Rigidbody b, Contact contact, sfloat invMassA, sfloat invMassB)
@@ -157,24 +162,31 @@ namespace stupid
             sfloat slop = (sfloat)0.01f;
             Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / (invMassA + invMassB) * percent * contact.normal;
 
-            if (!positionBuffer.ContainsKey(a)) positionBuffer[a] = Vector3S.zero;
-            if (!positionBuffer.ContainsKey(b)) positionBuffer[b] = Vector3S.zero;
-
-            positionBuffer[a] -= invMassA * correction;
-            positionBuffer[b] += invMassB * correction;
+            positionBuffer[a.index] -= invMassA * correction;
+            positionBuffer[b.index] += invMassB * correction;
         }
 
-        private void ApplyBuffers()
+        public uint SimulationFrame { get; private set; }
+        public void Simulate(sfloat deltaTime)
         {
-            foreach (var change in velocityBuffer)
+            AddGravity(deltaTime);
+            Integrate(deltaTime);
+
+            foreach (var body in Rigidbodies)
             {
-                change.Key.velocity += change.Value;
+                body.collider.CalculateBounds(body.position);
             }
 
-            foreach (var change in positionBuffer)
+            var pairs = Broadphase.ComputePairs(Rigidbodies);
+            NaiveNarrowPhase(pairs);
+            WorldCollision();
+
+            foreach (var body in Rigidbodies)
             {
-                change.Key.position += change.Value;
+                CheckSleep(body);
             }
+
+            SimulationFrame++;
         }
 
         private void Integrate(sfloat deltaTime)
@@ -186,7 +198,7 @@ namespace stupid
             }
         }
 
-        public void CheckSleep(Rigidbody body)
+        void CheckSleep(Rigidbody body)
         {
             var v = body.velocity.MagnitudeSquared();
             if (body.isSleeping)
@@ -203,50 +215,6 @@ namespace stupid
                     body.Sleep();
                 }
             }
-        }
-        public uint SimulationFrame { get; private set; }
-        public void Simulate(sfloat deltaTime)
-        {
-            AddGravity(deltaTime);
-            Integrate(deltaTime);
-
-            if (multiThread)
-            {
-                // Calculating bounds can be parallelized
-                Parallel.ForEach(Rigidbodies, body =>
-                {
-                    body.collider.CalculateBounds(body.position);
-                });
-            }
-            else
-            {
-                foreach (var body in Rigidbodies)
-                {
-                    body.collider.CalculateBounds(body.position);
-                }
-            }
-
-            var pairs = Broadphase.ComputePairs(Rigidbodies);
-            NaiveNarrowPhase(pairs);
-            WorldCollision();
-
-            if (multiThread)
-            {
-                // Checking sleep can be parallelized
-                Parallel.ForEach(Rigidbodies, body =>
-                {
-                    CheckSleep(body);
-                });
-            }
-            else
-            {
-                foreach (var body in Rigidbodies)
-                {
-                    CheckSleep(body);
-                }
-            }
-
-            SimulationFrame++;
         }
     }
 }

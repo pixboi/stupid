@@ -4,9 +4,7 @@
     {
         Rigidbody GetRigidbody();
         Bounds CalculateBounds(Vector3S position);
-
-        //cached version
-        Bounds GetBounds();
+        Bounds GetBounds();        //cached version
         bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact); // Add this method
     }
 }

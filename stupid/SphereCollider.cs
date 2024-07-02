@@ -20,17 +20,16 @@ namespace stupid
 
         public Vector3S _size { get; private set; }
         public Bounds _bounds { get; private set; }
-
-        public Bounds GetBounds()
-        {
-            return _bounds;
-        }
-
         public Bounds CalculateBounds(Vector3S position)
         {
             _size = new Vector3S(radius, radius, radius);
             var bounds = new Bounds(position - _size, position + _size);
             _bounds = bounds;
+            return _bounds;
+        }
+
+        public Bounds GetBounds()
+        {
             return _bounds;
         }
 

@@ -61,9 +61,9 @@ namespace stupid
             InsertionSort(endpointsY);
             InsertionSort(endpointsZ);
 
-            FlagPairsInAxis(endpointsX, 0);
-            FlagPairsInAxis(endpointsY, 1);
-            FlagPairsInAxis(endpointsZ, 2);
+            FlagPairsInAxis(endpointsX);
+            FlagPairsInAxis(endpointsY);
+            FlagPairsInAxis(endpointsZ);
 
             // Check overlap counts and perform detailed bounds checks
             for (int i = 0; i < overlapCount.Length; i++)
@@ -86,9 +86,9 @@ namespace stupid
             return pairs;
         }
 
-        private void FlagPairsInAxis(List<AxisEndpoint> endpoints, int axisIndex)
+        private void FlagPairsInAxis(List<AxisEndpoint> endpoints)
         {
-            List<Rigidbody> activeList = new List<Rigidbody>();
+            var activeList = new List<Rigidbody>();
 
             for (int i = 0; i < endpoints.Count; i++)
             {
@@ -110,7 +110,6 @@ namespace stupid
                 }
             }
         }
-
 
         private void UpdateEndpoints(List<AxisEndpoint> endpoints, char axis)
         {
