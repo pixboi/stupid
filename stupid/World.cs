@@ -11,16 +11,19 @@ namespace stupid
         public Bounds WorldBounds { get; private set; }
         public List<Rigidbody> Rigidbodies { get; private set; }
 
+        public Vector3S Gravity { get; private set; }
+
         private int counter;
         private readonly bool multiThread;
 
-        public World(Bounds worldBounds, IBroadphase broadphase, int startSize = 1000, bool multiThread = false)
+        public World(Bounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
         {
-            counter = 0;
-            WorldBounds = worldBounds;
+            this.counter = 0;
+            this.WorldBounds = worldBounds;
             this.multiThread = multiThread;
-            Rigidbodies = new List<Rigidbody>(startSize);
-            Broadphase = broadphase;
+            this.Gravity = gravity;
+            this.Rigidbodies = new List<Rigidbody>(startSize);
+            this.Broadphase = broadphase;
         }
 
         public Rigidbody AddRigidbody(Vector3S position, Vector3S velocity)
@@ -34,11 +37,8 @@ namespace stupid
         {
             foreach (var rb in Rigidbodies)
             {
-                if (rb.isSleeping) continue;
-                if (rb.useGravity)
-                {
-                    rb.velocity += new Vector3S(0f, -20f, 0f) * deltaTime;
-                }
+                if (rb.isSleeping || !rb.useGravity) continue;
+                rb.velocity += Gravity * deltaTime;
             }
         }
 
@@ -192,14 +192,18 @@ namespace stupid
 
             if (multiThread)
             {
-                Parallel.For(0, Rigidbodies.Count, i =>
+                // Calculating bounds can be parallelized
+                Parallel.ForEach(Rigidbodies, body =>
                 {
-                    Rigidbodies[i].collider.CalculateBounds(Rigidbodies[i].position);
+                    body.collider.CalculateBounds(body.position);
                 });
             }
             else
             {
-                foreach (var body in Rigidbodies) body.collider.CalculateBounds(body.position);
+                foreach (var body in Rigidbodies)
+                {
+                    body.collider.CalculateBounds(body.position);
+                }
             }
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);
@@ -208,9 +212,10 @@ namespace stupid
 
             if (multiThread)
             {
-                Parallel.For(0, Rigidbodies.Count, i =>
+                // Checking sleep can be parallelized
+                Parallel.ForEach(Rigidbodies, body =>
                 {
-                    CheckSleep(Rigidbodies[i]);
+                    CheckSleep(body);
                 });
             }
             else
