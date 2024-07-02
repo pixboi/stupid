@@ -86,8 +86,6 @@ namespace stupid
                 var a = Rigidbodies[pair.aIndex];
                 var b = Rigidbodies[pair.bIndex];
 
-                if (a.isSleeping && b.isSleeping) continue;
-
                 if (a.collider.Intersects(a.position, b.position, b.collider, out var contact))
                 {
                     ResolveCollision(a, b, contact);

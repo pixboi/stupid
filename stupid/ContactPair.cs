@@ -2,40 +2,6 @@
 
 namespace stupid
 {
-    public struct BodyPair
-    {
-        public int aIndex;
-        public int bIndex;
-
-        public BodyPair(int bodyA, int bodyB)
-        {
-            if (bodyA < bodyB)
-            {
-                aIndex = bodyA;
-                bIndex = bodyB;
-            }
-            else
-            {
-                aIndex = bodyB;
-                bIndex = bodyA;
-            }
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is BodyPair other)
-            {
-                return aIndex == other.aIndex && bIndex == other.bIndex;
-            }
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return aIndex.GetHashCode() ^ bIndex.GetHashCode();
-        }
-    }
-
     public struct Contact
     {
         public Vector3S point;
