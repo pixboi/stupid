@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using SoftFloat;
 
@@ -10,15 +12,35 @@ namespace stupid
         public IBroadphase Broadphase { get; set; }
         public Bounds WorldBounds { get; private set; }
         public List<Rigidbody> Rigidbodies { get; private set; }
-
         public Vector3S Gravity { get; private set; }
 
         private int counter;
         private readonly bool multiThread;
 
+        public string CalculateStateHash()
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var sb = new StringBuilder();
+                foreach (var rb in Rigidbodies)
+                {
+                    sb.Append(rb.position.x.ToString());
+                    sb.Append(rb.position.y.ToString());
+                    sb.Append(rb.position.z.ToString());
+                    sb.Append(rb.velocity.x.ToString());
+                    sb.Append(rb.velocity.y.ToString());
+                    sb.Append(rb.velocity.z.ToString());
+                }
+
+                var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+                return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+            }
+        }
+
         public World(Bounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
         {
             this.counter = 0;
+            this.SimulationFrame = 0;
             this.WorldBounds = worldBounds;
             this.multiThread = multiThread;
             this.Gravity = gravity;
@@ -182,7 +204,7 @@ namespace stupid
                 }
             }
         }
-
+        public uint SimulationFrame { get; private set; }
         public void Simulate(sfloat deltaTime)
         {
             AddGravity(deltaTime);
@@ -223,6 +245,8 @@ namespace stupid
                     CheckSleep(body);
                 }
             }
+
+            SimulationFrame++;
         }
     }
 }
