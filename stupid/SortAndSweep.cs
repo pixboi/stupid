@@ -117,7 +117,6 @@ namespace stupid
             public sfloat Value;
             public bool IsMin;
             public Rigidbody Body;
-
         }
     }
 }

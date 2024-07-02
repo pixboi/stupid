@@ -1,6 +1,5 @@
 using SoftFloat;
 using System;
-using System.Runtime.CompilerServices;
 
 namespace stupid
 {
