@@ -1,7 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using SoftFloat;
 
 namespace stupid
@@ -74,6 +72,13 @@ namespace stupid
             }
         }
 
+        private struct AxisEndpoint
+        {
+            public sfloat Value;
+            public bool IsMin;
+            public Rigidbody Body;
+        }
+
         private void InsertionSort(AxisEndpoint[] endpoints, int count)
         {
             for (int i = 1; i < count; i++)
@@ -123,12 +128,6 @@ namespace stupid
             }
         }
 
-        private struct AxisEndpoint
-        {
-            public sfloat Value;
-            public bool IsMin;
-            public Rigidbody Body;
-        }
 
         private struct BodyPair
         {
