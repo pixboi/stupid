@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using SoftFloat;
+﻿using SoftFloat;
+using System.Collections.Generic;
 
 namespace stupid
 {
@@ -8,6 +8,7 @@ namespace stupid
         private List<AxisEndpoint> endpoints;
         private List<ContactPair> pairs;
         private List<Rigidbody> activeList;
+        private int lastBodyCount = 0;
 
         public SortAndSweepBroadphase(int initialCapacity = 100)
         {
@@ -16,11 +17,9 @@ namespace stupid
             activeList = new List<Rigidbody>(initialCapacity);
         }
 
-
-        int _lastBodyCount = 0;
-        void Init(List<Rigidbody> rigidbodies)
+        private void Init(List<Rigidbody> rigidbodies)
         {
-            // Collect endpoints from each object
+            endpoints.Clear();
             foreach (var body in rigidbodies)
             {
                 var bounds = body.collider.GetBounds();
@@ -29,24 +28,12 @@ namespace stupid
             }
         }
 
-
-        void UpdateEndPoints()
+        private void UpdateEndpoints()
         {
-            for (int i = 0; i < endpoints.Count; i++)
+            foreach (var endpoint in endpoints)
             {
-                var endpoint = endpoints[i];
-                if (endpoint.Body.isSleeping) continue;
-
                 var bounds = endpoint.Body.collider.GetBounds();
-
-                if (endpoint.IsMin)
-                {
-                    endpoints[i] = new AxisEndpoint { Value = bounds.Min.x, IsMin = true, Body = endpoint.Body };
-                }
-                else
-                {
-                    endpoints[i] = new AxisEndpoint { Value = bounds.Max.x, IsMin = false, Body = endpoint.Body };
-                }
+                endpoint.Value = endpoint.IsMin ? bounds.Min.x : bounds.Max.x;
             }
         }
 
@@ -55,18 +42,14 @@ namespace stupid
             pairs.Clear();
             activeList.Clear();
 
-            if (_lastBodyCount != rigidbodies.Count)
+            if (lastBodyCount != rigidbodies.Count)
             {
                 Init(rigidbodies);
-                _lastBodyCount = rigidbodies.Count;
+                lastBodyCount = rigidbodies.Count;
             }
 
-            UpdateEndPoints();
-
-            // Sort endpoints using insertion sort
+            UpdateEndpoints();
             InsertionSort(endpoints);
-
-            // Perform sweep and prune
             SweepAndPrune(endpoints);
 
             return pairs;
@@ -97,6 +80,9 @@ namespace stupid
                 {
                     foreach (var activeBody in activeList)
                     {
+                        if (activeBody.collider.GetBounds().Max.x < endpoint.Value)
+                            break;
+
                         if (endpoint.Body != activeBody && endpoint.Body.collider.GetBounds().Intersects(activeBody.collider.GetBounds()))
                         {
                             pairs.Add(new ContactPair { bodyA = endpoint.Body, bodyB = activeBody });
@@ -111,12 +97,11 @@ namespace stupid
             }
         }
 
-        private struct AxisEndpoint
+        private class AxisEndpoint
         {
             public sfloat Value;
             public bool IsMin;
             public Rigidbody Body;
         }
     }
-
 }
