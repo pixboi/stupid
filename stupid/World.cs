@@ -57,19 +57,12 @@ namespace stupid
             return rb;
         }
 
-        private void AddGravity(sfloat deltaTime)
-        {
-            foreach (var rb in Rigidbodies)
-            {
-                if (rb.isSleeping || !rb.useGravity) continue;
-                rb.velocity += Gravity * deltaTime;
-            }
-        }
-
         public void WorldCollision()
         {
             foreach (var rb in Rigidbodies)
             {
+                if (rb.isSleeping) continue;
+                
                 var bounds = rb.collider.GetBounds();
                 if (WorldBounds.ContainsBounds(bounds)) continue;
 
@@ -107,12 +100,13 @@ namespace stupid
                 var a = Rigidbodies[pair.aIndex];
                 var b = Rigidbodies[pair.bIndex];
 
+                if (a.isSleeping && b.isSleeping) { continue; }
+
                 if (a.collider.Intersects(a.position, b.position, b.collider, out var contact))
                 {
                     ResolveCollision(a, b, contact);
                 }
             }
-
 
             foreach (var rb in Rigidbodies)
             {
@@ -169,7 +163,6 @@ namespace stupid
         public uint SimulationFrame { get; private set; }
         public void Simulate(sfloat deltaTime)
         {
-            AddGravity(deltaTime);
             Integrate(deltaTime);
 
             foreach (var body in Rigidbodies)
@@ -194,6 +187,12 @@ namespace stupid
             foreach (var rb in Rigidbodies)
             {
                 if (rb.isSleeping) continue;
+
+                if (rb.useGravity)
+                {
+                    rb.velocity += Gravity * deltaTime;
+                }
+
                 rb.position += rb.velocity * deltaTime;
             }
         }

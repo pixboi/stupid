@@ -16,6 +16,7 @@ namespace stupid
         private readonly HashSet<BodyPair> pairs;
         private int[] overlapCount;
         private int rbCount = 0;
+        private readonly List<Rigidbody> activeList;
 
         public SortAndSweepBroadphase(int initialCapacity = 100)
         {
@@ -23,6 +24,7 @@ namespace stupid
             endpointsY = new List<AxisEndpoint>(initialCapacity * 2);
             endpointsZ = new List<AxisEndpoint>(initialCapacity * 2);
             pairs = new HashSet<BodyPair>(initialCapacity * initialCapacity, new BodyPairComparer());
+            activeList = new List<Rigidbody>(initialCapacity);
         }
 
         private void Rebuild(List<Rigidbody> rigidbodies)
@@ -88,7 +90,7 @@ namespace stupid
 
         private void FlagPairsInAxis(List<AxisEndpoint> endpoints)
         {
-            var activeList = new List<Rigidbody>();
+            activeList.Clear();
 
             for (int i = 0; i < endpoints.Count; i++)
             {
@@ -96,8 +98,9 @@ namespace stupid
 
                 if (me.IsMin)
                 {
-                    foreach (var otherBody in activeList)
+                    for (int j = 0; j < activeList.Count; j++)
                     {
+                        var otherBody = activeList[j];
                         var pair = new BodyPair(me.Body.index, otherBody.index);
                         int index = GetPairIndex(pair.aIndex, pair.bIndex);
                         overlapCount[index]++;
@@ -106,7 +109,14 @@ namespace stupid
                 }
                 else
                 {
-                    activeList.Remove(me.Body);
+                    for (int j = 0; j < activeList.Count; j++)
+                    {
+                        if (activeList[j] == me.Body)
+                        {
+                            activeList.RemoveAt(j);
+                            break;
+                        }
+                    }
                 }
             }
         }
