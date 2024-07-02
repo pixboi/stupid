@@ -43,6 +43,7 @@ namespace stupid
         public void Attach(ICollider collider)
         {
             this.collider = collider;
+        
         }
     }
 }

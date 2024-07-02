@@ -27,7 +27,6 @@ namespace stupid
             this.worldBounds = worldBounds;
             this._multiThread = multiThread;
             Rigidbodies = new List<Rigidbody>(startSize);
-
             Broadphase = broadphase;
         }
 
@@ -76,35 +75,8 @@ namespace stupid
             }
         }
 
-        List<ContactPair> BruteForceBroadphase()
-        {
-            var pairs = new List<ContactPair>();
-            //The integration must be halved for like each iteration count
-            for (int i = 0; i < Rigidbodies.Count; i++)
-            {
-                for (int j = i + 1; j < Rigidbodies.Count; j++)
-                {
-                    var a = Rigidbodies[i];
-                    var b = Rigidbodies[j];
-
-                    var aBounds = a.collider.GetBounds();
-                    var bBounds = b.collider.GetBounds();
-
-                    if (aBounds.Intersects(bBounds))
-                    {
-                        var cp = new ContactPair { bodyA = a, bodyB = b };
-                        pairs.Add(cp);
-                    }
-                }
-            }
-
-            return pairs;
-        }
-
         public Dictionary<Rigidbody, Vector3S> VelocityBuffer = new Dictionary<Rigidbody, Vector3S>();
         public Dictionary<Rigidbody, Vector3S> PositionBuffer = new Dictionary<Rigidbody, Vector3S>();
-
-
         void NaiveNarrowPhase(HashSet<BodyPair> pairs)
         {
             // Ensure buffers are clear
@@ -248,6 +220,7 @@ namespace stupid
             }
 
             var pairs = Broadphase.ComputePairs(this.Rigidbodies);
+
             NaiveNarrowPhase(pairs);
 
             WorldCollision();
