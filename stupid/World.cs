@@ -13,9 +13,32 @@ namespace stupid
         public Bounds WorldBounds { get; private set; }
         public List<Rigidbody> Rigidbodies { get; private set; }
         public Vector3S Gravity { get; private set; }
+        public uint SimulationFrame { get; private set; }
 
         private int counter;
         private readonly bool multiThread;
+        private readonly Vector3S[] velocityBuffer;
+        private readonly Vector3S[] positionBuffer;
+
+        public World(Bounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
+        {
+            counter = 0;
+            SimulationFrame = 0;
+            WorldBounds = worldBounds;
+            this.multiThread = multiThread;
+            Gravity = gravity;
+            Rigidbodies = new List<Rigidbody>(startSize);
+            Broadphase = broadphase;
+            velocityBuffer = new Vector3S[startSize * 2];
+            positionBuffer = new Vector3S[startSize * 2];
+        }
+
+        public Rigidbody AddRigidbody(Vector3S position, Vector3S velocity)
+        {
+            var rb = new Rigidbody(counter++, position, velocity);
+            Rigidbodies.Add(rb);
+            return rb;
+        }
 
         public string CalculateStateHash()
         {
@@ -37,61 +60,41 @@ namespace stupid
             }
         }
 
-        public World(Bounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
+        public void Simulate(sfloat deltaTime)
         {
-            this.counter = 0;
-            this.SimulationFrame = 0;
-            this.WorldBounds = worldBounds;
-            this.multiThread = multiThread;
-            this.Gravity = gravity;
-            this.Rigidbodies = new List<Rigidbody>(startSize);
-            this.Broadphase = broadphase;
-            this.velocityBuffer = new Vector3S[startSize * 2];
-            this.positionBuffer = new Vector3S[startSize * 2];
+            Integrate(deltaTime);
+
+            foreach (var body in Rigidbodies)
+            {
+                body.collider.CalculateBounds(body.position);
+            }
+
+            var pairs = Broadphase.ComputePairs(Rigidbodies);
+            NaiveNarrowPhase(pairs);
+            WorldCollision();
+
+            foreach (var body in Rigidbodies)
+            {
+                CheckSleep(body);
+            }
+
+            SimulationFrame++;
         }
 
-        public Rigidbody AddRigidbody(Vector3S position, Vector3S velocity)
-        {
-            var rb = new Rigidbody(counter++, position, velocity);
-            Rigidbodies.Add(rb);
-            return rb;
-        }
-
-        public void WorldCollision()
+        private void Integrate(sfloat deltaTime)
         {
             foreach (var rb in Rigidbodies)
             {
                 if (rb.isSleeping) continue;
 
-                var bounds = rb.collider.GetBounds();
-                if (WorldBounds.ContainsBounds(bounds)) continue;
+                if (rb.useGravity)
+                {
+                    rb.velocity += Gravity * deltaTime;
+                }
 
-                var sc = (SphereCollider)rb.collider;
-                CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.Min.x, bounds.Max.x, WorldBounds.Min.x, WorldBounds.Max.x, sc.radius);
-                CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.Min.y, bounds.Max.y, WorldBounds.Min.y, WorldBounds.Max.y, sc.radius);
-                CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.Min.z, bounds.Max.z, WorldBounds.Min.z, WorldBounds.Max.z, sc.radius);
-
-                rb.velocity.x *= (sfloat)0.9f;
-                rb.velocity.z *= (sfloat)0.9f;
+                rb.position += rb.velocity * deltaTime;
             }
         }
-
-        private void CheckAxisCollision(ref sfloat position, ref sfloat velocity, sfloat minBound, sfloat maxBound, sfloat worldMin, sfloat worldMax, sfloat radius)
-        {
-            if (minBound < worldMin)
-            {
-                velocity *= sfloat.MinusOne * (sfloat)0.5f;
-                position = worldMin + radius;
-            }
-            else if (maxBound > worldMax)
-            {
-                velocity *= sfloat.MinusOne * (sfloat)0.5f;
-                position = worldMax - radius;
-            }
-        }
-
-        private Vector3S[] velocityBuffer;
-        private Vector3S[] positionBuffer;
 
         private void NaiveNarrowPhase(HashSet<BodyPair> pairs)
         {
@@ -100,7 +103,7 @@ namespace stupid
                 var a = Rigidbodies[pair.aIndex];
                 var b = Rigidbodies[pair.bIndex];
 
-                if (a.isSleeping && b.isSleeping) { continue; }
+                if (a.isSleeping && b.isSleeping) continue;
 
                 if (a.collider.Intersects(a.position, b.position, b.collider, out var contact))
                 {
@@ -108,15 +111,23 @@ namespace stupid
                 }
             }
 
-            foreach (var rb in Rigidbodies)
+            foreach (var pair in pairs)
             {
-                rb.velocity += velocityBuffer[rb.index];
-                rb.position += positionBuffer[rb.index];
+                var a = Rigidbodies[pair.aIndex];
+                var b = Rigidbodies[pair.bIndex];
 
-                velocityBuffer[rb.index] = Vector3S.zero;
-                positionBuffer[rb.index] = Vector3S.zero;
+                a.velocity += velocityBuffer[a.index];
+                a.position += positionBuffer[a.index];
+
+                b.velocity += velocityBuffer[b.index];
+                b.position += positionBuffer[b.index];
+
+                velocityBuffer[a.index] = Vector3S.zero;
+                positionBuffer[a.index] = Vector3S.zero;
+
+                velocityBuffer[b.index] = Vector3S.zero;
+                positionBuffer[b.index] = Vector3S.zero;
             }
-
         }
 
         private void ResolveCollision(Rigidbody a, Rigidbody b, Contact contact)
@@ -160,44 +171,40 @@ namespace stupid
             positionBuffer[b.index] += invMassB * correction;
         }
 
-        public uint SimulationFrame { get; private set; }
-        public void Simulate(sfloat deltaTime)
-        {
-            Integrate(deltaTime);
-
-            foreach (var body in Rigidbodies)
-            {
-                body.collider.CalculateBounds(body.position);
-            }
-
-            var pairs = Broadphase.ComputePairs(Rigidbodies);
-            NaiveNarrowPhase(pairs);
-            WorldCollision();
-
-            foreach (var body in Rigidbodies)
-            {
-                CheckSleep(body);
-            }
-
-            SimulationFrame++;
-        }
-
-        private void Integrate(sfloat deltaTime)
+        private void WorldCollision()
         {
             foreach (var rb in Rigidbodies)
             {
                 if (rb.isSleeping) continue;
 
-                if (rb.useGravity)
-                {
-                    rb.velocity += Gravity * deltaTime;
-                }
+                var bounds = rb.collider.GetBounds();
+                if (WorldBounds.ContainsBounds(bounds)) continue;
 
-                rb.position += rb.velocity * deltaTime;
+                var sc = (SphereCollider)rb.collider;
+                CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.Min.x, bounds.Max.x, WorldBounds.Min.x, WorldBounds.Max.x, sc.radius);
+                CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.Min.y, bounds.Max.y, WorldBounds.Min.y, WorldBounds.Max.y, sc.radius);
+                CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.Min.z, bounds.Max.z, WorldBounds.Min.z, WorldBounds.Max.z, sc.radius);
+
+                rb.velocity.x *= (sfloat)0.9f;
+                rb.velocity.z *= (sfloat)0.9f;
             }
         }
 
-        void CheckSleep(Rigidbody body)
+        private void CheckAxisCollision(ref sfloat position, ref sfloat velocity, sfloat minBound, sfloat maxBound, sfloat worldMin, sfloat worldMax, sfloat radius)
+        {
+            if (minBound < worldMin)
+            {
+                velocity *= sfloat.MinusOne * (sfloat)0.5f;
+                position = worldMin + radius;
+            }
+            else if (maxBound > worldMax)
+            {
+                velocity *= sfloat.MinusOne * (sfloat)0.5f;
+                position = worldMax - radius;
+            }
+        }
+
+        private void CheckSleep(Rigidbody body)
         {
             var v = body.velocity.MagnitudeSquared();
             if (body.isSleeping)

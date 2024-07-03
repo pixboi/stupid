@@ -228,95 +228,78 @@ namespace SoftFloat
             byte rawExp2 = f2.RawExponent;
             int deltaExp = rawExp1 - rawExp2;
 
-            if (rawExp1 != 255)
+            if (rawExp1 == 255)
             {
-                //Finite
-                if (deltaExp > 25)
+                // Special cases: NaN, +Inf, -Inf
+                if (rawExp2 != 255)
                 {
                     return f1;
                 }
+                return f1.rawValue == f2.rawValue ? f1 : NaN;
+            }
 
-                int man1;
-                int man2;
-                if (rawExp2 != 0)
-                {
-                    // man1 = f1.Mantissa
-                    // http://graphics.stanford.edu/~seander/bithacks.html#ConditionalNegate
-                    uint sign1 = (uint)((int)f1.rawValue >> 31);
-                    man1 = (int)(((f1.RawMantissa | 0x800000) ^ sign1) - sign1);
-                    // man2 = f2.Mantissa
-                    uint sign2 = (uint)((int)f2.rawValue >> 31);
-                    man2 = (int)(((f2.RawMantissa | 0x800000) ^ sign2) - sign2);
-                }
-                else
-                {
-                    // Subnorm
-                    // man2 = f2.Mantissa
-                    uint sign2 = (uint)((int)f2.rawValue >> 31);
-                    man2 = (int)((f2.RawMantissa ^ sign2) - sign2);
+            if (deltaExp > 25)
+            {
+                return f1;
+            }
 
-                    man1 = f1.Mantissa;
+            int man1, man2;
+            uint sign1 = (uint)((int)f1.rawValue >> 31);
+            uint sign2 = (uint)((int)f2.rawValue >> 31);
 
-                    rawExp2 = 1;
-                    if (rawExp1 == 0)
-                    {
-                        rawExp1 = 1;
-                    }
-
-                    deltaExp = rawExp1 - rawExp2;
-                }
-
-                int man = (man1 << 6) + ((man2 << 6) >> deltaExp);
-                int absMan = Math.Abs(man);
-                if (absMan == 0)
-                {
-                    return zero;
-                }
-
-                int rawExp = rawExp1 - 6;
-
-                int amount = normalizeAmounts[clz(absMan)];
-                rawExp -= amount;
-                absMan <<= amount;
-
-                int msbIndex = BitScanReverse8(absMan >> MantissaBits);
-                rawExp += msbIndex;
-                absMan >>= msbIndex;
-                if ((uint)(rawExp - 1) < 254)
-                {
-                    uint raw = (uint)man & 0x80000000 | (uint)rawExp << MantissaBits | ((uint)absMan & 0x7FFFFF);
-                    return new sfloat(raw);
-                }
-                else
-                {
-                    if (rawExp >= 255)
-                    {
-                        //Overflow
-                        return man >= 0 ? PositiveInfinity : NegativeInfinity;
-                    }
-
-                    if (rawExp >= -24)
-                    {
-                        uint raw = (uint)man & 0x80000000 | (uint)(absMan >> (-rawExp + 1));
-                        return new sfloat(raw);
-                    }
-
-                    return zero;
-                }
+            if (rawExp2 != 0)
+            {
+                man1 = (int)(((f1.RawMantissa | 0x800000) ^ sign1) - sign1);
+                man2 = (int)(((f2.RawMantissa | 0x800000) ^ sign2) - sign2);
             }
             else
             {
-                // Special
+                man2 = (int)((f2.RawMantissa ^ sign2) - sign2);
+                man1 = f1.Mantissa;
 
-                if (rawExp2 != 255)
+                rawExp2 = 1;
+                if (rawExp1 == 0)
                 {
-                    // f1 is NaN, +Inf, -Inf and f2 is finite
-                    return f1;
+                    rawExp1 = 1;
                 }
-
-                // Both not finite
-                return f1.rawValue == f2.rawValue ? f1 : NaN;
+                deltaExp = rawExp1 - rawExp2;
             }
+
+            int man = (man1 << 6) + ((man2 << 6) >> deltaExp);
+            int absMan = Math.Abs(man);
+
+            if (absMan == 0)
+            {
+                return zero;
+            }
+
+            int rawExp = rawExp1 - 6;
+            int amount = normalizeAmounts[clz(absMan)];
+            rawExp -= amount;
+            absMan <<= amount;
+
+            int msbIndex = BitScanReverse8(absMan >> MantissaBits);
+            rawExp += msbIndex;
+            absMan >>= msbIndex;
+
+            if ((uint)(rawExp - 1) < 254)
+            {
+                uint raw = (uint)man & 0x80000000 | (uint)rawExp << MantissaBits | ((uint)absMan & 0x7FFFFF);
+                return new sfloat(raw);
+            }
+
+            if (rawExp >= 255)
+            {
+                return man >= 0 ? PositiveInfinity : NegativeInfinity;
+            }
+
+            if (rawExp >= -24)
+            {
+                uint raw = (uint)man & 0x80000000 | (uint)(absMan >> (-rawExp + 1));
+                return new sfloat(raw);
+            }
+
+            return zero;
         }
 
         public static sfloat operator +(sfloat f1, sfloat f2)
@@ -329,213 +312,106 @@ namespace SoftFloat
 
         public static sfloat operator *(sfloat f1, sfloat f2)
         {
-            int man1;
+            // Extract exponent and mantissa for f1
             int rawExp1 = f1.RawExponent;
-            uint sign1;
-            uint sign2;
-            if (rawExp1 == 0)
+            uint sign1 = (uint)((int)f1.rawValue >> 31);
+            int man1 = ExtractMantissa(f1, rawExp1, sign1);
+
+            // Handle special cases for f1
+            if (rawExp1 == 255)
             {
-                // SubNorm
-                sign1 = (uint)((int)f1.rawValue >> 31);
-                int rawMan1 = (int)f1.RawMantissa;
-                if (rawMan1 == 0)
-                {
-                    if (f2.IsFinite())
-                    {
-                        // 0 * f2
-                        return new sfloat((f1.rawValue ^ f2.rawValue) & SignMask);
-                    }
-                    else
-                    {
-                        // 0 * Infinity
-                        // 0 * NaN
-                        return NaN;
-                    }
-                }
-
-                int shift = clz(rawMan1 & 0x00ffffff) - 8;
-                rawMan1 <<= shift;
-                rawExp1 = 1 - shift;
-
-                //Debug.Assert(rawMan1 >> MantissaBits == 1);
-                man1 = (int)((rawMan1 ^ sign1) - sign1);
-            }
-            else if (rawExp1 != 255)
-            {
-                // Norm
-                sign1 = (uint)((int)f1.rawValue >> 31);
-                man1 = (int)(((f1.RawMantissa | 0x800000) ^ sign1) - sign1);
-            }
-            else
-            {
-                // Non finite
-                if (f1.rawValue == RawPositiveInfinity)
-                {
-                    if (f2.IsZero())
-                    {
-                        // Infinity * 0
-                        return NaN;
-                    }
-
-                    if (f2.IsNaN())
-                    {
-                        // Infinity * NaN
-                        return NaN;
-                    }
-
-                    if ((int)f2.rawValue >= 0)
-                    {
-                        // Infinity * f
-                        return PositiveInfinity;
-                    }
-                    else
-                    {
-                        // Infinity * -f
-                        return NegativeInfinity;
-                    }
-                }
-                else if (f1.rawValue == RawNegativeInfinity)
-                {
-                    if (f2.IsZero() || f2.IsNaN())
-                    {
-                        // -Infinity * 0
-                        // -Infinity * NaN
-                        return NaN;
-                    }
-
-                    if ((int)f2.rawValue < 0)
-                    {
-                        // -Infinity * -f
-                        return PositiveInfinity;
-                    }
-                    else
-                    {
-                        // -Infinity * f
-                        return NegativeInfinity;
-                    }
-                }
-                else
-                {
-                    return f1;
-                }
+                return HandleSpecialCases(f1, f2, rawExp1);
             }
 
-            int man2;
+            // Extract exponent and mantissa for f2
             int rawExp2 = f2.RawExponent;
-            if (rawExp2 == 0)
+            uint sign2 = (uint)((int)f2.rawValue >> 31);
+            int man2 = ExtractMantissa(f2, rawExp2, sign2);
+
+            // Handle special cases for f2
+            if (rawExp2 == 255)
             {
-                // SubNorm
-                sign2 = (uint)((int)f2.rawValue >> 31);
-                int rawMan2 = (int)f2.RawMantissa;
-                if (rawMan2 == 0)
-                {
-                    if (f1.IsFinite())
-                    {
-                        // f1 * 0
-                        return new sfloat((f1.rawValue ^ f2.rawValue) & SignMask);
-                    }
-                    else
-                    {
-                        // Infinity * 0
-                        // NaN * 0
-                        return NaN;
-                    }
-                }
-
-                int shift = clz(rawMan2 & 0x00ffffff) - 8;
-                rawMan2 <<= shift;
-                rawExp2 = 1 - shift;
-
-                //Debug.Assert(rawMan2 >> MantissaBits == 1);
-                man2 = (int)((rawMan2 ^ sign2) - sign2);
-            }
-            else if (rawExp2 != 255)
-            {
-                // Norm
-                sign2 = (uint)((int)f2.rawValue >> 31);
-                man2 = (int)(((f2.RawMantissa | 0x800000) ^ sign2) - sign2);
-            }
-            else
-            {
-                // Non finite
-                if (f2.rawValue == RawPositiveInfinity)
-                {
-                    if (f1.IsZero())
-                    {
-                        // 0 * Infinity
-                        return NaN;
-                    }
-
-                    if ((int)f1.rawValue >= 0)
-                    {
-                        // f * Infinity
-                        return PositiveInfinity;
-                    }
-                    else
-                    {
-                        // -f * Infinity
-                        return NegativeInfinity;
-                    }
-                }
-                else if (f2.rawValue == RawNegativeInfinity)
-                {
-                    if (f1.IsZero())
-                    {
-                        // 0 * -Infinity
-                        return NaN;
-                    }
-
-                    if ((int)f1.rawValue < 0)
-                    {
-                        // -f * -Infinity
-                        return PositiveInfinity;
-                    }
-                    else
-                    {
-                        // f * -Infinity
-                        return NegativeInfinity;
-                    }
-                }
-                else
-                {
-                    return f2;
-                }
+                return HandleSpecialCases(f2, f1, rawExp2);
             }
 
+            // Calculate the product of mantissas
             long longMan = (long)man1 * (long)man2;
             int man = (int)(longMan >> MantissaBits);
-            //Debug.Assert(man != 0);
             uint absMan = (uint)Math.Abs(man);
             int rawExp = rawExp1 + rawExp2 - ExponentBias;
             uint sign = (uint)man & 0x80000000;
+
+            // Normalize the result
             if ((absMan & 0x1000000) != 0)
             {
                 absMan >>= 1;
                 rawExp++;
             }
 
-            //Debug.Assert(absMan >> MantissaBits == 1);
+            // Handle overflow and underflow
             if (rawExp >= 255)
             {
-                // Overflow
                 return new sfloat(sign ^ RawPositiveInfinity);
             }
-
             if (rawExp <= 0)
             {
-                // Subnorms/Underflow
                 if (rawExp <= -24)
                 {
                     return new sfloat(sign);
                 }
-
                 absMan >>= -rawExp + 1;
                 rawExp = 0;
             }
 
-            uint raw = sign | (uint)rawExp << MantissaBits | absMan & 0x7FFFFF;
+            uint raw = sign | (uint)rawExp << MantissaBits | (absMan & 0x7FFFFF);
             return new sfloat(raw);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ExtractMantissa(sfloat f, int rawExp, uint sign)
+        {
+            if (rawExp == 0)
+            {
+                // Subnormal number
+                int rawMan = (int)f.RawMantissa;
+                if (rawMan == 0)
+                {
+                    return 0;
+                }
+                int shift = clz(rawMan & 0x00ffffff) - 8;
+                rawMan <<= shift;
+                rawExp = 1 - shift;
+                return (int)((rawMan ^ sign) - sign);
+            }
+            else if (rawExp != 255)
+            {
+                // Normal number
+                return (int)(((f.RawMantissa | 0x800000) ^ sign) - sign);
+            }
+            return 0;
+        }
+
+        private static sfloat HandleSpecialCases(sfloat f1, sfloat f2, int rawExp)
+        {
+            if (f1.rawValue == RawPositiveInfinity)
+            {
+                if (f2.IsZero() || f2.IsNaN())
+                {
+                    return NaN;
+                }
+                return f2.rawValue >= 0 ? PositiveInfinity : NegativeInfinity;
+            }
+            else if (f1.rawValue == RawNegativeInfinity)
+            {
+                if (f2.IsZero() || f2.IsNaN())
+                {
+                    return NaN;
+                }
+                return f2.rawValue < 0 ? PositiveInfinity : NegativeInfinity;
+            }
+            return f1;
+        }
+
 
         public static sfloat operator /(sfloat f1, sfloat f2)
         {
@@ -789,23 +665,21 @@ namespace SoftFloat
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(sfloat f1, sfloat f2)
         {
             if (f1.RawExponent != 255)
             {
-                // 0 == -0
                 return (f1.rawValue == f2.rawValue) || ((f1.rawValue & 0x7FFFFFFF) == 0) && ((f2.rawValue & 0x7FFFFFFF) == 0);
             }
             else
             {
                 if (f1.RawMantissa == 0)
                 {
-                    // Infinities
                     return f1.rawValue == f2.rawValue;
                 }
                 else
                 {
-                    //NaNs
                     return false;
                 }
             }
@@ -815,16 +689,49 @@ namespace SoftFloat
         public static bool operator !=(sfloat f1, sfloat f2) => !(f1 == f2);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator <(sfloat f1, sfloat f2) => !f1.IsNaN() && !f2.IsNaN() && f1.CompareTo(f2) < 0;
+        public static bool operator <(sfloat f1, sfloat f2)
+        {
+            //if (f1.IsNaN() || f2.IsNaN()) return false;
+            uint sign1 = (uint)((int)f1.rawValue >> 31);
+            uint sign2 = (uint)((int)f2.rawValue >> 31);
+            int val1 = (int)(((f1.rawValue ^ (sign1 & 0x7FFFFFFF)) - sign1));
+            int val2 = (int)(((f2.rawValue ^ (sign2 & 0x7FFFFFFF)) - sign2));
+            return val1 < val2;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator >(sfloat f1, sfloat f2) => !f1.IsNaN() && !f2.IsNaN() && f1.CompareTo(f2) > 0;
+        public static bool operator >(sfloat f1, sfloat f2)
+        {
+           // if (f1.IsNaN() || f2.IsNaN()) return false;
+            uint sign1 = (uint)((int)f1.rawValue >> 31);
+            uint sign2 = (uint)((int)f2.rawValue >> 31);
+            int val1 = (int)(((f1.rawValue ^ (sign1 & 0x7FFFFFFF)) - sign1));
+            int val2 = (int)(((f2.rawValue ^ (sign2 & 0x7FFFFFFF)) - sign2));
+            return val1 > val2;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator <=(sfloat f1, sfloat f2) => !f1.IsNaN() && !f2.IsNaN() && f1.CompareTo(f2) <= 0;
+        public static bool operator <=(sfloat f1, sfloat f2)
+        {
+            //if (f1.IsNaN() || f2.IsNaN()) return false;
+            uint sign1 = (uint)((int)f1.rawValue >> 31);
+            uint sign2 = (uint)((int)f2.rawValue >> 31);
+            int val1 = (int)(((f1.rawValue ^ (sign1 & 0x7FFFFFFF)) - sign1));
+            int val2 = (int)(((f2.rawValue ^ (sign2 & 0x7FFFFFFF)) - sign2));
+            return val1 <= val2;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator >=(sfloat f1, sfloat f2) => !f1.IsNaN() && !f2.IsNaN() && f1.CompareTo(f2) >= 0;
+        public static bool operator >=(sfloat f1, sfloat f2)
+        {
+            //if (f1.IsNaN() || f2.IsNaN()) return false;
+            uint sign1 = (uint)((int)f1.rawValue >> 31);
+            uint sign2 = (uint)((int)f2.rawValue >> 31);
+            int val1 = (int)(((f1.rawValue ^ (sign1 & 0x7FFFFFFF)) - sign1));
+            int val2 = (int)(((f2.rawValue ^ (sign2 & 0x7FFFFFFF)) - sign2));
+            return val1 >= val2;
+        }
+
 
         public int CompareTo(sfloat other)
         {

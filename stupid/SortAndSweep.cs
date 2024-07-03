@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using SoftFloat;
 
 namespace stupid
@@ -85,10 +86,10 @@ namespace stupid
                     var bodyA = rigidbodies[aIndex];
                     var bodyB = rigidbodies[bIndex];
 
-                   // if (bodyA.collider.GetBounds().Intersects(bodyB.collider.GetBounds()))
-                   // {
+                    if (bodyA.collider.GetBounds().Intersects(bodyB.collider.GetBounds()))
+                    {
                         pairs.Add(new BodyPair(aIndex, bIndex));
-                   // }
+                    }
                 }
             }
 
@@ -102,15 +103,30 @@ namespace stupid
             for (int i = 0; i < count; i++)
             {
                 var me = endpoints[i];
+                var aIndex = me.Body.index;
 
                 if (me.IsMin)
                 {
                     for (int j = 0; j < activeListCount; j++)
                     {
                         var otherBody = activeList[j];
-                        var pair = new BodyPair(me.Body.index, otherBody.index);
-                        int index = GetPairIndex(pair.aIndex, pair.bIndex);
-                        overlapCount[index]++;
+                        var bIndex = otherBody.index;
+                        //var pair = new BodyPair(me.Body.index, otherBody.index);
+                        //int index = GetPairIndex(me.Body.index, otherBody.index);
+
+                        if (aIndex < bIndex)
+                        {
+                            int index = aIndex * rbCount + bIndex;
+                            overlapCount[index]++;
+                        }
+                        else
+                        {
+                            int index = bIndex * rbCount + aIndex;
+                            overlapCount[index]++;
+                        }
+
+                        //int index = me.Body.index * rbCount + otherBody.index;
+                        
                     }
                     activeList[activeListCount++] = me.Body;
                 }
@@ -168,6 +184,7 @@ namespace stupid
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetPairIndex(int a, int b)
         {
             return a * rbCount + b;
@@ -186,18 +203,12 @@ namespace stupid
         public int aIndex;
         public int bIndex;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BodyPair(int aIndex, int bIndex)
         {
-            if (aIndex < bIndex)
-            {
-                this.aIndex = aIndex;
-                this.bIndex = bIndex;
-            }
-            else
-            {
-                this.aIndex = bIndex;
-                this.bIndex = aIndex;
-            }
+            bool condition = aIndex < bIndex;
+            this.aIndex = condition ? aIndex : bIndex;
+            this.bIndex = condition ? bIndex : aIndex;
         }
 
         public override bool Equals(object obj)
@@ -218,6 +229,7 @@ namespace stupid
             }
         }
     }
+
 
     public class BodyPairComparer : IEqualityComparer<BodyPair>
     {
