@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace stupid
+namespace stupid.Collections
 {
     public class CustomList<T>
     {

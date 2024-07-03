@@ -6,7 +6,7 @@ namespace stupid
 {
     public interface IBroadphase
     {
-        HashSet<BodyPair> ComputePairs(List<Rigidbody> rigidbodies);
+        HashSet<BodyPair> ComputePairs(List<SRigidbody> rigidbodies);
     }
 
     public class SortAndSweepBroadphase : IBroadphase
@@ -17,7 +17,7 @@ namespace stupid
         private readonly HashSet<BodyPair> pairs;
         private int[] overlapCount;
         private int rbCount = 0;
-        private Rigidbody[] activeList;
+        private SRigidbody[] activeList;
         private int activeListCount;
 
         public SortAndSweepBroadphase(int initialCapacity = 100)
@@ -26,10 +26,10 @@ namespace stupid
             endpointsY = new AxisEndpoint[initialCapacity * 2];
             endpointsZ = new AxisEndpoint[initialCapacity * 2];
             pairs = new HashSet<BodyPair>(initialCapacity * initialCapacity, new BodyPairComparer());
-            activeList = new Rigidbody[initialCapacity];
+            activeList = new SRigidbody[initialCapacity];
         }
 
-        private void Rebuild(List<Rigidbody> rigidbodies)
+        private void Rebuild(List<SRigidbody> rigidbodies)
         {
             int endpointCapacity = rigidbodies.Count * 2;
             if (endpointsX.Length < endpointCapacity)
@@ -54,7 +54,7 @@ namespace stupid
             overlapCount = new int[rbCount * rbCount];
         }
 
-        public HashSet<BodyPair> ComputePairs(List<Rigidbody> rigidbodies)
+        public HashSet<BodyPair> ComputePairs(List<SRigidbody> rigidbodies)
         {
             if (rbCount != rigidbodies.Count)
             {
@@ -126,7 +126,7 @@ namespace stupid
                         }
 
                         //int index = me.Body.index * rbCount + otherBody.index;
-                        
+
                     }
                     activeList[activeListCount++] = me.Body;
                 }
@@ -194,7 +194,7 @@ namespace stupid
         {
             public sfloat Value;
             public bool IsMin;
-            public Rigidbody Body;
+            public SRigidbody Body;
         }
     }
 

@@ -1,7 +1,7 @@
 using SoftFloat;
 using System;
 
-namespace stupid
+namespace stupid.Maths
 {
     public struct Vector3S : IEquatable<Vector3S>
     {

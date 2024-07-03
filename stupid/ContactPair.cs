@@ -1,4 +1,5 @@
 ﻿using SoftFloat;
+using stupid.Maths;
 
 namespace stupid
 {
@@ -11,10 +12,10 @@ namespace stupid
 
     public struct ContactPair
     {
-        public Rigidbody bodyA;
-        public Rigidbody bodyB;
+        public SRigidbody bodyA;
+        public SRigidbody bodyB;
 
-        public ContactPair(Rigidbody a, Rigidbody b)
+        public ContactPair(SRigidbody a, SRigidbody b)
         {
             if (a.index < b.index)
             {

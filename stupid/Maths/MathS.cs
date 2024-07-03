@@ -1,6 +1,6 @@
 using SoftFloat;
 
-namespace stupid
+namespace stupid.Maths
 {
     public static class MathS
     {

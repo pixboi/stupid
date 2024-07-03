@@ -4,14 +4,16 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using SoftFloat;
+using stupid.Colliders;
+using stupid.Maths;
 
 namespace stupid
 {
     public class World
     {
         public IBroadphase Broadphase { get; set; }
-        public Bounds WorldBounds { get; private set; }
-        public List<Rigidbody> Rigidbodies { get; private set; }
+        public SBounds WorldBounds { get; private set; }
+        public List<SRigidbody> Rigidbodies { get; private set; }
         public Vector3S Gravity { get; private set; }
         public uint SimulationFrame { get; private set; }
 
@@ -20,22 +22,29 @@ namespace stupid
         private readonly Vector3S[] velocityBuffer;
         private readonly Vector3S[] positionBuffer;
 
-        public World(Bounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
+        public World(SBounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
         {
             counter = 0;
             SimulationFrame = 0;
             WorldBounds = worldBounds;
             this.multiThread = multiThread;
             Gravity = gravity;
-            Rigidbodies = new List<Rigidbody>(startSize);
+            Rigidbodies = new List<SRigidbody>(startSize);
             Broadphase = broadphase;
             velocityBuffer = new Vector3S[startSize * 2];
             positionBuffer = new Vector3S[startSize * 2];
         }
 
-        public Rigidbody AddRigidbody(Vector3S position, Vector3S velocity)
+        public SRigidbody AddRigidbody()
         {
-            var rb = new Rigidbody(counter++, position, velocity);
+            var rb = new SRigidbody(counter++);
+            Rigidbodies.Add(rb);
+            return rb;
+        }
+
+        public SRigidbody AddRigidbody(Vector3S position, Vector3S velocity)
+        {
+            var rb = new SRigidbody(counter++, position, velocity);
             Rigidbodies.Add(rb);
             return rb;
         }
@@ -71,7 +80,7 @@ namespace stupid
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);
             NaiveNarrowPhase(pairs);
-            WorldCollision();
+            //WorldCollision();
 
             foreach (var body in Rigidbodies)
             {
@@ -85,7 +94,7 @@ namespace stupid
         {
             foreach (var rb in Rigidbodies)
             {
-                if (rb.isSleeping) continue;
+                if (rb.isKinematic) continue;
 
                 if (rb.useGravity)
                 {
@@ -103,7 +112,7 @@ namespace stupid
                 var a = Rigidbodies[pair.aIndex];
                 var b = Rigidbodies[pair.bIndex];
 
-                if (a.isSleeping && b.isSleeping) continue;
+                //if (a.isSleeping && b.isSleeping) continue;
 
                 if (a.collider.Intersects(a.position, b.position, b.collider, out var contact))
                 {
@@ -130,7 +139,7 @@ namespace stupid
             }
         }
 
-        private void ResolveCollision(Rigidbody a, Rigidbody b, Contact contact)
+        private void ResolveCollision(SRigidbody a, SRigidbody b, Contact contact)
         {
             Vector3S relativeVelocity = b.velocity - a.velocity;
             sfloat velocityAlongNormal = Vector3S.Dot(relativeVelocity, contact.normal);
@@ -155,13 +164,13 @@ namespace stupid
             CorrectPositions(a, b, contact, invMassA, invMassB);
         }
 
-        private void AddToBuffer(Rigidbody a, Rigidbody b, Vector3S impulse, sfloat invMassA, sfloat invMassB)
+        private void AddToBuffer(SRigidbody a, SRigidbody b, Vector3S impulse, sfloat invMassA, sfloat invMassB)
         {
             velocityBuffer[a.index] -= invMassA * impulse;
             velocityBuffer[b.index] += invMassB * impulse;
         }
 
-        private void CorrectPositions(Rigidbody a, Rigidbody b, Contact contact, sfloat invMassA, sfloat invMassB)
+        private void CorrectPositions(SRigidbody a, SRigidbody b, Contact contact, sfloat invMassA, sfloat invMassB)
         {
             sfloat percent = (sfloat)0.2f;
             sfloat slop = (sfloat)0.01f;
@@ -180,7 +189,7 @@ namespace stupid
                 var bounds = rb.collider.GetBounds();
                 if (WorldBounds.ContainsBounds(bounds)) continue;
 
-                var sc = (SphereCollider)rb.collider;
+                var sc = (SSphereCollider)rb.collider;
                 CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.Min.x, bounds.Max.x, WorldBounds.Min.x, WorldBounds.Max.x, sc.radius);
                 CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.Min.y, bounds.Max.y, WorldBounds.Min.y, WorldBounds.Max.y, sc.radius);
                 CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.Min.z, bounds.Max.z, WorldBounds.Min.z, WorldBounds.Max.z, sc.radius);
@@ -204,7 +213,7 @@ namespace stupid
             }
         }
 
-        private void CheckSleep(Rigidbody body)
+        private void CheckSleep(SRigidbody body)
         {
             var v = body.velocity.MagnitudeSquared();
             if (body.isSleeping)
