@@ -5,6 +5,7 @@ namespace stupid.Colliders
 {
     public interface ICollider
     {
+        void Attach(SRigidbody body);
         SRigidbody GetRigidbody();
         SBounds CalculateBounds(Vector3S position);
         SBounds GetBounds();        //cached version

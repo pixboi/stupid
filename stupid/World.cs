@@ -166,8 +166,11 @@ namespace stupid
 
         private void AddToBuffer(SRigidbody a, SRigidbody b, Vector3S impulse, sfloat invMassA, sfloat invMassB)
         {
-            velocityBuffer[a.index] -= invMassA * impulse;
-            velocityBuffer[b.index] += invMassB * impulse;
+            if (!a.isKinematic)
+                velocityBuffer[a.index] -= invMassA * impulse;
+
+            if (!b.isKinematic)
+                velocityBuffer[b.index] += invMassB * impulse;
         }
 
         private void CorrectPositions(SRigidbody a, SRigidbody b, Contact contact, sfloat invMassA, sfloat invMassB)
@@ -176,42 +179,13 @@ namespace stupid
             sfloat slop = (sfloat)0.01f;
             Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / (invMassA + invMassB) * percent * contact.normal;
 
-            positionBuffer[a.index] -= invMassA * correction;
-            positionBuffer[b.index] += invMassB * correction;
+            if (!a.isKinematic)
+                positionBuffer[a.index] -= invMassA * correction;
+
+            if (!b.isKinematic)
+                positionBuffer[b.index] += invMassB * correction;
         }
 
-        private void WorldCollision()
-        {
-            foreach (var rb in Rigidbodies)
-            {
-                if (rb.isSleeping) continue;
-
-                var bounds = rb.collider.GetBounds();
-                if (WorldBounds.ContainsBounds(bounds)) continue;
-
-                var sc = (SSphereCollider)rb.collider;
-                CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.Min.x, bounds.Max.x, WorldBounds.Min.x, WorldBounds.Max.x, sc.radius);
-                CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.Min.y, bounds.Max.y, WorldBounds.Min.y, WorldBounds.Max.y, sc.radius);
-                CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.Min.z, bounds.Max.z, WorldBounds.Min.z, WorldBounds.Max.z, sc.radius);
-
-                rb.velocity.x *= (sfloat)0.9f;
-                rb.velocity.z *= (sfloat)0.9f;
-            }
-        }
-
-        private void CheckAxisCollision(ref sfloat position, ref sfloat velocity, sfloat minBound, sfloat maxBound, sfloat worldMin, sfloat worldMax, sfloat radius)
-        {
-            if (minBound < worldMin)
-            {
-                velocity *= sfloat.MinusOne * (sfloat)0.5f;
-                position = worldMin + radius;
-            }
-            else if (maxBound > worldMax)
-            {
-                velocity *= sfloat.MinusOne * (sfloat)0.5f;
-                position = worldMax - radius;
-            }
-        }
 
         private void CheckSleep(SRigidbody body)
         {
