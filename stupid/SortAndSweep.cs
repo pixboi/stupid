@@ -63,9 +63,9 @@ namespace stupid
             pairs.Clear();
             System.Array.Clear(overlapCount, 0, overlapCount.Length);
 
-            UpdateEndpoints(endpointsX, 'x');
-            UpdateEndpoints(endpointsY, 'y');
-            UpdateEndpoints(endpointsZ, 'z');
+            UpdateEndpoints(endpointsX, 0);
+            UpdateEndpoints(endpointsY, 1);
+            UpdateEndpoints(endpointsZ, 2);
             InsertionSort(endpointsX, rbCount * 2);
             InsertionSort(endpointsY, rbCount * 2);
             InsertionSort(endpointsZ, rbCount * 2);
@@ -85,10 +85,10 @@ namespace stupid
                     var bodyA = rigidbodies[aIndex];
                     var bodyB = rigidbodies[bIndex];
 
-                    if (bodyA.collider.GetBounds().Intersects(bodyB.collider.GetBounds()))
-                    {
+                   // if (bodyA.collider.GetBounds().Intersects(bodyB.collider.GetBounds()))
+                   // {
                         pairs.Add(new BodyPair(aIndex, bIndex));
-                    }
+                   // }
                 }
             }
 
@@ -128,7 +128,7 @@ namespace stupid
             }
         }
 
-        private void UpdateEndpoints(AxisEndpoint[] endpoints, char axis)
+        private void UpdateEndpoints(AxisEndpoint[] endpoints, int axis)
         {
             for (int i = 0; i < rbCount * 2; i++)
             {
@@ -138,13 +138,13 @@ namespace stupid
                 var bounds = endpoint.Body.collider.GetBounds();
                 switch (axis)
                 {
-                    case 'x':
+                    case 0:
                         endpoint.Value = endpoint.IsMin ? bounds.Min.x : bounds.Max.x;
                         break;
-                    case 'y':
+                    case 1:
                         endpoint.Value = endpoint.IsMin ? bounds.Min.y : bounds.Max.y;
                         break;
-                    case 'z':
+                    case 2:
                         endpoint.Value = endpoint.IsMin ? bounds.Min.z : bounds.Max.z;
                         break;
                 }

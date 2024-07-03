@@ -62,7 +62,7 @@ namespace stupid
             foreach (var rb in Rigidbodies)
             {
                 if (rb.isSleeping) continue;
-                
+
                 var bounds = rb.collider.GetBounds();
                 if (WorldBounds.ContainsBounds(bounds)) continue;
 
