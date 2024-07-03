@@ -9,42 +9,42 @@ namespace stupid.Colliders
     /// </summary>
     public struct SBounds
     {
-        public Vector3S Min;
-        public Vector3S Max;
+        public Vector3S min;
+        public Vector3S max;
 
         public SBounds(Vector3S min, Vector3S max)
         {
-            Min = min;
-            Max = max;
+            this.min = min;
+            this.max = max;
         }
 
         public bool Intersects(SBounds other)
         {
-            if (Max.x < other.Min.x || Min.x > other.Max.x) return false;
-            if (Max.y < other.Min.y || Min.y > other.Max.y) return false;
-            if (Max.z < other.Min.z || Min.z > other.Max.z) return false;
+            if (max.x < other.min.x || min.x > other.max.x) return false;
+            if (max.y < other.min.y || min.y > other.max.y) return false;
+            if (max.z < other.min.z || min.z > other.max.z) return false;
             return true;
         }
 
         public void Union(SBounds other)
         {
-            Min = new Vector3S(MathS.Min(Min.x, other.Min.x), MathS.Min(Min.y, other.Min.y), MathS.Min(Min.z, other.Min.z));
-            Max = new Vector3S(MathS.Max(Max.x, other.Max.x), MathS.Max(Max.y, other.Max.y), MathS.Max(Max.z, other.Max.z));
+            min = new Vector3S(MathS.Min(min.x, other.min.x), MathS.Min(min.y, other.min.y), MathS.Min(min.z, other.min.z));
+            max = new Vector3S(MathS.Max(max.x, other.max.x), MathS.Max(max.y, other.max.y), MathS.Max(max.z, other.max.z));
         }
 
         public static SBounds Union(SBounds a, SBounds b)
         {
             return new SBounds(
-                new Vector3S(MathS.Min(a.Min.x, b.Min.x), MathS.Min(a.Min.y, b.Min.y), MathS.Min(a.Min.z, b.Min.z)),
-                new Vector3S(MathS.Max(a.Max.x, b.Max.x), MathS.Max(a.Max.y, b.Max.y), MathS.Max(a.Max.z, b.Max.z))
+                new Vector3S(MathS.Min(a.min.x, b.min.x), MathS.Min(a.min.y, b.min.y), MathS.Min(a.min.z, b.min.z)),
+                new Vector3S(MathS.Max(a.max.x, b.max.x), MathS.Max(a.max.y, b.max.y), MathS.Max(a.max.z, b.max.z))
             );
         }
 
-        public Vector3S Center => (Min + Max) * (sfloat)0.5f;
+        public Vector3S Center => (min + max) * (sfloat)0.5f;
 
         public int MaximumExtent()
         {
-            Vector3S diag = Max - Min;
+            Vector3S diag = max - min;
             if (diag.x > diag.y && diag.x > diag.z)
                 return 0;
             else if (diag.y > diag.z)
@@ -55,14 +55,14 @@ namespace stupid.Colliders
 
         public bool Contains(Vector3S point)
         {
-            return point.x >= Min.x && point.x <= Max.x &&
-                   point.y >= Min.y && point.y <= Max.y &&
-                   point.z >= Min.z && point.z <= Max.z;
+            return point.x >= min.x && point.x <= max.x &&
+                   point.y >= min.y && point.y <= max.y &&
+                   point.z >= min.z && point.z <= max.z;
         }
 
         public bool ContainsBounds(SBounds other)
         {
-            return Contains(other.Min) && Contains(other.Max);
+            return Contains(other.min) && Contains(other.max);
         }
     }
 }

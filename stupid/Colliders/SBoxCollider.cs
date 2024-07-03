@@ -3,38 +3,46 @@ using stupid.Maths;
 
 namespace stupid.Colliders
 {
-    public class SBoxCollider : ICollider
+    public class SBoxCollider : BaseCollider
     {
-        public Vector3S Size { get; private set; }
-        public SRigidbody AttachedRigidbody { get; private set; }
-        public SRigidbody GetRigidbody() { return AttachedRigidbody; }
+        public Vector3S size { get; private set; }
+        private SBounds _bounds;
 
         public SBoxCollider(Vector3S size)
         {
-            Size = size;
+            this.size = size;
         }
 
-        public void Attach(SRigidbody rigidbody)
+        public override SBounds CalculateBounds(Vector3S position)
         {
-            AttachedRigidbody = rigidbody;
-            CalculateBounds(rigidbody.position);
-        }
+            Vector3S halfSize = size * (sfloat)0.5f;
+            Vector3S[] vertices = new Vector3S[8];
 
-        public SBounds _bounds { get; private set; }
+            vertices[0] = position + attachedRigidbody.rotation * new Vector3S(-halfSize.x, -halfSize.y, -halfSize.z);
+            vertices[1] = position + attachedRigidbody.rotation * new Vector3S(halfSize.x, -halfSize.y, -halfSize.z);
+            vertices[2] = position + attachedRigidbody.rotation * new Vector3S(-halfSize.x, halfSize.y, -halfSize.z);
+            vertices[3] = position + attachedRigidbody.rotation * new Vector3S(halfSize.x, halfSize.y, -halfSize.z);
+            vertices[4] = position + attachedRigidbody.rotation * new Vector3S(-halfSize.x, -halfSize.y, halfSize.z);
+            vertices[5] = position + attachedRigidbody.rotation * new Vector3S(halfSize.x, -halfSize.y, halfSize.z);
+            vertices[6] = position + attachedRigidbody.rotation * new Vector3S(-halfSize.x, halfSize.y, halfSize.z);
+            vertices[7] = position + attachedRigidbody.rotation * new Vector3S(halfSize.x, halfSize.y, halfSize.z);
 
-        public SBounds CalculateBounds(Vector3S position)
-        {
-            var halfSize = Size * (sfloat)0.5f;
-            _bounds = new SBounds(position - halfSize, position + halfSize);
+            Vector3S min = vertices[0];
+            Vector3S max = vertices[0];
+
+            for (int i = 1; i < 8; i++)
+            {
+                min = Vector3S.Min(min, vertices[i]);
+                max = Vector3S.Max(max, vertices[i]);
+            }
+
+            _bounds = new SBounds(min, max);
             return _bounds;
         }
 
-        public SBounds GetBounds()
-        {
-            return _bounds;
-        }
+        public override SBounds GetBounds() => _bounds;
 
-        public bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact)
+        public override bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact)
         {
             contact = new Contact();
 
@@ -42,9 +50,9 @@ namespace stupid.Colliders
             {
                 return IntersectsBox(positionA, positionB, otherBox, out contact);
             }
-            else if (other is SSphereCollider otherSphere)
+            else if (other is SSphereCollider sphere)
             {
-                return IntersectsSphere(positionA, positionB, otherSphere, out contact);
+                return IntersectsSphere(positionA, positionB, sphere, out contact);
             }
 
             return false;
@@ -54,64 +62,119 @@ namespace stupid.Colliders
         {
             contact = new Contact();
 
-            Vector3S aMin = positionA - Size * (sfloat)0.5f;
-            Vector3S aMax = positionA + Size * (sfloat)0.5f;
-            Vector3S bMin = positionB - other.Size * (sfloat)0.5f;
-            Vector3S bMax = positionB + other.Size * (sfloat)0.5f;
+            Vector3S[] axes = GetAxes(this.attachedRigidbody.rotation, other.attachedRigidbody.rotation);
 
-            if (aMin.x <= bMax.x && aMax.x >= bMin.x &&
-                aMin.y <= bMax.y && aMax.y >= bMin.y &&
-                aMin.z <= bMax.z && aMax.z >= bMin.z)
+            foreach (var axis in axes)
             {
-                // Calculate penetration depth and collision normal
-                sfloat dx = MathS.Min(aMax.x - bMin.x, bMax.x - aMin.x);
-                sfloat dy = MathS.Min(aMax.y - bMin.y, bMax.y - aMin.y);
-                sfloat dz = MathS.Min(aMax.z - bMin.z, bMax.z - aMin.z);
-
-                if (dx < dy && dx < dz)
+                if (!OverlapOnAxis(positionA, this.size * (sfloat)0.5f, positionB, other.size * (sfloat)0.5f, axis))
                 {
-                    contact.penetrationDepth = dx;
-                    contact.normal = (positionB.x > positionA.x) ? Vector3S.right : Vector3S.left;
+                    return false;
                 }
-                else if (dy < dx && dy < dz)
-                {
-                    contact.penetrationDepth = dy;
-                    contact.normal = (positionB.y > positionA.y) ? Vector3S.up : Vector3S.down;
-                }
-                else
-                {
-                    contact.penetrationDepth = dz;
-                    contact.normal = (positionB.z > positionA.z) ? Vector3S.forward : Vector3S.back;
-                }
-
-                contact.point = positionA + (contact.normal * (contact.penetrationDepth * (sfloat)0.5f));
-                return true;
             }
 
-            return false;
+            Vector3S direction = positionB - positionA;
+            sfloat overlap = sfloat.MaxValue;
+            Vector3S smallestAxis = Vector3S.zero;
+
+            foreach (var axis in axes)
+            {
+                sfloat o = CalculateOverlap(positionA, this.size * (sfloat)0.5f, positionB, other.size * (sfloat)0.5f, axis);
+                if (o < overlap)
+                {
+                    overlap = o;
+                    smallestAxis = axis;
+                }
+            }
+
+            contact.normal = smallestAxis;
+            contact.penetrationDepth = overlap;
+            contact.point = (positionA + positionB) * (sfloat)0.5f;
+
+            return true;
+        }
+
+        private Vector3S[] GetAxes(SQuaternion rotationA, SQuaternion rotationB)
+        {
+            return new Vector3S[]
+            {
+                rotationA * Vector3S.right,
+                rotationA * Vector3S.up,
+                rotationA * Vector3S.forward,
+                rotationB * Vector3S.right,
+                rotationB * Vector3S.up,
+                rotationB * Vector3S.forward,
+            };
+        }
+
+        private bool OverlapOnAxis(Vector3S posA, Vector3S halfSizeA, Vector3S posB, Vector3S halfSizeB, Vector3S axis)
+        {
+            sfloat aMin, aMax, bMin, bMax;
+
+            ProjectBox(posA, halfSizeA, axis, out aMin, out aMax);
+            ProjectBox(posB, halfSizeB, axis, out bMin, out bMax);
+
+            return aMax >= bMin && bMax >= aMin;
+        }
+
+        private void ProjectBox(Vector3S pos, Vector3S halfSize, Vector3S axis, out sfloat min, out sfloat max)
+        {
+            Vector3S[] vertices = new Vector3S[8]
+            {
+                pos + attachedRigidbody.rotation * new Vector3S(-halfSize.x, -halfSize.y, -halfSize.z),
+                pos + attachedRigidbody.rotation * new Vector3S(halfSize.x, -halfSize.y, -halfSize.z),
+                pos + attachedRigidbody.rotation * new Vector3S(-halfSize.x, halfSize.y, -halfSize.z),
+                pos + attachedRigidbody.rotation * new Vector3S(halfSize.x, halfSize.y, -halfSize.z),
+                pos + attachedRigidbody.rotation * new Vector3S(-halfSize.x, -halfSize.y, halfSize.z),
+                pos + attachedRigidbody.rotation * new Vector3S(halfSize.x, -halfSize.y, halfSize.z),
+                pos + attachedRigidbody.rotation * new Vector3S(-halfSize.x, halfSize.y, halfSize.z),
+                pos + attachedRigidbody.rotation * new Vector3S(halfSize.x, halfSize.y, halfSize.z)
+            };
+
+            min = max = Vector3S.Dot(vertices[0], axis);
+            for (int i = 1; i < 8; i++)
+            {
+                sfloat projection = Vector3S.Dot(vertices[i], axis);
+                if (projection < min)
+                    min = projection;
+                if (projection > max)
+                    max = projection;
+            }
+        }
+
+        private sfloat CalculateOverlap(Vector3S posA, Vector3S halfSizeA, Vector3S posB, Vector3S halfSizeB, Vector3S axis)
+        {
+            sfloat aMin, aMax, bMin, bMax;
+
+            ProjectBox(posA, halfSizeA, axis, out aMin, out aMax);
+            ProjectBox(posB, halfSizeB, axis, out bMin, out bMax);
+
+            return MathS.Min(aMax - bMin, bMax - aMin);
         }
 
         private bool IntersectsSphere(Vector3S positionA, Vector3S positionB, SSphereCollider sphere, out Contact contact)
         {
             contact = new Contact();
 
-            Vector3S halfSize = Size * (sfloat)0.5f;
+            Vector3S halfSize = size * (sfloat)0.5f;
             Vector3S boxCenter = positionA;
             Vector3S sphereCenter = positionB;
             sfloat radius = sphere.radius;
 
+            // Calculate closest point on the box to the sphere center
             Vector3S closestPoint = new Vector3S(
                 MathS.Max(boxCenter.x - halfSize.x, MathS.Min(sphereCenter.x, boxCenter.x + halfSize.x)),
                 MathS.Max(boxCenter.y - halfSize.y, MathS.Min(sphereCenter.y, boxCenter.y + halfSize.y)),
                 MathS.Max(boxCenter.z - halfSize.z, MathS.Min(sphereCenter.z, boxCenter.z + halfSize.z))
             );
 
-            sfloat distance = Vector3S.Distance(closestPoint, sphereCenter);
+            Vector3S diff = sphereCenter - closestPoint;
+            sfloat distanceSquared = diff.MagnitudeSquared();
 
-            if (distance <= radius)
+            if (distanceSquared <= radius * radius)
             {
+                sfloat distance = libm.sqrtf(distanceSquared);
                 contact.point = closestPoint;
-                contact.normal = (sphereCenter - closestPoint).Normalize();
+                contact.normal = diff.Normalize();
                 contact.penetrationDepth = radius - distance;
                 return true;
             }

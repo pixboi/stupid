@@ -49,6 +49,7 @@ namespace stupid.Maths
         public sfloat MagnitudeSquared() => x * x + y * y + z * z;
 
         public static sfloat Distance(Vector3S a, Vector3S b) => (a - b).Magnitude();
+        public static sfloat DistanceSquared(Vector3S a, Vector3S b) => (a - b).MagnitudeSquared();
 
         public Vector3S Normalize()
         {
@@ -56,6 +57,24 @@ namespace stupid.Maths
             if (mag > sfloat.zero)
                 return this / mag;
             return zero;
+        }
+
+        public static Vector3S Min(Vector3S a, Vector3S b)
+        {
+            return new Vector3S(
+                MathS.Min(a.x, b.x),
+                MathS.Min(a.y, b.y),
+                MathS.Min(a.z, b.z)
+            );
+        }
+
+        public static Vector3S Max(Vector3S a, Vector3S b)
+        {
+            return new Vector3S(
+                MathS.Max(a.x, b.x),
+                MathS.Max(a.y, b.y),
+                MathS.Max(a.z, b.z)
+            );
         }
 
         public bool Equals(Vector3S other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);

@@ -20,6 +20,14 @@ namespace stupid.Maths
             this.w = w;
         }
 
+        public SQuaternion(float x, float y, float z, float w)
+        {
+            this.x = (sfloat)x;
+            this.y = (sfloat)y;
+            this.z = (sfloat)z;
+            this.w = (sfloat)w;
+        }
+
         public static SQuaternion FromAxisAngle(Vector3S axis, sfloat angle)
         {
             sfloat halfAngle = angle * (sfloat)0.5f;

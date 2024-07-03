@@ -43,12 +43,12 @@ namespace stupid
             {
                 var body = rigidbodies[i];
                 var bounds = body.collider.GetBounds();
-                endpointsX[i * 2] = new AxisEndpoint { Value = bounds.Min.x, IsMin = true, Body = body };
-                endpointsX[i * 2 + 1] = new AxisEndpoint { Value = bounds.Max.x, IsMin = false, Body = body };
-                endpointsY[i * 2] = new AxisEndpoint { Value = bounds.Min.y, IsMin = true, Body = body };
-                endpointsY[i * 2 + 1] = new AxisEndpoint { Value = bounds.Max.y, IsMin = false, Body = body };
-                endpointsZ[i * 2] = new AxisEndpoint { Value = bounds.Min.z, IsMin = true, Body = body };
-                endpointsZ[i * 2 + 1] = new AxisEndpoint { Value = bounds.Max.z, IsMin = false, Body = body };
+                endpointsX[i * 2] = new AxisEndpoint { Value = bounds.min.x, IsMin = true, Body = body };
+                endpointsX[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.x, IsMin = false, Body = body };
+                endpointsY[i * 2] = new AxisEndpoint { Value = bounds.min.y, IsMin = true, Body = body };
+                endpointsY[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.y, IsMin = false, Body = body };
+                endpointsZ[i * 2] = new AxisEndpoint { Value = bounds.min.z, IsMin = true, Body = body };
+                endpointsZ[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.z, IsMin = false, Body = body };
             }
             rbCount = rigidbodies.Count;
             overlapCount = new int[rbCount * rbCount];
@@ -111,8 +111,6 @@ namespace stupid
                     {
                         var otherBody = activeList[j];
                         var bIndex = otherBody.index;
-                        //var pair = new BodyPair(me.Body.index, otherBody.index);
-                        //int index = GetPairIndex(me.Body.index, otherBody.index);
 
                         if (aIndex < bIndex)
                         {
@@ -124,8 +122,6 @@ namespace stupid
                             int index = bIndex * rbCount + aIndex;
                             overlapCount[index]++;
                         }
-
-                        //int index = me.Body.index * rbCount + otherBody.index;
 
                     }
                     activeList[activeListCount++] = me.Body;
@@ -155,13 +151,13 @@ namespace stupid
                 switch (axis)
                 {
                     case 0:
-                        endpoint.Value = endpoint.IsMin ? bounds.Min.x : bounds.Max.x;
+                        endpoint.Value = endpoint.IsMin ? bounds.min.x : bounds.max.x;
                         break;
                     case 1:
-                        endpoint.Value = endpoint.IsMin ? bounds.Min.y : bounds.Max.y;
+                        endpoint.Value = endpoint.IsMin ? bounds.min.y : bounds.max.y;
                         break;
                     case 2:
-                        endpoint.Value = endpoint.IsMin ? bounds.Min.z : bounds.Max.z;
+                        endpoint.Value = endpoint.IsMin ? bounds.min.z : bounds.max.z;
                         break;
                 }
                 endpoints[i] = endpoint; // Ensure the updated endpoint is stored back

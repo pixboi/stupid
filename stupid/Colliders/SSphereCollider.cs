@@ -3,39 +3,30 @@ using stupid.Maths;
 
 namespace stupid.Colliders
 {
-    public class SSphereCollider : ICollider
+    public class SSphereCollider : BaseCollider
     {
         public sfloat radius { get; private set; }
-        public SRigidbody AttachedRigidbody { get; private set; }
-        public SRigidbody GetRigidbody() { return AttachedRigidbody; }
-
         public SSphereCollider(sfloat radius)
         {
             this.radius = radius;
         }
 
-        public void Attach(SRigidbody rigidbody)
-        {
-            AttachedRigidbody = rigidbody;
-            CalculateBounds(rigidbody.position);
-        }
-
         public Vector3S _size { get; private set; }
         public SBounds _bounds { get; private set; }
 
-        public SBounds CalculateBounds(Vector3S position)
+        public override SBounds CalculateBounds(Vector3S position)
         {
             _size = new Vector3S(radius, radius, radius);
             _bounds = new SBounds(position - _size, position + _size);
             return _bounds;
         }
 
-        public SBounds GetBounds()
+        public override SBounds GetBounds()
         {
             return _bounds;
         }
 
-        public bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact)
+        public override bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact)
         {
             contact = new Contact();
 
