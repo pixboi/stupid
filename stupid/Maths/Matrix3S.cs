@@ -89,6 +89,17 @@ namespace stupid.Maths
             });
         }
 
+        public Matrix3S Inverse()
+        {
+            // Simplified inverse for diagonal matrix used for inertia tensor
+            sfloat[,] inverse = new sfloat[3, 3];
+            for (int i = 0; i < 3; i++)
+            {
+                inverse[i, i] = Elements[i, i] != sfloat.zero ? sfloat.one / Elements[i, i] : sfloat.zero;
+            }
+            return new Matrix3S(inverse);
+        }
+
         public static Matrix3S Inverse(Matrix3S m)
         {
             sfloat determinant =
