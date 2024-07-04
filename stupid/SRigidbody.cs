@@ -1,6 +1,6 @@
-﻿using SoftFloat;
-using stupid.Maths;
+﻿using stupid.Maths;
 using stupid.Colliders;
+using SoftFloat;
 
 namespace stupid
 {
@@ -11,35 +11,26 @@ namespace stupid
         public override int GetHashCode() => index;
 
         public Vector3S position;
+        public SQuaternion rotation;
+
         public Vector3S velocity;
-        public Vector3S angularVelocity; // New property for angular velocity
-        public SQuaternion rotation;  // New property for orientation
+        public Vector3S angularVelocity;
 
         public ICollider collider;
 
         // Settings
         public sfloat mass = sfloat.one;
-        public sfloat inertia = sfloat.one; // New property for inertia
+        public Matrix3S InertiaTensor { get; private set; }
+        public Matrix3S InverseInertiaTensor { get; private set; }
 
         public bool useGravity = true;
         public bool isKinematic = false;
-
-        public readonly sfloat sleepThreshold = (sfloat)0.001f;
-        public bool isSleeping { get; private set; }
-
-        public void WakeUp() => isSleeping = false;
-
-        public void Sleep()
-        {
-            isSleeping = true;
-            this.velocity = Vector3S.zero;
-            this.angularVelocity = Vector3S.zero; // Stop rotation when sleeping
-        }
 
         public SRigidbody(int index)
         {
             this.index = index;
             this.rotation = SQuaternion.Identity;
+            InitializeInertiaTensor();
         }
 
         public SRigidbody(int index, Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
@@ -47,8 +38,21 @@ namespace stupid
             this.index = index;
             this.position = position;
             this.velocity = velocity;
-            this.angularVelocity = angularVelocity; // Initialize angular velocity
-            this.rotation = SQuaternion.Identity; // Initialize orientation
+            this.angularVelocity = angularVelocity;
+            this.rotation = SQuaternion.Identity;
+            InitializeInertiaTensor();
+        }
+
+        private void InitializeInertiaTensor()
+        {
+            // This should be adjusted according to the actual shape and mass distribution of the rigidbody
+            sfloat oneFifth = (sfloat)0.2f;
+            InertiaTensor = new Matrix3S(new sfloat[,] {
+                { oneFifth * mass, sfloat.zero, sfloat.zero },
+                { sfloat.zero, oneFifth * mass, sfloat.zero },
+                { sfloat.zero, sfloat.zero, oneFifth * mass }
+            });
+            InverseInertiaTensor = Matrix3S.Inverse(InertiaTensor);
         }
 
         public void Attach(ICollider collider)
@@ -57,11 +61,24 @@ namespace stupid
             collider.Attach(this);
         }
 
-        public void ApplyTorque(Vector3S torque)
+        public void UpdateRotation(sfloat deltaTime)
         {
-            if (!isKinematic)
+            if (angularVelocity.Magnitude() > sfloat.zero)
             {
-                angularVelocity += torque / inertia;
+                sfloat angle = angularVelocity.Magnitude() * deltaTime;
+                Vector3S axis = angularVelocity.Normalize();
+                sfloat halfAngle = angle / (sfloat)2.0f;
+                sfloat sinHalfAngle = libm.sinf(halfAngle);
+
+                SQuaternion deltaRotation = new SQuaternion(
+                    libm.cosf(halfAngle),
+                    axis.x * sinHalfAngle,
+                    axis.y * sinHalfAngle,
+                    axis.z * sinHalfAngle
+                );
+
+                rotation = deltaRotation * rotation;
+                angularVelocity *= (sfloat)0.99f;
             }
         }
     }

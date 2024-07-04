@@ -67,6 +67,7 @@ namespace stupid
             UpdateEndpoints(endpointsX, 0);
             UpdateEndpoints(endpointsY, 1);
             UpdateEndpoints(endpointsZ, 2);
+
             InsertionSort(endpointsX, rbCount * 2);
             InsertionSort(endpointsY, rbCount * 2);
             InsertionSort(endpointsZ, rbCount * 2);
@@ -145,7 +146,6 @@ namespace stupid
             for (int i = 0; i < rbCount * 2; i++)
             {
                 var endpoint = endpoints[i];
-                if (endpoint.Body.isSleeping) continue;
 
                 var bounds = endpoint.Body.collider.GetBounds();
                 switch (axis)
@@ -178,12 +178,6 @@ namespace stupid
                 }
                 endpoints[j + 1] = key;
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetPairIndex(int a, int b)
-        {
-            return a * rbCount + b;
         }
 
         private struct AxisEndpoint

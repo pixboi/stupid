@@ -5,26 +5,20 @@ namespace stupid.Colliders
 {
     public class SSphereCollider : BaseCollider
     {
-        public sfloat radius { get; private set; }
+        public sfloat Radius { get; private set; }
         public SSphereCollider(sfloat radius)
         {
-            this.radius = radius;
+            Radius = radius;
         }
-
-        public Vector3S _size { get; private set; }
-        public SBounds _bounds { get; private set; }
 
         public override SBounds CalculateBounds(Vector3S position)
         {
-            _size = new Vector3S(radius, radius, radius);
-            _bounds = new SBounds(position - _size, position + _size);
+            var size = new Vector3S(Radius, Radius, Radius);
+            _bounds = new SBounds(position - size, position + size);
             return _bounds;
         }
 
-        public override SBounds GetBounds()
-        {
-            return _bounds;
-        }
+        public override SBounds GetBounds() => _bounds;
 
         public override bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact)
         {
@@ -47,13 +41,13 @@ namespace stupid.Colliders
             contact = new Contact();
 
             sfloat distance = Vector3S.Distance(positionA, positionB);
-            sfloat combinedRadius = radius + otherSphere.radius;
+            sfloat combinedRadius = Radius + otherSphere.Radius;
 
             if (distance <= combinedRadius)
             {
-                // Calculate collision information
-                contact.point = positionA + (positionB - positionA) * (radius / combinedRadius);
-                contact.normal = (positionB - positionA).Normalize();
+                Vector3S direction = (positionB - positionA).Normalize();
+                contact.point = positionA + direction * Radius;
+                contact.normal = direction;
                 contact.penetrationDepth = combinedRadius - distance;
                 return true;
             }

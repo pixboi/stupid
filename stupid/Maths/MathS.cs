@@ -1,4 +1,7 @@
 using SoftFloat;
+using System.Security.Cryptography;
+using System.Text;
+using System;
 
 namespace stupid.Maths
 {
@@ -22,5 +25,33 @@ namespace stupid.Maths
             return value < sfloat.zero ? -value : value;
 
         }
+
+        public static string CalculateStateHash(World world)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var sb = new StringBuilder();
+                foreach (var rb in world.Rigidbodies)
+                {
+                    sb.Append(rb.position.x.ToString());
+                    sb.Append(rb.position.y.ToString());
+                    sb.Append(rb.position.z.ToString());
+                    sb.Append(rb.velocity.x.ToString());
+                    sb.Append(rb.velocity.y.ToString());
+                    sb.Append(rb.velocity.z.ToString());
+                    sb.Append(rb.angularVelocity.x.ToString());
+                    sb.Append(rb.angularVelocity.y.ToString());
+                    sb.Append(rb.angularVelocity.z.ToString());
+                    sb.Append(rb.rotation.x.ToString());
+                    sb.Append(rb.rotation.y.ToString());
+                    sb.Append(rb.rotation.z.ToString());
+                    sb.Append(rb.rotation.w.ToString());
+                }
+
+                var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+                return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+            }
+        }
+
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using SoftFloat;
 using stupid.Colliders;
 using stupid.Maths;
@@ -20,8 +21,6 @@ namespace stupid
         private readonly bool multiThread;
         private readonly Vector3S[] velocityBuffer;
         private readonly Vector3S[] positionBuffer;
-        private readonly Vector3S[] angularVelocityBuffer;
-        private readonly SQuaternion[] rotationBuffer;
 
         public World(SBounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
         {
@@ -34,49 +33,13 @@ namespace stupid
             Broadphase = broadphase;
             velocityBuffer = new Vector3S[startSize * 2];
             positionBuffer = new Vector3S[startSize * 2];
-            angularVelocityBuffer = new Vector3S[startSize * 2];
-            rotationBuffer = new SQuaternion[startSize * 2];
         }
 
-        public SRigidbody AddRigidbody()
-        {
-            var rb = new SRigidbody(counter++);
-            Rigidbodies.Add(rb);
-            return rb;
-        }
-
-        public SRigidbody AddRigidbody(Vector3S position, Vector3S velocity)
+        public SRigidbody AddRigidbody(Vector3S position = default, Vector3S velocity = default)
         {
             var rb = new SRigidbody(counter++, position, velocity);
             Rigidbodies.Add(rb);
             return rb;
-        }
-
-        public string CalculateStateHash()
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var sb = new StringBuilder();
-                foreach (var rb in Rigidbodies)
-                {
-                    sb.Append(rb.position.x.ToString());
-                    sb.Append(rb.position.y.ToString());
-                    sb.Append(rb.position.z.ToString());
-                    sb.Append(rb.velocity.x.ToString());
-                    sb.Append(rb.velocity.y.ToString());
-                    sb.Append(rb.velocity.z.ToString());
-                    sb.Append(rb.angularVelocity.x.ToString());
-                    sb.Append(rb.angularVelocity.y.ToString());
-                    sb.Append(rb.angularVelocity.z.ToString());
-                    sb.Append(rb.rotation.x.ToString());
-                    sb.Append(rb.rotation.y.ToString());
-                    sb.Append(rb.rotation.z.ToString());
-                    sb.Append(rb.rotation.w.ToString());
-                }
-
-                var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
-                return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-            }
         }
 
         public void Simulate(sfloat deltaTime)
@@ -90,11 +53,8 @@ namespace stupid
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);
             NaiveNarrowPhase(pairs);
+            WorldCollision();
 
-            foreach (var body in Rigidbodies)
-            {
-                CheckSleep(body);
-            }
 
             SimulationFrame++;
         }
@@ -111,9 +71,6 @@ namespace stupid
                 }
 
                 rb.position += rb.velocity * deltaTime;
-
-                SQuaternion deltaRotation = SQuaternion.FromAngularVelocity(rb.angularVelocity * deltaTime);
-                rb.rotation = (deltaRotation * rb.rotation).Normalize();
             }
         }
 
@@ -137,23 +94,15 @@ namespace stupid
 
                 a.velocity += velocityBuffer[a.index];
                 a.position += positionBuffer[a.index];
-                a.angularVelocity += angularVelocityBuffer[a.index];
-                a.rotation = (rotationBuffer[a.index] * a.rotation).Normalize();
 
                 b.velocity += velocityBuffer[b.index];
                 b.position += positionBuffer[b.index];
-                b.angularVelocity += angularVelocityBuffer[b.index];
-                b.rotation = (rotationBuffer[b.index] * b.rotation).Normalize();
 
                 velocityBuffer[a.index] = Vector3S.zero;
                 positionBuffer[a.index] = Vector3S.zero;
-                angularVelocityBuffer[a.index] = Vector3S.zero;
-                rotationBuffer[a.index] = SQuaternion.Identity;
 
                 velocityBuffer[b.index] = Vector3S.zero;
                 positionBuffer[b.index] = Vector3S.zero;
-                angularVelocityBuffer[b.index] = Vector3S.zero;
-                rotationBuffer[b.index] = SQuaternion.Identity;
             }
         }
 
@@ -162,59 +111,30 @@ namespace stupid
             Vector3S relativeVelocity = b.velocity - a.velocity;
             sfloat velocityAlongNormal = Vector3S.Dot(relativeVelocity, contact.normal);
 
-            //if (velocityAlongNormal > sfloat.zero) return;
+            if (velocityAlongNormal > sfloat.zero) return;
 
             sfloat e = (sfloat)0.5f;
-            sfloat invMassA = a.isKinematic ? sfloat.zero : (sfloat.one / a.mass);
-            sfloat invMassB = b.isKinematic ? sfloat.zero : (sfloat.one / b.mass);
-
-            // Linear impulse
+            sfloat invMassA = (sfloat.one / a.mass);
+            sfloat invMassB = (sfloat.one / b.mass);
             sfloat j = -(sfloat.one + e) * velocityAlongNormal / (invMassA + invMassB);
+
             Vector3S impulse = j * contact.normal;
-            ApplyImpulse(a, b, impulse, invMassA, invMassB);
+            AddToBuffer(a, b, impulse, invMassA, invMassB);
 
-            // Angular impulse
-            Vector3S rA = contact.point - a.position;
-            Vector3S rB = contact.point - b.position;
-
-            Vector3S torqueA = Vector3S.Cross(rA, impulse);
-            Vector3S torqueB = Vector3S.Cross(rB, impulse);
-
-            sfloat invInertiaA = a.isKinematic ? sfloat.zero : (sfloat.one / a.inertia);
-            sfloat invInertiaB = b.isKinematic ? sfloat.zero : (sfloat.one / b.inertia);
-
-            ApplyAngularImpulse(a, b, torqueA, torqueB, invInertiaA, invInertiaB);
-
-            // Friction impulse
             Vector3S tangent = (relativeVelocity - (velocityAlongNormal * contact.normal)).Normalize();
             sfloat jt = -Vector3S.Dot(relativeVelocity, tangent) / (invMassA + invMassB);
+
             sfloat mu = (sfloat)0.5f;
             Vector3S frictionImpulse = MathS.Abs(jt) < j * mu ? jt * tangent : -j * mu * tangent;
-            ApplyImpulse(a, b, frictionImpulse, invMassA, invMassB);
-
-            torqueA = Vector3S.Cross(rA, frictionImpulse);
-            torqueB = Vector3S.Cross(rB, frictionImpulse);
-            ApplyAngularImpulse(a, b, torqueA, torqueB, invInertiaA, invInertiaB);
+            AddToBuffer(a, b, frictionImpulse, invMassA, invMassB);
 
             CorrectPositions(a, b, contact, invMassA, invMassB);
         }
 
-        private void ApplyImpulse(SRigidbody a, SRigidbody b, Vector3S impulse, sfloat invMassA, sfloat invMassB)
+        private void AddToBuffer(SRigidbody a, SRigidbody b, Vector3S impulse, sfloat invMassA, sfloat invMassB)
         {
-            if (!a.isKinematic)
-                velocityBuffer[a.index] -= invMassA * impulse;
-
-            if (!b.isKinematic)
-                velocityBuffer[b.index] += invMassB * impulse;
-        }
-
-        private void ApplyAngularImpulse(SRigidbody a, SRigidbody b, Vector3S torqueA, Vector3S torqueB, sfloat invInertiaA, sfloat invInertiaB)
-        {
-            if (!a.isKinematic)
-                angularVelocityBuffer[a.index] += invInertiaA * torqueA;
-
-            if (!b.isKinematic)
-                angularVelocityBuffer[b.index] -= invInertiaB * torqueB;
+            velocityBuffer[a.index] -= invMassA * impulse;
+            velocityBuffer[b.index] += invMassB * impulse;
         }
 
         private void CorrectPositions(SRigidbody a, SRigidbody b, Contact contact, sfloat invMassA, sfloat invMassB)
@@ -223,30 +143,40 @@ namespace stupid
             sfloat slop = (sfloat)0.01f;
             Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / (invMassA + invMassB) * percent * contact.normal;
 
-            if (!a.isKinematic)
-                positionBuffer[a.index] -= invMassA * correction;
-
-            if (!b.isKinematic)
-                positionBuffer[b.index] += invMassB * correction;
+            positionBuffer[a.index] -= invMassA * correction;
+            positionBuffer[b.index] += invMassB * correction;
         }
 
-        private void CheckSleep(SRigidbody body)
+        private void WorldCollision()
         {
-            var v = body.velocity.MagnitudeSquared();
-            if (body.isSleeping)
+            foreach (var rb in Rigidbodies)
             {
-                if (v > body.sleepThreshold)
-                {
-                    body.WakeUp();
-                }
-            }
-            else
-            {
-                if (v <= body.sleepThreshold)
-                {
-                    body.Sleep();
-                }
+                var bounds = rb.collider.GetBounds();
+                if (WorldBounds.ContainsBounds(bounds)) continue;
+
+                var sc = (SSphereCollider)rb.collider;
+                CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.min.x, bounds.max.x, WorldBounds.min.x, WorldBounds.max.x, sc.Radius);
+                CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.min.y, bounds.max.y, WorldBounds.min.y, WorldBounds.max.y, sc.Radius);
+                CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.min.z, bounds.max.z, WorldBounds.min.z, WorldBounds.max.z, sc.Radius);
+
+                rb.velocity.x *= (sfloat)0.9f;
+                rb.velocity.z *= (sfloat)0.9f;
             }
         }
+
+        private void CheckAxisCollision(ref sfloat position, ref sfloat velocity, sfloat minBound, sfloat maxBound, sfloat worldMin, sfloat worldMax, sfloat radius)
+        {
+            if (minBound < worldMin)
+            {
+                velocity *= sfloat.MinusOne * (sfloat)0.5f;
+                position = worldMin + radius;
+            }
+            else if (maxBound > worldMax)
+            {
+                velocity *= sfloat.MinusOne * (sfloat)0.5f;
+                position = worldMax - radius;
+            }
+        }
+
     }
 }

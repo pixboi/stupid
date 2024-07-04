@@ -5,17 +5,15 @@ namespace stupid.Colliders
 {
     public class SBoxCollider : BaseCollider
     {
-        public Vector3S size { get; private set; }
-        private SBounds _bounds;
-
+        public Vector3S Size { get; private set; }
         public SBoxCollider(Vector3S size)
         {
-            this.size = size;
+            Size = size;
         }
 
         public override SBounds CalculateBounds(Vector3S position)
         {
-            Vector3S halfSize = size * (sfloat)0.5f;
+            Vector3S halfSize = Size * (sfloat)0.5f;
             Vector3S[] vertices = new Vector3S[8];
 
             vertices[0] = position + attachedRigidbody.rotation * new Vector3S(-halfSize.x, -halfSize.y, -halfSize.z);
@@ -66,7 +64,7 @@ namespace stupid.Colliders
 
             foreach (var axis in axes)
             {
-                if (!OverlapOnAxis(positionA, this.size * (sfloat)0.5f, positionB, other.size * (sfloat)0.5f, axis))
+                if (!OverlapOnAxis(positionA, this.Size * (sfloat)0.5f, positionB, other.Size * (sfloat)0.5f, axis))
                 {
                     return false;
                 }
@@ -78,7 +76,7 @@ namespace stupid.Colliders
 
             foreach (var axis in axes)
             {
-                sfloat o = CalculateOverlap(positionA, this.size * (sfloat)0.5f, positionB, other.size * (sfloat)0.5f, axis);
+                sfloat o = CalculateOverlap(positionA, this.Size * (sfloat)0.5f, positionB, other.Size * (sfloat)0.5f, axis);
                 if (o < overlap)
                 {
                     overlap = o;
@@ -155,27 +153,22 @@ namespace stupid.Colliders
         {
             contact = new Contact();
 
-            Vector3S halfSize = size * (sfloat)0.5f;
-            Vector3S boxCenter = positionA;
-            Vector3S sphereCenter = positionB;
-            sfloat radius = sphere.radius;
-
-            // Calculate closest point on the box to the sphere center
+            Vector3S halfSize = Size * (sfloat)0.5f;
             Vector3S closestPoint = new Vector3S(
-                MathS.Max(boxCenter.x - halfSize.x, MathS.Min(sphereCenter.x, boxCenter.x + halfSize.x)),
-                MathS.Max(boxCenter.y - halfSize.y, MathS.Min(sphereCenter.y, boxCenter.y + halfSize.y)),
-                MathS.Max(boxCenter.z - halfSize.z, MathS.Min(sphereCenter.z, boxCenter.z + halfSize.z))
+                MathS.Max(positionA.x - halfSize.x, MathS.Min(positionB.x, positionA.x + halfSize.x)),
+                MathS.Max(positionA.y - halfSize.y, MathS.Min(positionB.y, positionA.y + halfSize.y)),
+                MathS.Max(positionA.z - halfSize.z, MathS.Min(positionB.z, positionA.z + halfSize.z))
             );
 
-            Vector3S diff = sphereCenter - closestPoint;
+            Vector3S diff = positionB - closestPoint;
             sfloat distanceSquared = diff.MagnitudeSquared();
 
-            if (distanceSquared <= radius * radius)
+            if (distanceSquared <= sphere.Radius * sphere.Radius)
             {
                 sfloat distance = libm.sqrtf(distanceSquared);
                 contact.point = closestPoint;
                 contact.normal = diff.Normalize();
-                contact.penetrationDepth = radius - distance;
+                contact.penetrationDepth = sphere.Radius - distance;
                 return true;
             }
 

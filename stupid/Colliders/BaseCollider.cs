@@ -1,5 +1,4 @@
-﻿using SoftFloat;
-using stupid.Maths;
+﻿using stupid.Maths;
 
 namespace stupid.Colliders
 {
@@ -14,7 +13,10 @@ namespace stupid.Colliders
             CalculateBounds(rigidbody.position);
         }
 
+
         public abstract SBounds CalculateBounds(Vector3S position);
+
+        protected SBounds _bounds;
         public abstract SBounds GetBounds();
         public abstract bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact);
 
