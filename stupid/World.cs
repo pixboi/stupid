@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using SoftFloat;
 using stupid.Colliders;
 using stupid.Maths;
@@ -21,6 +18,7 @@ namespace stupid
         private readonly bool multiThread;
         private readonly Vector3S[] velocityBuffer;
         private readonly Vector3S[] positionBuffer;
+        private readonly Vector3S[] angularVelocityBuffer;
 
         public World(SBounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
         {
@@ -33,11 +31,12 @@ namespace stupid
             Broadphase = broadphase;
             velocityBuffer = new Vector3S[startSize * 2];
             positionBuffer = new Vector3S[startSize * 2];
+            angularVelocityBuffer = new Vector3S[startSize * 2];
         }
 
-        public SRigidbody AddRigidbody(Vector3S position = default, Vector3S velocity = default)
+        public SRigidbody AddRigidbody(Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
         {
-            var rb = new SRigidbody(counter++, position, velocity);
+            var rb = new SRigidbody(counter++, position, velocity, angularVelocity);
             Rigidbodies.Add(rb);
             return rb;
         }
@@ -55,7 +54,6 @@ namespace stupid
             NaiveNarrowPhase(pairs);
             WorldCollision();
 
-
             SimulationFrame++;
         }
 
@@ -71,6 +69,16 @@ namespace stupid
                 }
 
                 rb.position += rb.velocity * deltaTime;
+
+                // Angular integration
+                if (rb.angularVelocity.Magnitude() > sfloat.Epsilon)
+                {
+                    Vector3S angularVelocityDelta = rb.angularVelocity;
+                    SQuaternion deltaRotation = SQuaternion.FromAxisAngle(angularVelocityDelta.Normalize(), angularVelocityDelta.Magnitude());
+                    rb.rotation = (deltaRotation * rb.rotation).Normalize();
+                    rb.angularVelocity *= (sfloat)0.99f;
+
+                }
             }
         }
 
@@ -87,23 +95,7 @@ namespace stupid
                 }
             }
 
-            foreach (var pair in pairs)
-            {
-                var a = Rigidbodies[pair.aIndex];
-                var b = Rigidbodies[pair.bIndex];
-
-                a.velocity += velocityBuffer[a.index];
-                a.position += positionBuffer[a.index];
-
-                b.velocity += velocityBuffer[b.index];
-                b.position += positionBuffer[b.index];
-
-                velocityBuffer[a.index] = Vector3S.zero;
-                positionBuffer[a.index] = Vector3S.zero;
-
-                velocityBuffer[b.index] = Vector3S.zero;
-                positionBuffer[b.index] = Vector3S.zero;
-            }
+            ApplyBuffers(pairs);
         }
 
         private void ResolveCollision(SRigidbody a, SRigidbody b, Contact contact)
@@ -114,8 +106,8 @@ namespace stupid
             if (velocityAlongNormal > sfloat.zero) return;
 
             sfloat e = (sfloat)0.5f;
-            sfloat invMassA = (sfloat.one / a.mass);
-            sfloat invMassB = (sfloat.one / b.mass);
+            sfloat invMassA = sfloat.one / a.mass;
+            sfloat invMassB = sfloat.one / b.mass;
             sfloat j = -(sfloat.one + e) * velocityAlongNormal / (invMassA + invMassB);
 
             Vector3S impulse = j * contact.normal;
@@ -129,6 +121,10 @@ namespace stupid
             AddToBuffer(a, b, frictionImpulse, invMassA, invMassB);
 
             CorrectPositions(a, b, contact, invMassA, invMassB);
+
+            // Angular impulse
+            ApplyAngularImpulseToBuffer(a, impulse, contact.point, contact.normal);
+            ApplyAngularImpulseToBuffer(b, -impulse, contact.point, contact.normal);
         }
 
         private void AddToBuffer(SRigidbody a, SRigidbody b, Vector3S impulse, sfloat invMassA, sfloat invMassB)
@@ -139,12 +135,46 @@ namespace stupid
 
         private void CorrectPositions(SRigidbody a, SRigidbody b, Contact contact, sfloat invMassA, sfloat invMassB)
         {
-            sfloat percent = (sfloat)0.2f;
+            sfloat percent = (sfloat)1f;
             sfloat slop = (sfloat)0.01f;
             Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / (invMassA + invMassB) * percent * contact.normal;
 
             positionBuffer[a.index] -= invMassA * correction;
             positionBuffer[b.index] += invMassB * correction;
+        }
+
+        private void ApplyBuffers(HashSet<BodyPair> pairs)
+        {
+            foreach (var pair in pairs)
+            {
+                var a = Rigidbodies[pair.aIndex];
+                var b = Rigidbodies[pair.bIndex];
+
+                a.velocity += velocityBuffer[a.index];
+                a.position += positionBuffer[a.index];
+                a.angularVelocity += angularVelocityBuffer[a.index];
+
+                b.velocity += velocityBuffer[b.index];
+                b.position += positionBuffer[b.index];
+                b.angularVelocity += angularVelocityBuffer[b.index];
+
+                velocityBuffer[a.index] = Vector3S.zero;
+                positionBuffer[a.index] = Vector3S.zero;
+                angularVelocityBuffer[a.index] = Vector3S.zero;
+
+                velocityBuffer[b.index] = Vector3S.zero;
+                positionBuffer[b.index] = Vector3S.zero;
+                angularVelocityBuffer[b.index] = Vector3S.zero;
+            }
+        }
+
+        private void ApplyAngularImpulseToBuffer(SRigidbody rb, Vector3S impulse, Vector3S contactPoint, Vector3S normal)
+        {
+            Vector3S ra = contactPoint - rb.position;
+            Vector3S torque = Vector3S.Cross(ra, impulse);
+            Matrix3S inverseInertiaTensor = rb.GetInverseInertiaTensorWorld();
+            Vector3S angularAcceleration = inverseInertiaTensor * torque;
+            angularVelocityBuffer[rb.index] += angularAcceleration*(sfloat)8888f;
         }
 
         private void WorldCollision()
@@ -177,6 +207,5 @@ namespace stupid
                 position = worldMax - radius;
             }
         }
-
     }
 }

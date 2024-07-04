@@ -1,5 +1,4 @@
 ﻿using SoftFloat;
-using stupid.Maths;
 
 namespace stupid.Maths
 {
@@ -40,6 +39,23 @@ namespace stupid.Maths
             );
         }
 
+        public static SQuaternion FromEulerAngles(Vector3S eulerAngles)
+        {
+            sfloat c1 = libm.cosf(eulerAngles.y * (sfloat)0.5f);
+            sfloat c2 = libm.cosf(eulerAngles.z * (sfloat)0.5f);
+            sfloat c3 = libm.cosf(eulerAngles.x * (sfloat)0.5f);
+            sfloat s1 = libm.sinf(eulerAngles.y * (sfloat)0.5f);
+            sfloat s2 = libm.sinf(eulerAngles.z * (sfloat)0.5f);
+            sfloat s3 = libm.sinf(eulerAngles.x * (sfloat)0.5f);
+
+            return new SQuaternion(
+                s1 * c2 * c3 + c1 * s2 * s3,
+                c1 * s2 * c3 - s1 * c2 * s3,
+                c1 * c2 * s3 + s1 * s2 * c3,
+                c1 * c2 * c3 - s1 * s2 * s3
+            );
+        }
+
         public static SQuaternion operator *(SQuaternion a, SQuaternion b)
         {
             return new SQuaternion(
@@ -68,24 +84,17 @@ namespace stupid.Maths
         public SQuaternion Normalize()
         {
             sfloat magnitude = Magnitude();
-            return new SQuaternion(x / magnitude, y / magnitude, z / magnitude, w / magnitude);
+            if (magnitude > sfloat.Epsilon)
+            {
+                sfloat invMag = sfloat.one / magnitude;
+                return new SQuaternion(x * invMag, y * invMag, z * invMag, w * invMag);
+            }
+            return Identity;
         }
 
         public SQuaternion Conjugate()
         {
             return new SQuaternion(-x, -y, -z, w);
-        }
-
-        public static SQuaternion FromAngularVelocity(Vector3S angularVelocity)
-        {
-            sfloat angle = angularVelocity.Magnitude();
-            if (angle < (sfloat)0.0001f)
-            {
-                return Identity;
-            }
-
-            Vector3S axis = angularVelocity / angle;
-            return FromAxisAngle(axis, angle);
         }
 
         public override string ToString()

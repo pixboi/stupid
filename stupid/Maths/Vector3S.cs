@@ -23,6 +23,7 @@ namespace stupid.Maths
 
         public static Vector3S operator +(Vector3S a, Vector3S b) => new Vector3S(a.x + b.x, a.y + b.y, a.z + b.z);
         public static Vector3S operator -(Vector3S a, Vector3S b) => new Vector3S(a.x - b.x, a.y - b.y, a.z - b.z);
+        public static Vector3S operator -(Vector3S a) => new Vector3S(-a.x, -a.y, -a.z);
         public static Vector3S operator *(Vector3S a, sfloat d) => new Vector3S(a.x * d, a.y * d, a.z * d);
         public static Vector3S operator /(Vector3S a, sfloat d) => new Vector3S(a.x / d, a.y / d, a.z / d);
         public static Vector3S operator *(sfloat d, Vector3S a) => new Vector3S(a.x * d, a.y * d, a.z * d);

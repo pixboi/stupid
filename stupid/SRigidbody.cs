@@ -1,6 +1,6 @@
-﻿using stupid.Maths;
+﻿using SoftFloat;
 using stupid.Colliders;
-using SoftFloat;
+using stupid.Maths;
 
 namespace stupid
 {
@@ -10,6 +10,7 @@ namespace stupid
         public readonly int index;
         public override int GetHashCode() => index;
 
+        // Transform
         public Vector3S position;
         public SQuaternion rotation;
 
@@ -20,8 +21,9 @@ namespace stupid
 
         // Settings
         public sfloat mass = sfloat.one;
-        public Matrix3S InertiaTensor { get; private set; }
-        public Matrix3S InverseInertiaTensor { get; private set; }
+        public Vector3S centerOfMass = Vector3S.zero;
+        public Vector3S inertiaTensor = new Vector3S(1, 1, 1);
+        public SQuaternion inertiaTensorRotation = SQuaternion.Identity;
 
         public bool useGravity = true;
         public bool isKinematic = false;
@@ -30,7 +32,6 @@ namespace stupid
         {
             this.index = index;
             this.rotation = SQuaternion.Identity;
-            InitializeInertiaTensor();
         }
 
         public SRigidbody(int index, Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
@@ -40,19 +41,7 @@ namespace stupid
             this.velocity = velocity;
             this.angularVelocity = angularVelocity;
             this.rotation = SQuaternion.Identity;
-            InitializeInertiaTensor();
-        }
-
-        private void InitializeInertiaTensor()
-        {
-            // This should be adjusted according to the actual shape and mass distribution of the rigidbody
-            sfloat oneFifth = (sfloat)0.2f;
-            InertiaTensor = new Matrix3S(new sfloat[,] {
-                { oneFifth * mass, sfloat.zero, sfloat.zero },
-                { sfloat.zero, oneFifth * mass, sfloat.zero },
-                { sfloat.zero, sfloat.zero, oneFifth * mass }
-            });
-            InverseInertiaTensor = Matrix3S.Inverse(InertiaTensor);
+            this.inertiaTensor = new Vector3S(1, 1, 1);
         }
 
         public void Attach(ICollider collider)
@@ -61,25 +50,20 @@ namespace stupid
             collider.Attach(this);
         }
 
-        public void UpdateRotation(sfloat deltaTime)
+        public Matrix3S GetInverseInertiaTensorWorld()
         {
-            if (angularVelocity.Magnitude() > sfloat.zero)
-            {
-                sfloat angle = angularVelocity.Magnitude() * deltaTime;
-                Vector3S axis = angularVelocity.Normalize();
-                sfloat halfAngle = angle / (sfloat)2.0f;
-                sfloat sinHalfAngle = libm.sinf(halfAngle);
+            // Compute the local space inverse inertia tensor
+            Matrix3S inverseInertiaTensorLocal = new Matrix3S(
+                new Vector3S(inertiaTensor.x != sfloat.zero ? sfloat.one / inertiaTensor.x : sfloat.zero, sfloat.zero, sfloat.zero),
+                new Vector3S(sfloat.zero, inertiaTensor.y != sfloat.zero ? sfloat.one / inertiaTensor.y : sfloat.zero, sfloat.zero),
+                new Vector3S(sfloat.zero, sfloat.zero, inertiaTensor.z != sfloat.zero ? sfloat.one / inertiaTensor.z : sfloat.zero)
+            );
 
-                SQuaternion deltaRotation = new SQuaternion(
-                    libm.cosf(halfAngle),
-                    axis.x * sinHalfAngle,
-                    axis.y * sinHalfAngle,
-                    axis.z * sinHalfAngle
-                );
+            // Convert the inertia tensor to world space using the body's rotation
+            Matrix3S rotationMatrix = Matrix3S.Rotate(rotation);
+            Matrix3S inverseInertiaTensorWorld = rotationMatrix * inverseInertiaTensorLocal * rotationMatrix.Transpose();
 
-                rotation = deltaRotation * rotation;
-                angularVelocity *= (sfloat)0.99f;
-            }
+            return inverseInertiaTensorWorld;
         }
     }
 }

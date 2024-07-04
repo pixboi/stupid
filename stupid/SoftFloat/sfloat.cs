@@ -98,6 +98,8 @@ namespace SoftFloat
         public static sfloat NegativeInfinity => new sfloat(RawNegativeInfinity);
         public static sfloat NaN => new sfloat(RawNaN);
         public static sfloat one => new sfloat(RawOne);
+
+        public static sfloat two = (sfloat)2f;
         public static sfloat MinusOne => new sfloat(RawMinusOne);
         public static sfloat MaxValue => new sfloat(RawMaxValue);
         public static sfloat MinValue => new sfloat(RawMinValue);
@@ -702,7 +704,7 @@ namespace SoftFloat
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >(sfloat f1, sfloat f2)
         {
-           // if (f1.IsNaN() || f2.IsNaN()) return false;
+            // if (f1.IsNaN() || f2.IsNaN()) return false;
             uint sign1 = (uint)((int)f1.rawValue >> 31);
             uint sign2 = (uint)((int)f2.rawValue >> 31);
             int val1 = (int)(((f1.rawValue ^ (sign1 & 0x7FFFFFFF)) - sign1));
