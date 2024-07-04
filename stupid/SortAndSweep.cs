@@ -11,9 +11,10 @@ namespace stupid
 
     public class SortAndSweepBroadphase : IBroadphase
     {
-        private AxisEndpoint[] endpointsX;
-        private AxisEndpoint[] endpointsY;
-        private AxisEndpoint[] endpointsZ;
+        public AxisEndpoint[] endpointsX { get; private set; }
+        public AxisEndpoint[] endpointsY { get; private set; }
+        public AxisEndpoint[] endpointsZ { get; private set; }
+
         private readonly HashSet<BodyPair> pairs;
         private int[] overlapCount;
         private int rbCount = 0;
@@ -180,7 +181,7 @@ namespace stupid
             }
         }
 
-        private struct AxisEndpoint
+        public struct AxisEndpoint
         {
             public sfloat Value;
             public bool IsMin;

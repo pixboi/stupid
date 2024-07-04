@@ -22,6 +22,7 @@ namespace stupid.Colliders
     {
         public BVHNode Root;
         private List<SRigidbody> _rigidbodies;
+        private int _nodeCount;
 
         public BVH(List<SRigidbody> rigidbodies)
         {
@@ -31,59 +32,91 @@ namespace stupid.Colliders
 
         public void Rebuild()
         {
-            List<int> objectIndices = new List<int>();
+            int[] objectIndices = new int[_rigidbodies.Count];
             for (int i = 0; i < _rigidbodies.Count; i++)
             {
-                objectIndices.Add(i);
+                objectIndices[i] = i;
             }
-            Root = BuildBVH(_rigidbodies, objectIndices);
+            _nodeCount = 0;
+            Root = BuildBVH(_rigidbodies, objectIndices, 0, _rigidbodies.Count);
         }
 
-        private BVHNode BuildBVH(List<SRigidbody> rigidbodies, List<int> objectIndices)
+        private BVHNode BuildBVH(List<SRigidbody> rigidbodies, int[] objectIndices, int start, int end)
         {
-            if (objectIndices.Count == 0)
+            int count = end - start;
+            if (count == 0)
             {
                 return null;
             }
 
             BVHNode node = new BVHNode();
+            _nodeCount++;
 
-            if (objectIndices.Count == 1)
+            if (count == 1)
             {
-                int index = objectIndices[0];
+                int index = objectIndices[start];
                 node.Bounds = rigidbodies[index].collider.GetBounds();
                 node.ObjectIndex = rigidbodies[index].index;
                 return node;
             }
 
             // Compute the bounding box that encompasses all objects
-            SBounds combinedBounds = rigidbodies[objectIndices[0]].collider.GetBounds();
-            foreach (int index in objectIndices)
+            SBounds combinedBounds = rigidbodies[objectIndices[start]].collider.GetBounds();
+            for (int i = start + 1; i < end; i++)
             {
-                combinedBounds = SBounds.Union(combinedBounds, rigidbodies[index].collider.GetBounds());
+                combinedBounds = SBounds.Union(combinedBounds, rigidbodies[objectIndices[i]].collider.GetBounds());
             }
             node.Bounds = combinedBounds;
 
             // Find the axis to split along
             int axis = combinedBounds.MaximumExtent();
 
-            // Sort objects along the chosen axis
-            objectIndices.Sort((a, b) =>
-            {
-                sfloat centerA = GetAxisValue(rigidbodies[a].collider.GetBounds().Center, axis);
-                sfloat centerB = GetAxisValue(rigidbodies[b].collider.GetBounds().Center, axis);
-                return centerA.CompareTo(centerB);
-            });
+            // Sort objects along the chosen axis using custom quicksort
+            QuickSort(rigidbodies, objectIndices, start, end - 1, axis);
 
             // Split the list into two halves
-            int mid = objectIndices.Count / 2;
-            List<int> leftIndices = objectIndices.GetRange(0, mid);
-            List<int> rightIndices = objectIndices.GetRange(mid, objectIndices.Count - mid);
+            int mid = start + count / 2;
 
-            node.Left = BuildBVH(rigidbodies, leftIndices);
-            node.Right = BuildBVH(rigidbodies, rightIndices);
+            node.Left = BuildBVH(rigidbodies, objectIndices, start, mid);
+            node.Right = BuildBVH(rigidbodies, objectIndices, mid, end);
 
             return node;
+        }
+
+        private void QuickSort(List<SRigidbody> rigidbodies, int[] indices, int low, int high, int axis)
+        {
+            if (low < high)
+            {
+                int pi = Partition(rigidbodies, indices, low, high, axis);
+                QuickSort(rigidbodies, indices, low, pi - 1, axis);
+                QuickSort(rigidbodies, indices, pi + 1, high, axis);
+            }
+        }
+
+        private int Partition(List<SRigidbody> rigidbodies, int[] indices, int low, int high, int axis)
+        {
+            sfloat pivot = GetAxisValue(rigidbodies[indices[high]].collider.GetBounds().Center, axis);
+            int i = low - 1;
+
+            for (int j = low; j < high; j++)
+            {
+                sfloat centerValue = GetAxisValue(rigidbodies[indices[j]].collider.GetBounds().Center, axis);
+                if (centerValue.CompareTo(pivot) < 0)
+                {
+                    i++;
+                    Swap(indices, i, j);
+                }
+            }
+
+            Swap(indices, i + 1, high);
+            return i + 1;
+        }
+
+        private void Swap(int[] array, int i, int j)
+        {
+            int temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
         }
 
         private sfloat GetAxisValue(Vector3S vector, int axis)
@@ -125,35 +158,29 @@ namespace stupid.Colliders
             }
         }
 
-        // Traverse the BVH and collect bounds
-        public List<SBounds> CollectBounds()
+        // Traverse the BVH and collect bounds into a preallocated array
+        public SBounds[] CollectBounds(ref SBounds[] boundsArray)
         {
-            List<SBounds> boundsList = new List<SBounds>();
-            Queue<BVHNode> queue = new Queue<BVHNode>();
-            queue.Enqueue(Root);
+            int index = 0;
+            CollectBoundsRecursive(Root, boundsArray, ref index);
+            return boundsArray;
+        }
 
-            while (queue.Count > 0)
+        private void CollectBoundsRecursive(BVHNode node, SBounds[] boundsArray, ref int index)
+        {
+            if (node == null) return;
+
+            boundsArray[index++] = node.Bounds;
+
+            if (node.Left != null)
             {
-                BVHNode currentNode = queue.Dequeue();
-                if (currentNode == null)
-                {
-                    continue;
-                }
-
-                boundsList.Add(currentNode.Bounds);
-
-                if (currentNode.Left != null)
-                {
-                    queue.Enqueue(currentNode.Left);
-                }
-
-                if (currentNode.Right != null)
-                {
-                    queue.Enqueue(currentNode.Right);
-                }
+                CollectBoundsRecursive(node.Left, boundsArray, ref index);
             }
 
-            return boundsList;
+            if (node.Right != null)
+            {
+                CollectBoundsRecursive(node.Right, boundsArray, ref index);
+            }
         }
     }
 }
