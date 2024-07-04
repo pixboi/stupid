@@ -13,11 +13,11 @@ namespace stupid
         public List<SRigidbody> Rigidbodies { get; private set; }
         public Vector3S Gravity { get; private set; }
         public uint SimulationFrame { get; private set; }
+        public BVH BVH { get; private set; }
 
         private int counter;
         private readonly bool multiThread;
         private readonly Vector3S[] velocityBuffer;
-        private readonly Vector3S[] positionBuffer;
         private readonly Vector3S[] angularVelocityBuffer;
 
         public World(SBounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
@@ -30,8 +30,8 @@ namespace stupid
             Rigidbodies = new List<SRigidbody>(startSize);
             Broadphase = broadphase;
             velocityBuffer = new Vector3S[startSize * 2];
-            positionBuffer = new Vector3S[startSize * 2];
             angularVelocityBuffer = new Vector3S[startSize * 2];
+            BVH = new BVH(Rigidbodies);
         }
 
         public SRigidbody AddRigidbody(Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
@@ -76,7 +76,7 @@ namespace stupid
                     Vector3S angularVelocityDelta = rb.angularVelocity * deltaTime;
                     SQuaternion deltaRotation = SQuaternion.FromAxisAngle(angularVelocityDelta.Normalize(), angularVelocityDelta.Magnitude());
                     rb.rotation = (deltaRotation * rb.rotation).Normalize();
-                    rb.angularVelocity *= (sfloat)0.95f;
+                    rb.angularVelocity *= (sfloat)0.99f;
                 }
             }
         }
@@ -153,18 +153,6 @@ namespace stupid
 
             angularVelocityBuffer[a.index] -= inverseInertiaTensorA * Vector3S.Cross(ra, frictionImpulse);
             angularVelocityBuffer[b.index] += inverseInertiaTensorB * Vector3S.Cross(rb, frictionImpulse);
-
-            CorrectPositions(a, b, contact, invMassA, invMassB);
-        }
-
-        private void CorrectPositions(SRigidbody a, SRigidbody b, Contact contact, sfloat invMassA, sfloat invMassB)
-        {
-            sfloat percent = (sfloat)0.2f;
-            sfloat slop = (sfloat)0.01f;
-            Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / (invMassA + invMassB) * percent * contact.normal;
-
-            positionBuffer[a.index] -= invMassA * correction;
-            positionBuffer[b.index] += invMassB * correction;
         }
 
         private void ApplyBuffers(HashSet<BodyPair> pairs)
@@ -175,19 +163,15 @@ namespace stupid
                 var b = Rigidbodies[pair.bIndex];
 
                 a.velocity += velocityBuffer[a.index];
-                a.position += positionBuffer[a.index];
                 a.angularVelocity += angularVelocityBuffer[a.index];
 
                 b.velocity += velocityBuffer[b.index];
-                b.position += positionBuffer[b.index];
                 b.angularVelocity += angularVelocityBuffer[b.index];
 
                 velocityBuffer[a.index] = Vector3S.zero;
-                positionBuffer[a.index] = Vector3S.zero;
                 angularVelocityBuffer[a.index] = Vector3S.zero;
 
                 velocityBuffer[b.index] = Vector3S.zero;
-                positionBuffer[b.index] = Vector3S.zero;
                 angularVelocityBuffer[b.index] = Vector3S.zero;
             }
         }
@@ -203,9 +187,6 @@ namespace stupid
                 CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.min.x, bounds.max.x, WorldBounds.min.x, WorldBounds.max.x, sc.Radius);
                 CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.min.y, bounds.max.y, WorldBounds.min.y, WorldBounds.max.y, sc.Radius);
                 CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.min.z, bounds.max.z, WorldBounds.min.z, WorldBounds.max.z, sc.Radius);
-
-                rb.velocity.x *= (sfloat)0.9f;
-                rb.velocity.z *= (sfloat)0.9f;
             }
         }
 

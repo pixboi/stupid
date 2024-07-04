@@ -13,19 +13,14 @@ namespace stupid
         // Transform
         public Vector3S position;
         public SQuaternion rotation;
+        public Matrix3S inertiaTensor;
 
         public Vector3S velocity;
         public Vector3S angularVelocity;
-
         public ICollider collider;
 
         // Settings
         public sfloat mass = sfloat.one;
-        public sfloat radius = sfloat.one; // Assuming a default radius for spheres
-        public Vector3S centerOfMass = Vector3S.zero;
-        public Matrix3S inertiaTensor;
-        public SQuaternion inertiaTensorRotation = SQuaternion.Identity;
-
         public bool useGravity = true;
         public bool isKinematic = false;
 
@@ -33,7 +28,6 @@ namespace stupid
         {
             this.index = index;
             this.rotation = SQuaternion.Identity;
-            CalculateInertiaTensor();
         }
 
         public SRigidbody(int index, Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
@@ -43,7 +37,6 @@ namespace stupid
             this.velocity = velocity;
             this.angularVelocity = angularVelocity;
             this.rotation = SQuaternion.Identity;
-            CalculateInertiaTensor();
         }
 
         public void Attach(ICollider collider)
@@ -52,12 +45,11 @@ namespace stupid
             collider.Attach(this);
             if (collider is SSphereCollider sphereCollider)
             {
-                this.radius = sphereCollider.Radius;
-                CalculateInertiaTensor();
+                CalculateInertiaTensor(sphereCollider.Radius);
             }
         }
 
-        private void CalculateInertiaTensor()
+        private void CalculateInertiaTensor(sfloat radius)
         {
             // For a solid sphere: I = 2/5 * m * r^2
             sfloat inertia = (sfloat)(0.4f) * mass * radius * radius;

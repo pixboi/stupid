@@ -1,4 +1,3 @@
-
 using SoftFloat;
 using stupid.Maths;
 
@@ -42,9 +41,11 @@ namespace stupid.Colliders
 
         public Vector3S Center => (min + max) * (sfloat)0.5f;
 
+        public Vector3S Size => max - min;
+
         public int MaximumExtent()
         {
-            Vector3S diag = max - min;
+            Vector3S diag = Size;
             if (diag.x > diag.y && diag.x > diag.z)
                 return 0;
             else if (diag.y > diag.z)
