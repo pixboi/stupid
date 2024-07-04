@@ -76,7 +76,7 @@ namespace stupid
                     Vector3S angularVelocityDelta = rb.angularVelocity * deltaTime;
                     SQuaternion deltaRotation = SQuaternion.FromAxisAngle(angularVelocityDelta.Normalize(), angularVelocityDelta.Magnitude());
                     rb.rotation = (deltaRotation * rb.rotation).Normalize();
-                    rb.angularVelocity *= (sfloat)0.99f;
+                    rb.angularVelocity *= (sfloat)0.95f;
                 }
             }
         }
@@ -140,7 +140,6 @@ namespace stupid
             angularVelocityBuffer[a.index] -= inverseInertiaTensorA * Vector3S.Cross(ra, impulse);
             angularVelocityBuffer[b.index] += inverseInertiaTensorB * Vector3S.Cross(rb, impulse);
 
-            
             // Friction impulse
             Vector3S tangent = (relativeVelocity - (velocityAlongNormal * contact.normal)).Normalize();
             sfloat jt = -Vector3S.Dot(relativeVelocity, tangent) / denom;
@@ -154,14 +153,13 @@ namespace stupid
 
             angularVelocityBuffer[a.index] -= inverseInertiaTensorA * Vector3S.Cross(ra, frictionImpulse);
             angularVelocityBuffer[b.index] += inverseInertiaTensorB * Vector3S.Cross(rb, frictionImpulse);
-            
 
             CorrectPositions(a, b, contact, invMassA, invMassB);
         }
 
         private void CorrectPositions(SRigidbody a, SRigidbody b, Contact contact, sfloat invMassA, sfloat invMassB)
         {
-            sfloat percent = (sfloat)1f;
+            sfloat percent = (sfloat)0.2f;
             sfloat slop = (sfloat)0.01f;
             Vector3S correction = MathS.Max(contact.penetrationDepth - slop, sfloat.zero) / (invMassA + invMassB) * percent * contact.normal;
 
@@ -192,17 +190,6 @@ namespace stupid
                 positionBuffer[b.index] = Vector3S.zero;
                 angularVelocityBuffer[b.index] = Vector3S.zero;
             }
-        }
-
-        private void ApplyAngularImpulseToBuffer(SRigidbody rb, Vector3S impulse, Vector3S contactPoint)
-        {
-            Vector3S ra = contactPoint - rb.position;
-            Vector3S torque = Vector3S.Cross(ra, impulse);
-            Matrix3S inverseInertiaTensor = rb.GetInverseInertiaTensorWorld();
-            Vector3S angularAcceleration = inverseInertiaTensor * torque;
-
-            // Apply the correct angular impulse
-            angularVelocityBuffer[rb.index] += angularAcceleration;
         }
 
         private void WorldCollision()
