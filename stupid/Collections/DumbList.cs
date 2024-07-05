@@ -2,13 +2,13 @@
 
 namespace stupid.Collections
 {
-    public class CustomList<T>
+    public class DumbList<T> where T : struct
     {
         private T[] items;
         private int count;
-        private const int DefaultCapacity = 4;
+        private const int DefaultCapacity = 16;
 
-        public CustomList(int capacity = DefaultCapacity)
+        public DumbList(int capacity = DefaultCapacity)
         {
             items = new T[capacity];
             count = 0;
@@ -16,11 +16,14 @@ namespace stupid.Collections
 
         public void Add(T item)
         {
-            if (count >= items.Length)
+            if (count < items.Length)
             {
-                Resize();
+                items[count++] = item;
             }
-            items[count++] = item;
+            else
+            {
+                throw new InvalidOperationException("Bucket is full");
+            }
         }
 
         public void Clear()
@@ -28,15 +31,35 @@ namespace stupid.Collections
             count = 0;
         }
 
-        public int Count => count;
-        public T this[int index] => items[index];
-
-        private void Resize()
+        public bool Remove(T item)
         {
-            int newCapacity = items.Length > 0 ? items.Length * 3 / 2 : DefaultCapacity;
-            T[] newItems = new T[newCapacity];
-            items.AsSpan(0, count).CopyTo(newItems);
-            items = newItems;
+            int index = Array.IndexOf(items, item, 0, count);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            for (int i = index; i < count - 1; i++)
+            {
+                items[i] = items[i + 1];
+            }
+            count--;
+            items[count] = default(T); // Clear the last item
+            return true;
+        }
+
+        public int Count => count;
+
+        public T this[int index]
+        {
+            get
+            {
+                if (index < 0 || index >= count)
+                {
+                    throw new IndexOutOfRangeException();
+                }
+                return items[index];
+            }
         }
     }
 }

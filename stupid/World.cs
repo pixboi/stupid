@@ -3,24 +3,25 @@ using System.Collections.Generic;
 using SoftFloat;
 using stupid.Colliders;
 using stupid.Maths;
+using stupid.Collections;
 
 namespace stupid
 {
     public class World
     {
-        public IBroadphase Broadphase { get; set; }
+        public SortAndSweepBroadphase Broadphase { get; set; }
         public SBounds WorldBounds { get; private set; }
         public List<SRigidbody> Rigidbodies { get; private set; }
         public Vector3S Gravity { get; private set; }
         public uint SimulationFrame { get; private set; }
-        public BVH BVH { get; private set; }
+        public DumbGrid<int> DumbGrid { get; private set; }
 
         private int counter;
         private readonly bool multiThread;
         private readonly Vector3S[] velocityBuffer;
         private readonly Vector3S[] angularVelocityBuffer;
 
-        public World(SBounds worldBounds, IBroadphase broadphase, Vector3S gravity, int startSize = 1000, bool multiThread = false)
+        public World(SBounds worldBounds, SortAndSweepBroadphase broadphase, Vector3S gravity, int gridSize = 4, int startSize = 1000, bool multiThread = false)
         {
             counter = 0;
             SimulationFrame = 0;
@@ -31,7 +32,7 @@ namespace stupid
             Broadphase = broadphase;
             velocityBuffer = new Vector3S[startSize * 2];
             angularVelocityBuffer = new Vector3S[startSize * 2];
-            BVH = new BVH(Rigidbodies);
+            DumbGrid = new DumbGrid<int>(32, 32, 32, (sfloat)gridSize);
         }
 
         public SRigidbody AddRigidbody(Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
@@ -45,9 +46,15 @@ namespace stupid
         {
             Integrate(deltaTime);
 
+            for (int i = 0; i < DumbGrid.Contents.Length; i++)
+            {
+                DumbGrid.Contents[i] = -1;
+            }
+
             foreach (var body in Rigidbodies)
             {
-                body.collider.CalculateBounds(body.position);
+                var bounds = body.collider.CalculateBounds(body.position);
+                DumbGrid.Add(bounds, body.index);
             }
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);

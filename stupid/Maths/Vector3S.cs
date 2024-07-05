@@ -14,11 +14,25 @@ namespace stupid.Maths
             this.z = z;
         }
 
+        public Vector3S(sfloat x)
+        {
+            this.x = x;
+            this.y = x;
+            this.z = x;
+        }
+
         public Vector3S(float x, float y, float z)
         {
             this.x = (sfloat)x;
             this.y = (sfloat)y;
             this.z = (sfloat)z;
+        }
+
+        public Vector3S(float x)
+        {
+            this.x = (sfloat)x;
+            this.y = (sfloat)x;
+            this.z = (sfloat)x;
         }
 
         public static Vector3S operator +(Vector3S a, Vector3S b) => new Vector3S(a.x + b.x, a.y + b.y, a.z + b.z);

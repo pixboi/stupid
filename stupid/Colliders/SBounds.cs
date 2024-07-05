@@ -25,12 +25,6 @@ namespace stupid.Colliders
             return true;
         }
 
-        public void Union(SBounds other)
-        {
-            min = new Vector3S(MathS.Min(min.x, other.min.x), MathS.Min(min.y, other.min.y), MathS.Min(min.z, other.min.z));
-            max = new Vector3S(MathS.Max(max.x, other.max.x), MathS.Max(max.y, other.max.y), MathS.Max(max.z, other.max.z));
-        }
-
         public static SBounds Union(SBounds a, SBounds b)
         {
             return new SBounds(
@@ -39,8 +33,9 @@ namespace stupid.Colliders
             );
         }
 
-        public Vector3S Center => (min + max) * (sfloat)0.5f;
+        public void Union(SBounds other) => this = Union(this, other);
 
+        public Vector3S Center => (min + max) * (sfloat)0.5f;
         public Vector3S Size => max - min;
 
         public int MaximumExtent()

@@ -99,7 +99,7 @@ namespace SoftFloat
         public static sfloat NaN => new sfloat(RawNaN);
         public static sfloat one => new sfloat(RawOne);
 
-        public static sfloat two = (sfloat)2f;
+        public static sfloat two = new sfloat(2);
         public static sfloat MinusOne => new sfloat(RawMinusOne);
         public static sfloat MaxValue => new sfloat(RawMaxValue);
         public static sfloat MinValue => new sfloat(RawMinValue);

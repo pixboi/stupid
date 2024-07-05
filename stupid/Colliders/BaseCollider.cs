@@ -6,13 +6,11 @@ namespace stupid.Colliders
     {
         protected SRigidbody attachedRigidbody;
         public virtual SRigidbody GetRigidbody() => attachedRigidbody;
-
         public void Attach(SRigidbody rigidbody)
         {
             attachedRigidbody = rigidbody;
             CalculateBounds(rigidbody.position);
         }
-
 
         public abstract SBounds CalculateBounds(Vector3S position);
 
