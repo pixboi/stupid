@@ -63,30 +63,16 @@ namespace stupid.Maths
             if (value < f32.zero) throw new ArgumentOutOfRangeException("Cannot compute square root of a negative value.");
             if (value == f32.zero) return f32.zero;
 
-            f32 min = f32.zero;
-            f32 max = value > f32.one ? value : f32.one;
-            f32 mid;
+            f32 x = value > f32.one ? value : f32.one; // Initial guess
+            const int iterations = 10; // Number of iterations can be adjusted
 
-            for (int i = 0; i < 8; i++) // Number of iterations can be adjusted
+            for (int i = 0; i < iterations; i++)
             {
-                mid = (min + max) / f32.two;
-                f32 midSquared = mid * mid;
-
-                if (midSquared == value)
-                {
-                    return mid;
-                }
-                else if (midSquared < value)
-                {
-                    min = mid;
-                }
-                else
-                {
-                    max = mid;
-                }
+                x = (x + value / x) / f32.two;
             }
 
-            return (min + max) / f32.two;
+            return x;
         }
+
     }
 }

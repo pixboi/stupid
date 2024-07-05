@@ -47,12 +47,12 @@ namespace stupid
         {
             Integrate(deltaTime);
 
-            DumbGrid.Invalidate(-1);
+            //DumbGrid.Invalidate(-1);
 
             foreach (var body in Rigidbodies)
             {
                 var bounds = body.collider.CalculateBounds(body.position);
-                DumbGrid.Add(bounds, body.index);
+                // DumbGrid.Add(bounds, body.index);
             }
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);

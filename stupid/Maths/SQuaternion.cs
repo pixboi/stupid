@@ -17,7 +17,6 @@ namespace stupid.Maths
             this.y = y;
             this.z = z;
             this.w = w;
-            NormalizeToUnit();
         }
 
         public SQuaternion(float x, float y, float z, float w)
@@ -26,7 +25,6 @@ namespace stupid.Maths
             this.y = f32.FromFloat(y);
             this.z = f32.FromFloat(z);
             this.w = f32.FromFloat(w);
-            NormalizeToUnit();
         }
 
         public static SQuaternion FromAxisAngle(Vector3S axis, f32 angle)
@@ -98,17 +96,6 @@ namespace stupid.Maths
         {
             f32 magnitude = Magnitude();
             return magnitude > f32.zero ? this / magnitude : Identity;
-        }
-
-        public void NormalizeToUnit()
-        {
-            // Ensure the sum of the squares of the components is 1
-            f32 sumOfSquares = x * x + y * y + z * z + w * w;
-            if (sumOfSquares != f32.one)
-            {
-                f32 error = f32.one - sumOfSquares;
-                w += error / (f32)4.0f; // Adjust w to make the quaternion unit length
-            }
         }
 
         public SQuaternion Conjugate()
