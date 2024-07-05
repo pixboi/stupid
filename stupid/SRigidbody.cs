@@ -1,5 +1,4 @@
-﻿using SoftFloat;
-using stupid.Colliders;
+﻿using stupid.Colliders;
 using stupid.Maths;
 
 namespace stupid
@@ -20,7 +19,7 @@ namespace stupid
         public ICollider collider;
 
         // Settings
-        public sfloat mass = sfloat.one;
+        public f32 mass = f32.one;
         public bool useGravity = true;
         public bool isKinematic = false;
 
@@ -49,14 +48,14 @@ namespace stupid
             }
         }
 
-        private void CalculateInertiaTensor(sfloat radius)
+        private void CalculateInertiaTensor(f32 radius)
         {
             // For a solid sphere: I = 2/5 * m * r^2
-            sfloat inertia = (sfloat)(0.4f) * mass * radius * radius;
+            f32 inertia = (f32)(0.4f) * mass * radius * radius;
             inertiaTensor = new Matrix3S(
-                new Vector3S(inertia, sfloat.zero, sfloat.zero),
-                new Vector3S(sfloat.zero, inertia, sfloat.zero),
-                new Vector3S(sfloat.zero, sfloat.zero, inertia)
+                new Vector3S(inertia, f32.zero, f32.zero),
+                new Vector3S(f32.zero, inertia, f32.zero),
+                new Vector3S(f32.zero, f32.zero, inertia)
             );
         }
 

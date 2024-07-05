@@ -7,6 +7,6 @@ namespace stupid
     {
         public Vector3S point;
         public Vector3S normal;
-        public sfloat penetrationDepth;
+        public f32 penetrationDepth;
     }
 }

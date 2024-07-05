@@ -21,7 +21,7 @@ namespace stupid
         private readonly Vector3S[] velocityBuffer;
         private readonly Vector3S[] angularVelocityBuffer;
 
-        public World(SBounds worldBounds, SortAndSweepBroadphase broadphase, Vector3S gravity, int gridSize = 4, int startSize = 1000, bool multiThread = false)
+        public World(SBounds worldBounds, SortAndSweepBroadphase broadphase, Vector3S gravity, int gridSize = 4, int gridDim = 32, int startSize = 1000, bool multiThread = false)
         {
             counter = 0;
             SimulationFrame = 0;
@@ -32,7 +32,7 @@ namespace stupid
             Broadphase = broadphase;
             velocityBuffer = new Vector3S[startSize * 2];
             angularVelocityBuffer = new Vector3S[startSize * 2];
-            DumbGrid = new DumbGrid<int>(32, 32, 32, (sfloat)gridSize);
+            DumbGrid = new DumbGrid<int>(gridDim, gridDim, gridDim, (sfloat)gridSize);
         }
 
         public SRigidbody AddRigidbody(Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
@@ -46,10 +46,7 @@ namespace stupid
         {
             Integrate(deltaTime);
 
-            for (int i = 0; i < DumbGrid.Contents.Length; i++)
-            {
-                DumbGrid.Contents[i] = -1;
-            }
+            DumbGrid.Invalidate(-1);
 
             foreach (var body in Rigidbodies)
             {

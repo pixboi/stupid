@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using SoftFloat;
+using stupid.Maths;
 
 namespace stupid
 {
@@ -183,7 +183,7 @@ namespace stupid
 
         public struct AxisEndpoint
         {
-            public sfloat Value;
+            public f32 Value;
             public bool IsMin;
             public SRigidbody Body;
         }

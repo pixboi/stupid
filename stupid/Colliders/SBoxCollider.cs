@@ -1,5 +1,4 @@
-﻿using SoftFloat;
-using stupid.Maths;
+﻿using stupid.Maths;
 
 namespace stupid.Colliders
 {
@@ -13,7 +12,7 @@ namespace stupid.Colliders
 
         public override SBounds CalculateBounds(Vector3S position)
         {
-            Vector3S halfSize = Size * (sfloat)0.5f;
+            Vector3S halfSize = Size * f32.half;
             Vector3S[] vertices = new Vector3S[8];
 
             vertices[0] = position + attachedRigidbody.rotation * new Vector3S(-halfSize.x, -halfSize.y, -halfSize.z);
@@ -64,19 +63,19 @@ namespace stupid.Colliders
 
             foreach (var axis in axes)
             {
-                if (!OverlapOnAxis(positionA, this.Size * (sfloat)0.5f, positionB, other.Size * (sfloat)0.5f, axis))
+                if (!OverlapOnAxis(positionA, this.Size * f32.half, positionB, other.Size * f32.half, axis))
                 {
                     return false;
                 }
             }
 
             Vector3S direction = positionB - positionA;
-            sfloat overlap = sfloat.MaxValue;
+            f32 overlap = f32.maxValue;
             Vector3S smallestAxis = Vector3S.zero;
 
             foreach (var axis in axes)
             {
-                sfloat o = CalculateOverlap(positionA, this.Size * (sfloat)0.5f, positionB, other.Size * (sfloat)0.5f, axis);
+                f32 o = CalculateOverlap(positionA, this.Size * f32.half, positionB, other.Size * f32.half, axis);
                 if (o < overlap)
                 {
                     overlap = o;
@@ -86,7 +85,7 @@ namespace stupid.Colliders
 
             contact.normal = smallestAxis;
             contact.penetrationDepth = overlap;
-            contact.point = (positionA + positionB) * (sfloat)0.5f;
+            contact.point = (positionA + positionB) * f32.half;
 
             return true;
         }
@@ -106,7 +105,7 @@ namespace stupid.Colliders
 
         private bool OverlapOnAxis(Vector3S posA, Vector3S halfSizeA, Vector3S posB, Vector3S halfSizeB, Vector3S axis)
         {
-            sfloat aMin, aMax, bMin, bMax;
+            f32 aMin, aMax, bMin, bMax;
 
             ProjectBox(posA, halfSizeA, axis, out aMin, out aMax);
             ProjectBox(posB, halfSizeB, axis, out bMin, out bMax);
@@ -114,7 +113,7 @@ namespace stupid.Colliders
             return aMax >= bMin && bMax >= aMin;
         }
 
-        private void ProjectBox(Vector3S pos, Vector3S halfSize, Vector3S axis, out sfloat min, out sfloat max)
+        private void ProjectBox(Vector3S pos, Vector3S halfSize, Vector3S axis, out f32 min, out f32 max)
         {
             Vector3S[] vertices = new Vector3S[8]
             {
@@ -131,7 +130,7 @@ namespace stupid.Colliders
             min = max = Vector3S.Dot(vertices[0], axis);
             for (int i = 1; i < 8; i++)
             {
-                sfloat projection = Vector3S.Dot(vertices[i], axis);
+                f32 projection = Vector3S.Dot(vertices[i], axis);
                 if (projection < min)
                     min = projection;
                 if (projection > max)
@@ -139,9 +138,9 @@ namespace stupid.Colliders
             }
         }
 
-        private sfloat CalculateOverlap(Vector3S posA, Vector3S halfSizeA, Vector3S posB, Vector3S halfSizeB, Vector3S axis)
+        private f32 CalculateOverlap(Vector3S posA, Vector3S halfSizeA, Vector3S posB, Vector3S halfSizeB, Vector3S axis)
         {
-            sfloat aMin, aMax, bMin, bMax;
+            f32 aMin, aMax, bMin, bMax;
 
             ProjectBox(posA, halfSizeA, axis, out aMin, out aMax);
             ProjectBox(posB, halfSizeB, axis, out bMin, out bMax);
@@ -153,7 +152,7 @@ namespace stupid.Colliders
         {
             contact = new Contact();
 
-            Vector3S halfSize = Size * (sfloat)0.5f;
+            Vector3S halfSize = Size * f32.half;
             Vector3S closestPoint = new Vector3S(
                 MathS.Max(positionA.x - halfSize.x, MathS.Min(positionB.x, positionA.x + halfSize.x)),
                 MathS.Max(positionA.y - halfSize.y, MathS.Min(positionB.y, positionA.y + halfSize.y)),
@@ -161,11 +160,11 @@ namespace stupid.Colliders
             );
 
             Vector3S diff = positionB - closestPoint;
-            sfloat distanceSquared = diff.MagnitudeSquared();
+            f32 distanceSquared = diff.MagnitudeSquared();
 
             if (distanceSquared <= sphere.Radius * sphere.Radius)
             {
-                sfloat distance = libm.sqrtf(distanceSquared);
+                f32 distance = MathS.Sqrt(distanceSquared);
                 contact.point = closestPoint;
                 contact.normal = diff.Normalize();
                 contact.penetrationDepth = sphere.Radius - distance;

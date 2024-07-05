@@ -245,6 +245,87 @@ namespace SoftFloat
                 return f1;
             }
 
+            uint sign1 = (uint)((int)f1.rawValue >> 31);
+            uint sign2 = (uint)((int)f2.rawValue >> 31);
+            int man1, man2;
+
+            if (rawExp2 != 0)
+            {
+                man1 = (int)(((f1.RawMantissa | 0x800000) ^ sign1) - sign1);
+                man2 = (int)(((f2.RawMantissa | 0x800000) ^ sign2) - sign2);
+            }
+            else
+            {
+                man2 = (int)((f2.RawMantissa ^ sign2) - sign2);
+                man1 = f1.Mantissa;
+
+                rawExp2 = 1;
+                if (rawExp1 == 0)
+                {
+                    rawExp1 = 1;
+                }
+                deltaExp = rawExp1 - rawExp2;
+            }
+
+            int man = (man1 << 6) + ((man2 << 6) >> deltaExp);
+            int absMan = Math.Abs(man);
+
+            if (absMan == 0)
+            {
+                return zero;
+            }
+
+            int rawExp = rawExp1 - 6;
+            int amount = normalizeAmounts[clz(absMan)];
+            rawExp -= amount;
+            absMan <<= amount;
+
+            int msbIndex = BitScanReverse8(absMan >> MantissaBits);
+            rawExp += msbIndex;
+            absMan >>= msbIndex;
+
+            if ((uint)(rawExp - 1) < 254)
+            {
+                uint raw = (uint)man & 0x80000000 | (uint)rawExp << MantissaBits | ((uint)absMan & 0x7FFFFF);
+                return new sfloat(raw);
+            }
+
+            if (rawExp >= 255)
+            {
+                return man >= 0 ? PositiveInfinity : NegativeInfinity;
+            }
+
+            if (rawExp >= -24)
+            {
+                uint raw = (uint)man & 0x80000000 | (uint)(absMan >> (-rawExp + 1));
+                return new sfloat(raw);
+            }
+
+            return zero;
+        }
+
+
+        private static sfloat InternalAdd2(sfloat f1, sfloat f2)
+        {
+            byte rawExp1 = f1.RawExponent;
+            byte rawExp2 = f2.RawExponent;
+            int deltaExp = rawExp1 - rawExp2;
+
+            if (rawExp1 == 255)
+            {
+                // Special cases: NaN, +Inf, -Inf
+                if (rawExp2 != 255)
+                {
+                    return f1;
+                }
+                return f1.rawValue == f2.rawValue ? f1 : NaN;
+            }
+
+            if (deltaExp > 25)
+            {
+                return f1;
+            }
+
             int man1, man2;
             uint sign1 = (uint)((int)f1.rawValue >> 31);
             uint sign2 = (uint)((int)f2.rawValue >> 31);

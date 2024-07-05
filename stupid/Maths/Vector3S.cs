@@ -1,20 +1,19 @@
-using SoftFloat;
 using System;
 
 namespace stupid.Maths
 {
     public struct Vector3S : IEquatable<Vector3S>
     {
-        public sfloat x, y, z;
+        public f32 x, y, z;
 
-        public Vector3S(sfloat x, sfloat y, sfloat z)
+        public Vector3S(f32 x, f32 y, f32 z)
         {
             this.x = x;
             this.y = y;
             this.z = z;
         }
 
-        public Vector3S(sfloat x)
+        public Vector3S(f32 x)
         {
             this.x = x;
             this.y = x;
@@ -23,24 +22,24 @@ namespace stupid.Maths
 
         public Vector3S(float x, float y, float z)
         {
-            this.x = (sfloat)x;
-            this.y = (sfloat)y;
-            this.z = (sfloat)z;
+            this.x = f32.FromFloat(x);
+            this.y = f32.FromFloat(y);
+            this.z = f32.FromFloat(z);
         }
 
         public Vector3S(float x)
         {
-            this.x = (sfloat)x;
-            this.y = (sfloat)x;
-            this.z = (sfloat)x;
+            this.x = f32.FromFloat(x);
+            this.y = f32.FromFloat(x);
+            this.z = f32.FromFloat(x);
         }
 
         public static Vector3S operator +(Vector3S a, Vector3S b) => new Vector3S(a.x + b.x, a.y + b.y, a.z + b.z);
         public static Vector3S operator -(Vector3S a, Vector3S b) => new Vector3S(a.x - b.x, a.y - b.y, a.z - b.z);
         public static Vector3S operator -(Vector3S a) => new Vector3S(-a.x, -a.y, -a.z);
-        public static Vector3S operator *(Vector3S a, sfloat d) => new Vector3S(a.x * d, a.y * d, a.z * d);
-        public static Vector3S operator /(Vector3S a, sfloat d) => new Vector3S(a.x / d, a.y / d, a.z / d);
-        public static Vector3S operator *(sfloat d, Vector3S a) => new Vector3S(a.x * d, a.y * d, a.z * d);
+        public static Vector3S operator *(Vector3S a, f32 d) => new Vector3S(a.x * d, a.y * d, a.z * d);
+        public static Vector3S operator /(Vector3S a, f32 d) => new Vector3S(a.x / d, a.y / d, a.z / d);
+        public static Vector3S operator *(f32 d, Vector3S a) => new Vector3S(a.x * d, a.y * d, a.z * d);
 
         public static readonly Vector3S zero = new Vector3S(0f, 0f, 0f);
         public static readonly Vector3S one = new Vector3S(1f, 1f, 1f);
@@ -52,24 +51,24 @@ namespace stupid.Maths
         public static readonly Vector3S back = new Vector3S(0f, 0f, -1f);
 
         public override string ToString() => $"({x}, {y}, {z})";
-        public static sfloat Dot(Vector3S a, Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
+        public static f32 Dot(Vector3S a, Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
         public static Vector3S Cross(Vector3S a, Vector3S b) => new Vector3S(
             a.y * b.z - a.z * b.y,
             a.z * b.x - a.x * b.z,
             a.x * b.y - a.y * b.x
         );
 
-        public sfloat Magnitude() => libm.sqrtf(x * x + y * y + z * z);
+        public f32 Magnitude() => MathS.Sqrt(x * x + y * y + z * z);
 
-        public sfloat MagnitudeSquared() => x * x + y * y + z * z;
+        public f32 MagnitudeSquared() => x * x + y * y + z * z;
 
-        public static sfloat Distance(Vector3S a, Vector3S b) => (a - b).Magnitude();
-        public static sfloat DistanceSquared(Vector3S a, Vector3S b) => (a - b).MagnitudeSquared();
+        public static f32 Distance(Vector3S a, Vector3S b) => (a - b).Magnitude();
+        public static f32 DistanceSquared(Vector3S a, Vector3S b) => (a - b).MagnitudeSquared();
 
         public Vector3S Normalize()
         {
             var mag = Magnitude();
-            if (mag > sfloat.zero)
+            if (mag > f32.zero)
                 return this / mag;
             return zero;
         }

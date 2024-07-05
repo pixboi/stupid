@@ -2,34 +2,34 @@
 using System.Collections.Generic;
 using stupid.Maths;
 using stupid.Colliders;
-using SoftFloat;
 
 namespace stupid.Collections
 {
     public class DumbGrid<T>
     {
-        public T[] Contents { get; private set; }
-
+        public T[] Contents;
         public int Width { get; private set; }
         public int Height { get; private set; }
         public int Depth { get; private set; }
-        public sfloat CellSize { get; private set; }
+        public f32 CellSize { get; private set; }
+        public f32 HalfSize { get; private set; }
 
-        public DumbGrid(int width, int height, int depth, sfloat cellSize)
+        public DumbGrid(int width, int height, int depth, f32 cellSize)
         {
             Width = width;
             Height = height;
             Depth = depth;
             CellSize = cellSize;
             Contents = new T[width * height * depth];
+
+            HalfSize = cellSize * f32.half;
         }
 
         public void Add(Vector3S position, T value)
         {
-            int i = (int)(position.x / CellSize);
-            int j = (int)(position.y / CellSize);
-            int k = (int)(position.z / CellSize);
-
+            int i = (int)MathS.Floor((position.x + HalfSize) / CellSize);
+            int j = (int)MathS.Floor((position.y + HalfSize) / CellSize);
+            int k = (int)MathS.Floor((position.z + HalfSize) / CellSize);
             if (IsValidIndex(i, j, k))
             {
                 this[i, j, k] = value;
@@ -38,13 +38,26 @@ namespace stupid.Collections
 
         public void Add(SBounds bounds, T value)
         {
-            int minI = (int)libm.floorf(bounds.min.x / CellSize);
-            int minJ = (int)libm.floorf(bounds.min.y / CellSize);
-            int minK = (int)libm.floorf(bounds.min.z / CellSize);
-            int maxI = (int)libm.ceilf(bounds.max.x / CellSize);
-            int maxJ = (int)libm.ceilf(bounds.max.y / CellSize);
-            int maxK = (int)libm.ceilf(bounds.max.z / CellSize);
+            // Precompute the division by CellSize
+            f32 invCellSize = (f32)1.0f / CellSize;
 
+            // Precompute bounds adjusted for cell center
+            f32 adjustedMinX = bounds.min.x + HalfSize;
+            f32 adjustedMinY = bounds.min.y + HalfSize;
+            f32 adjustedMinZ = bounds.min.z + HalfSize;
+            f32 adjustedMaxX = bounds.max.x + HalfSize;
+            f32 adjustedMaxY = bounds.max.y + HalfSize;
+            f32 adjustedMaxZ = bounds.max.z + HalfSize;
+
+            // Calculate the minimum and maximum indices for the bounds
+            int minI = (int)MathS.Floor(adjustedMinX * invCellSize);
+            int minJ = (int)MathS.Floor(adjustedMinY * invCellSize);
+            int minK = (int)MathS.Floor(adjustedMinZ * invCellSize);
+            int maxI = (int)MathS.Floor(adjustedMaxX * invCellSize);
+            int maxJ = (int)MathS.Floor(adjustedMaxY * invCellSize);
+            int maxK = (int)MathS.Floor(adjustedMaxZ * invCellSize);
+
+            // Add the value to all cells covered by the bounds
             for (int i = minI; i <= maxI; i++)
             {
                 for (int j = minJ; j <= maxJ; j++)
@@ -59,6 +72,7 @@ namespace stupid.Collections
                 }
             }
         }
+
 
         private bool IsValidIndex(int i, int j, int k)
         {
@@ -82,9 +96,9 @@ namespace stupid.Collections
             int k = index % Depth;
 
             // Scale up the indices to account for the cell size
-            i = (int)((sfloat)i * CellSize);
-            j = (int)((sfloat)j * CellSize);
-            k = (int)((sfloat)k * CellSize);
+            i = (int)((f32)i * CellSize);
+            j = (int)((f32)j * CellSize);
+            k = (int)((f32)k * CellSize);
 
             return (i, j, k);
         }
@@ -123,6 +137,11 @@ namespace stupid.Collections
         public void Clear()
         {
             Array.Clear(Contents, 0, Contents.Length);
+        }
+
+        public void Invalidate(T v)
+        {
+            for (int i = 0; i < Contents.Length; i++) Contents[i] = v;
         }
     }
 }

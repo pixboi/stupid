@@ -1,4 +1,4 @@
-using SoftFloat;
+
 using stupid.Maths;
 
 namespace stupid.Colliders
@@ -35,7 +35,7 @@ namespace stupid.Colliders
 
         public void Union(SBounds other) => this = Union(this, other);
 
-        public Vector3S Center => (min + max) * (sfloat)0.5f;
+        public Vector3S Center => (min + max) * f32.half;
         public Vector3S Size => max - min;
 
         public int MaximumExtent()

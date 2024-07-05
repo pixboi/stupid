@@ -1,17 +1,15 @@
-﻿using SoftFloat;
-
-namespace stupid.Maths
+﻿namespace stupid.Maths
 {
     public struct SQuaternion
     {
-        public sfloat x;
-        public sfloat y;
-        public sfloat z;
-        public sfloat w;
+        public f32 x;
+        public f32 y;
+        public f32 z;
+        public f32 w;
 
-        public static readonly SQuaternion Identity = new SQuaternion(sfloat.zero, sfloat.zero, sfloat.zero, sfloat.one);
+        public static readonly SQuaternion Identity = new SQuaternion(f32.zero, f32.zero, f32.zero, f32.one);
 
-        public SQuaternion(sfloat x, sfloat y, sfloat z, sfloat w)
+        public SQuaternion(f32 x, f32 y, f32 z, f32 w)
         {
             this.x = x;
             this.y = y;
@@ -21,32 +19,32 @@ namespace stupid.Maths
 
         public SQuaternion(float x, float y, float z, float w)
         {
-            this.x = (sfloat)x;
-            this.y = (sfloat)y;
-            this.z = (sfloat)z;
-            this.w = (sfloat)w;
+            this.x = f32.FromFloat(x);
+            this.y = f32.FromFloat(y);
+            this.z = f32.FromFloat(z);
+            this.w = f32.FromFloat(w);
         }
 
-        public static SQuaternion FromAxisAngle(Vector3S axis, sfloat angle)
+        public static SQuaternion FromAxisAngle(Vector3S axis, f32 angle)
         {
-            sfloat halfAngle = angle * (sfloat)0.5f;
-            sfloat sinHalfAngle = libm.sinf(halfAngle);
+            f32 halfAngle = angle * (f32)0.5f;
+            f32 sinHalfAngle = MathS.Sin(halfAngle);
             return new SQuaternion(
                 axis.x * sinHalfAngle,
                 axis.y * sinHalfAngle,
                 axis.z * sinHalfAngle,
-                libm.cosf(halfAngle)
+                MathS.Cos(halfAngle)
             );
         }
 
         public static SQuaternion FromEulerAngles(Vector3S eulerAngles)
         {
-            sfloat c1 = libm.cosf(eulerAngles.y * (sfloat)0.5f);
-            sfloat c2 = libm.cosf(eulerAngles.z * (sfloat)0.5f);
-            sfloat c3 = libm.cosf(eulerAngles.x * (sfloat)0.5f);
-            sfloat s1 = libm.sinf(eulerAngles.y * (sfloat)0.5f);
-            sfloat s2 = libm.sinf(eulerAngles.z * (sfloat)0.5f);
-            sfloat s3 = libm.sinf(eulerAngles.x * (sfloat)0.5f);
+            f32 c1 = MathS.Cos(eulerAngles.y * f32.half);
+            f32 c2 = MathS.Cos(eulerAngles.z * f32.half);
+            f32 c3 = MathS.Cos(eulerAngles.x * f32.half);
+            f32 s1 = MathS.Sin(eulerAngles.y * f32.half);
+            f32 s2 = MathS.Sin(eulerAngles.z * f32.half);
+            f32 s3 = MathS.Sin(eulerAngles.x * f32.half);
 
             return new SQuaternion(
                 s1 * c2 * c3 + c1 * s2 * s3,
@@ -69,24 +67,24 @@ namespace stupid.Maths
         public static Vector3S operator *(SQuaternion q, Vector3S v)
         {
             Vector3S u = new Vector3S(q.x, q.y, q.z);
-            sfloat s = q.w;
+            f32 s = q.w;
 
-            return (sfloat)2.0f * Vector3S.Dot(u, v) * u
+            return (f32)2.0f * Vector3S.Dot(u, v) * u
                  + (s * s - Vector3S.Dot(u, u)) * v
-                 + (sfloat)2.0f * s * Vector3S.Cross(u, v);
+                 + (f32)2.0f * s * Vector3S.Cross(u, v);
         }
 
-        public sfloat Magnitude()
+        public f32 Magnitude()
         {
-            return libm.sqrtf(x * x + y * y + z * z + w * w);
+            return MathS.Sqrt(x * x + y * y + z * z + w * w);
         }
 
         public SQuaternion Normalize()
         {
-            sfloat magnitude = Magnitude();
-            if (magnitude > sfloat.Epsilon)
+            f32 magnitude = Magnitude();
+            if (magnitude > f32.FromFloat(1e-6f))
             {
-                sfloat invMag = sfloat.one / magnitude;
+                f32 invMag = f32.one / magnitude;
                 return new SQuaternion(x * invMag, y * invMag, z * invMag, w * invMag);
             }
             return Identity;

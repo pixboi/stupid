@@ -5,8 +5,8 @@ namespace stupid.Colliders
 {
     public class SSphereCollider : BaseCollider
     {
-        public sfloat Radius { get; private set; }
-        public SSphereCollider(sfloat radius)
+        public f32 Radius { get; private set; }
+        public SSphereCollider(f32 radius)
         {
             Radius = radius;
         }
@@ -40,8 +40,8 @@ namespace stupid.Colliders
         {
             contact = new Contact();
 
-            sfloat distance = Vector3S.Distance(positionA, positionB);
-            sfloat combinedRadius = Radius + otherSphere.Radius;
+            f32 distance = Vector3S.Distance(positionA, positionB);
+            f32 combinedRadius = Radius + otherSphere.Radius;
 
             if (distance <= combinedRadius)
             {
