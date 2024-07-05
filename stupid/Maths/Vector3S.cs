@@ -5,7 +5,6 @@ namespace stupid.Maths
     public struct Vector3S : IEquatable<Vector3S>
     {
         public f32 x, y, z;
-
         public Vector3S(f32 x, f32 y, f32 z)
         {
             this.x = x;
@@ -30,8 +29,8 @@ namespace stupid.Maths
         public Vector3S(float x)
         {
             this.x = f32.FromFloat(x);
-            this.y = f32.FromFloat(x);
-            this.z = f32.FromFloat(x);
+            this.y = this.x;
+            this.z = this.x;
         }
 
         public static Vector3S operator +(Vector3S a, Vector3S b) => new Vector3S(a.x + b.x, a.y + b.y, a.z + b.z);
@@ -58,9 +57,16 @@ namespace stupid.Maths
             a.x * b.y - a.y * b.x
         );
 
-        public f32 Magnitude() => MathS.Sqrt(x * x + y * y + z * z);
+        public f32 Magnitude()
+        {
+            f32 magnitudeSquared = MagnitudeSquared();
+            return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
+        }
 
-        public f32 MagnitudeSquared() => x * x + y * y + z * z;
+        public f32 MagnitudeSquared()
+        {
+            return ((x * x) + (y * y) + (z * z));
+        }
 
         public static f32 Distance(Vector3S a, Vector3S b) => (a - b).Magnitude();
         public static f32 DistanceSquared(Vector3S a, Vector3S b) => (a - b).MagnitudeSquared();
@@ -89,6 +95,12 @@ namespace stupid.Maths
                 MathS.Max(a.y, b.y),
                 MathS.Max(a.z, b.z)
             );
+        }
+
+        public Vector3S Clamp(f32 min, f32 max) => Vector3S.Clamp(this, min, max);
+        public static Vector3S Clamp(Vector3S v, f32 min, f32 max)
+        {
+            return new Vector3S(MathS.Clamp(v.x, min, max), MathS.Clamp(v.y, min, max), MathS.Clamp(v.z, min, max));
         }
 
         public bool Equals(Vector3S other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);

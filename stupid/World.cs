@@ -1,6 +1,5 @@
-﻿using System;
+﻿
 using System.Collections.Generic;
-using SoftFloat;
 using stupid.Colliders;
 using stupid.Maths;
 using stupid.Collections;
@@ -20,6 +19,7 @@ namespace stupid
         private readonly bool multiThread;
         private readonly Vector3S[] velocityBuffer;
         private readonly Vector3S[] angularVelocityBuffer;
+        private readonly Vector3S[] positionBuffer;
 
         public World(SBounds worldBounds, SortAndSweepBroadphase broadphase, Vector3S gravity, int gridSize = 4, int gridDim = 32, int startSize = 1000, bool multiThread = false)
         {
@@ -32,7 +32,8 @@ namespace stupid
             Broadphase = broadphase;
             velocityBuffer = new Vector3S[startSize * 2];
             angularVelocityBuffer = new Vector3S[startSize * 2];
-            DumbGrid = new DumbGrid<int>(gridDim, gridDim, gridDim, (sfloat)gridSize);
+            positionBuffer = new Vector3S[startSize * 2];
+            DumbGrid = new DumbGrid<int>(gridDim, gridDim, gridDim, (f32)gridSize);
         }
 
         public SRigidbody AddRigidbody(Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
@@ -42,7 +43,7 @@ namespace stupid
             return rb;
         }
 
-        public void Simulate(sfloat deltaTime)
+        public void Simulate(f32 deltaTime)
         {
             Integrate(deltaTime);
 
@@ -61,7 +62,7 @@ namespace stupid
             SimulationFrame++;
         }
 
-        private void Integrate(sfloat deltaTime)
+        private void Integrate(f32 deltaTime)
         {
             foreach (var rb in Rigidbodies)
             {
@@ -75,15 +76,17 @@ namespace stupid
                 rb.position += rb.velocity * deltaTime;
 
                 // Angular integration
-                if (rb.angularVelocity.Magnitude() > sfloat.Epsilon)
+                if (rb.angularVelocity.MagnitudeSquared() > f32.zero)
                 {
-                    Vector3S angularVelocityDelta = rb.angularVelocity * deltaTime;
-                    SQuaternion deltaRotation = SQuaternion.FromAxisAngle(angularVelocityDelta.Normalize(), angularVelocityDelta.Magnitude());
-                    rb.rotation = (deltaRotation * rb.rotation).Normalize();
-                    rb.angularVelocity *= (sfloat)0.99f;
+                    Vector3S angDelta = rb.angularVelocity * deltaTime;
+                    SQuaternion deltaRot = SQuaternion.FromAxisAngle(angDelta.Normalize(), angDelta.Magnitude());
+
+                    rb.rotation = (rb.rotation * deltaRot).Normalize();
+                    rb.angularVelocity *= (f32)0.95f;
                 }
             }
         }
+
 
         private void NaiveNarrowPhase(HashSet<BodyPair> pairs)
         {
@@ -103,58 +106,54 @@ namespace stupid
 
         private void ResolveCollision(SRigidbody a, SRigidbody b, Contact contact)
         {
-            Vector3S ra = contact.point - a.position;
-            Vector3S rb = contact.point - b.position;
+            // Calculate relative velocity at contact point
+            Vector3S relativeVelocity = b.velocity - a.velocity;
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocity, contact.normal);
 
-            Vector3S raCrossN = Vector3S.Cross(ra, contact.normal);
-            Vector3S rbCrossN = Vector3S.Cross(rb, contact.normal);
+            // Do not resolve if velocities are separating
+            if (velocityAlongNormal > f32.zero) return;
 
-            Vector3S angularVelocityA = a.angularVelocity;
-            Vector3S angularVelocityB = b.angularVelocity;
+            // Restitution (coefficient of restitution)
+            f32 e = f32.half;
 
-            Vector3S velocityAtPointA = a.velocity + Vector3S.Cross(angularVelocityA, ra);
-            Vector3S velocityAtPointB = b.velocity + Vector3S.Cross(angularVelocityB, rb);
+            // Calculate inverse masses
+            f32 invMassA = f32.one / a.mass;
+            f32 invMassB = f32.one / b.mass;
 
-            Vector3S relativeVelocity = velocityAtPointB - velocityAtPointA;
-            sfloat velocityAlongNormal = Vector3S.Dot(relativeVelocity, contact.normal);
+            // Calculate the impulse scalar
+            f32 j = -(f32.one + e) * velocityAlongNormal / (invMassA + invMassB);
 
-            if (velocityAlongNormal > sfloat.zero) return;
-
-            sfloat e = (sfloat)0.5f;
-            sfloat invMassA = sfloat.one / a.mass;
-            sfloat invMassB = sfloat.one / b.mass;
-
-            Matrix3S inverseInertiaTensorA = a.GetInverseInertiaTensorWorld();
-            Matrix3S inverseInertiaTensorB = b.GetInverseInertiaTensorWorld();
-
-            sfloat raCrossNDot = Vector3S.Dot(raCrossN, inverseInertiaTensorA * raCrossN);
-            sfloat rbCrossNDot = Vector3S.Dot(rbCrossN, inverseInertiaTensorB * rbCrossN);
-
-            sfloat denom = invMassA + invMassB + raCrossNDot + rbCrossNDot;
-
-            sfloat j = -(sfloat.one + e) * velocityAlongNormal / denom;
-
+            // Apply linear impulse
             Vector3S impulse = j * contact.normal;
-
-            // Buffer the linear velocity changes
             velocityBuffer[a.index] -= invMassA * impulse;
             velocityBuffer[b.index] += invMassB * impulse;
 
-            // Buffer the angular velocity changes
+            // Positional correction to prevent sinking
+            f32 percent = (f32)0.2f; // Percentage of penetration to correct
+            f32 slop = (f32)0.01f; // Allowable penetration slop
+            Vector3S correction = (MathS.Max(contact.penetrationDepth - slop, f32.zero) / (invMassA + invMassB)) * percent * contact.normal;
+            positionBuffer[a.index] -= invMassA * correction;
+            positionBuffer[b.index] += invMassB * correction;
+
+            // Angular velocity handling
+            Vector3S ra = contact.point - a.position;
+            Vector3S rb = contact.point - b.position;
+            Matrix3S inverseInertiaTensorA = a.GetInverseInertiaTensorWorld();
+            Matrix3S inverseInertiaTensorB = b.GetInverseInertiaTensorWorld();
+
+            // Update angular velocities
             angularVelocityBuffer[a.index] -= inverseInertiaTensorA * Vector3S.Cross(ra, impulse);
             angularVelocityBuffer[b.index] += inverseInertiaTensorB * Vector3S.Cross(rb, impulse);
 
-            // Friction impulse
-            Vector3S tangent = (relativeVelocity - (velocityAlongNormal * contact.normal)).Normalize();
-            sfloat jt = -Vector3S.Dot(relativeVelocity, tangent) / denom;
-
-            sfloat mu = (sfloat)0.5f;
+            // Calculate friction impulse
+            Vector3S tangent = (relativeVelocity - velocityAlongNormal * contact.normal).Normalize();
+            f32 jt = -Vector3S.Dot(relativeVelocity, tangent) / (invMassA + invMassB);
+            f32 mu = f32.half;
             Vector3S frictionImpulse = MathS.Abs(jt) < j * mu ? jt * tangent : -j * mu * tangent;
 
-            // Buffer the friction impulse changes
+            // Apply friction impulse
             velocityBuffer[a.index] -= invMassA * frictionImpulse;
             velocityBuffer[b.index] += invMassB * frictionImpulse;
-
             angularVelocityBuffer[a.index] -= inverseInertiaTensorA * Vector3S.Cross(ra, frictionImpulse);
             angularVelocityBuffer[b.index] += inverseInertiaTensorB * Vector3S.Cross(rb, frictionImpulse);
         }
@@ -168,14 +167,18 @@ namespace stupid
 
                 a.velocity += velocityBuffer[a.index];
                 a.angularVelocity += angularVelocityBuffer[a.index];
+                a.position += positionBuffer[a.index];
 
                 b.velocity += velocityBuffer[b.index];
                 b.angularVelocity += angularVelocityBuffer[b.index];
+                b.position += positionBuffer[b.index];
 
                 velocityBuffer[a.index] = Vector3S.zero;
+                positionBuffer[a.index] = Vector3S.zero;
                 angularVelocityBuffer[a.index] = Vector3S.zero;
 
                 velocityBuffer[b.index] = Vector3S.zero;
+                positionBuffer[b.index] = Vector3S.zero;
                 angularVelocityBuffer[b.index] = Vector3S.zero;
             }
         }
@@ -194,16 +197,16 @@ namespace stupid
             }
         }
 
-        private void CheckAxisCollision(ref sfloat position, ref sfloat velocity, sfloat minBound, sfloat maxBound, sfloat worldMin, sfloat worldMax, sfloat radius)
+        private void CheckAxisCollision(ref f32 position, ref f32 velocity, f32 minBound, f32 maxBound, f32 worldMin, f32 worldMax, f32 radius)
         {
             if (minBound < worldMin)
             {
-                velocity *= sfloat.MinusOne * (sfloat)0.5f;
+                velocity *= f32.negativeOne * (f32)0.5f;
                 position = worldMin + radius;
             }
             else if (maxBound > worldMax)
             {
-                velocity *= sfloat.MinusOne * (sfloat)0.5f;
+                velocity *= f32.negativeOne * (f32)0.5f;
                 position = worldMax - radius;
             }
         }

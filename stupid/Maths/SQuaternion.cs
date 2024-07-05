@@ -1,4 +1,6 @@
-﻿namespace stupid.Maths
+﻿using System.Numerics;
+
+namespace stupid.Maths
 {
     public struct SQuaternion
     {
@@ -15,6 +17,7 @@
             this.y = y;
             this.z = z;
             this.w = w;
+            NormalizeToUnit();
         }
 
         public SQuaternion(float x, float y, float z, float w)
@@ -23,11 +26,12 @@
             this.y = f32.FromFloat(y);
             this.z = f32.FromFloat(z);
             this.w = f32.FromFloat(w);
+            NormalizeToUnit();
         }
 
         public static SQuaternion FromAxisAngle(Vector3S axis, f32 angle)
         {
-            f32 halfAngle = angle * (f32)0.5f;
+            f32 halfAngle = angle * f32.half;
             f32 sinHalfAngle = MathS.Sin(halfAngle);
             return new SQuaternion(
                 axis.x * sinHalfAngle,
@@ -69,25 +73,42 @@
             Vector3S u = new Vector3S(q.x, q.y, q.z);
             f32 s = q.w;
 
-            return (f32)2.0f * Vector3S.Dot(u, v) * u
+            return (f32)2 * Vector3S.Dot(u, v) * u
                  + (s * s - Vector3S.Dot(u, u)) * v
-                 + (f32)2.0f * s * Vector3S.Cross(u, v);
+                 + (f32)2 * s * Vector3S.Cross(u, v);
+        }
+
+        public static SQuaternion operator /(SQuaternion q, f32 scalar)
+        {
+            return new SQuaternion(q.x / scalar, q.y / scalar, q.z / scalar, q.w / scalar);
+        }
+
+        public f32 MagnitudeSquared()
+        {
+            return (x * x) + (y * y) + (z * z) + (w * w);
         }
 
         public f32 Magnitude()
         {
-            return MathS.Sqrt(x * x + y * y + z * z + w * w);
+            f32 magnitudeSquared = MagnitudeSquared();
+            return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
         public SQuaternion Normalize()
         {
             f32 magnitude = Magnitude();
-            if (magnitude > f32.FromFloat(1e-6f))
+            return magnitude > f32.zero ? this / magnitude : Identity;
+        }
+
+        public void NormalizeToUnit()
+        {
+            // Ensure the sum of the squares of the components is 1
+            f32 sumOfSquares = x * x + y * y + z * z + w * w;
+            if (sumOfSquares != f32.one)
             {
-                f32 invMag = f32.one / magnitude;
-                return new SQuaternion(x * invMag, y * invMag, z * invMag, w * invMag);
+                f32 error = f32.one - sumOfSquares;
+                w += error / (f32)4.0f; // Adjust w to make the quaternion unit length
             }
-            return Identity;
         }
 
         public SQuaternion Conjugate()

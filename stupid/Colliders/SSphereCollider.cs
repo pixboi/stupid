@@ -1,4 +1,3 @@
-using SoftFloat;
 using stupid.Maths;
 
 namespace stupid.Colliders

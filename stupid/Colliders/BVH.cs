@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using SoftFloat;
 using stupid.Maths;
 
 namespace stupid.Colliders
@@ -99,7 +98,7 @@ namespace stupid.Colliders
 
         private int Partition(int[] indices, int left, int right, int axis)
         {
-            sfloat pivot = GetAxisValue(_rigidbodies[indices[right]].collider.GetBounds().Center, axis);
+            f32 pivot = GetAxisValue(_rigidbodies[indices[right]].collider.GetBounds().Center, axis);
             int i = left;
             for (int j = left; j < right; j++)
             {
@@ -120,7 +119,7 @@ namespace stupid.Colliders
             indices[j] = temp;
         }
 
-        private sfloat GetAxisValue(Vector3S vector, int axis)
+        private f32 GetAxisValue(Vector3S vector, int axis)
         {
             return axis switch
             {

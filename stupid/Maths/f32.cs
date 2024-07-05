@@ -4,7 +4,7 @@ namespace stupid.Maths
 {
     public static class f32helpers
     {
-        public static int ToRaw(this f32 value)
+        public static long ToRaw(this f32 value)
         {
             return value._value;
         }
@@ -12,35 +12,35 @@ namespace stupid.Maths
 
     public struct f32 : IEquatable<f32>, IComparable<f32>
     {
-        public readonly int _value;
+        public readonly long _value;
         private const int FractionalBits = 16;
-        private const int One = 1 << FractionalBits;
+        private const long One = 1L << FractionalBits;
         public static f32 zero => FromRaw(0);
         public static f32 one => FromRaw(One);
-        public static f32 two => FromRaw(2 << FractionalBits);
+        public static f32 two => FromRaw(2L << FractionalBits);
         public static f32 half => FromRaw(One >> 1);
         public static f32 negativeOne => FromRaw(-One);
-        public static f32 negativeTwo => FromRaw(-(2 << FractionalBits));
+        public static f32 negativeTwo => FromRaw(-(2L << FractionalBits));
         public static f32 pi => FromFloat(3.14159265358979323846f);
         public static f32 twoPi => FromFloat(6.28318530717958647692f);
         public static f32 halfPi => FromFloat(1.57079632679489661923f);
         public static f32 epsilon => FromRaw(1); // Smallest possible value greater than zero
-        public static f32 maxValue => FromRaw(int.MaxValue);
-        public static f32 minValue => FromRaw(int.MinValue);
+        public static f32 maxValue => FromRaw(long.MaxValue);
+        public static f32 minValue => FromRaw(long.MinValue);
 
-        private f32(int value)
+        private f32(long value)
         {
             _value = value;
         }
 
-        public static f32 FromRaw(int rawValue)
+        public static f32 FromRaw(long rawValue)
         {
             return new f32(rawValue);
         }
 
         public static f32 FromFloat(float value)
         {
-            return new f32((int)(value * One));
+            return new f32((long)(value * One));
         }
 
         public float ToFloat()
@@ -60,14 +60,19 @@ namespace stupid.Maths
 
         public static f32 operator *(f32 a, f32 b)
         {
-            long result = (long)a._value * b._value;
-            return new f32((int)(result >> FractionalBits));
+            long result = (a._value * b._value) >> FractionalBits;
+            return new f32(result);
         }
 
         public static f32 operator /(f32 a, f32 b)
         {
-            long dividend = ((long)a._value << FractionalBits);
-            return new f32((int)(dividend / b._value));
+            if (b._value == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero.");
+            }
+            long dividend = (a._value << FractionalBits);
+            long result = dividend / b._value;
+            return new f32(result);
         }
 
         public static f32 operator -(f32 value)
