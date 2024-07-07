@@ -15,7 +15,7 @@ namespace stupid.Maths
         public static f32 Floor(f32 value)
         {
             long raw = value.ToRaw();
-            long fractionalPart = raw & ((1L << 16) - 1);
+            long fractionalPart = raw & ((1L << f32.FractionalBits) - 1);
             return f32.FromRaw(raw - fractionalPart);
         }
 
@@ -31,11 +31,11 @@ namespace stupid.Maths
             f32 term = value;
             f32 square = value * value;
 
-            term *= -square / f32.FromRaw(6L << 16);  // -value^3 / 3!
+            term *= -square / f32.FromRaw(6L << f32.FractionalBits);  // -value^3 / 3!
             result += term;
-            term *= -square / f32.FromRaw(20L << 16); // +value^5 / 5!
+            term *= -square / f32.FromRaw(20L << f32.FractionalBits); // +value^5 / 5!
             result += term;
-            term *= -square / f32.FromRaw(42L << 16); // -value^7 / 7!
+            term *= -square / f32.FromRaw(42L << f32.FractionalBits); // -value^7 / 7!
             result += term;
 
             return result;
@@ -48,11 +48,11 @@ namespace stupid.Maths
             f32 term = f32.one;
             f32 square = value * value;
 
-            term *= -square / f32.FromRaw(2L << 16);  // -value^2 / 2!
+            term *= -square / f32.FromRaw(2L << f32.FractionalBits);  // -value^2 / 2!
             result += term;
-            term *= -square / f32.FromRaw(24L << 16); // +value^4 / 4!
+            term *= -square / f32.FromRaw(24L << f32.FractionalBits); // +value^4 / 4!
             result += term;
-            term *= -square / f32.FromRaw(120L << 16); // -value^6 / 6!
+            term *= -square / f32.FromRaw(120L << f32.FractionalBits); // -value^6 / 6!
             result += term;
 
             return result;
@@ -60,7 +60,7 @@ namespace stupid.Maths
 
         public static f32 Sqrt(f32 value)
         {
-            if (value < f32.zero) throw new ArgumentOutOfRangeException("Cannot compute square root of a negative value.");
+            if (value < f32.zero) throw new ArgumentOutOfRangeException(nameof(value), "Cannot compute square root of a negative value.");
             if (value == f32.zero) return f32.zero;
 
             f32 x = value > f32.one ? value : f32.one; // Initial guess
@@ -74,5 +74,43 @@ namespace stupid.Maths
             return x;
         }
 
+        public static f32 Exp(f32 value)
+        {
+            f32 result = f32.one;
+            f32 term = f32.one;
+            const int iterations = 8; // Number of iterations can be adjusted
+
+            for (int i = 1; i <= iterations; i++)
+            {
+                term *= value / f32.FromRaw(i << f32.FractionalBits); // value^i / i!
+                result += term;
+            }
+
+            return result;
+        }
+
+        public static f32 Log(f32 value)
+        {
+            if (value <= f32.zero) throw new ArgumentOutOfRangeException(nameof(value), "Logarithm of non-positive value is undefined.");
+
+            f32 result = f32.zero;
+            f32 x = (value - f32.one) / (value + f32.one);
+            f32 term = x;
+            f32 xSquared = x * x;
+            const int iterations = 8; // Number of iterations can be adjusted
+
+            for (int i = 1; i <= iterations; i += 2)
+            {
+                result += term / f32.FromRaw(i << f32.FractionalBits);
+                term *= xSquared;
+            }
+
+            return result * f32.two;
+        }
+
+        public static f32 Pow(f32 baseValue, f32 exponent)
+        {
+            return Exp(exponent * Log(baseValue));
+        }
     }
 }

@@ -47,12 +47,13 @@ namespace stupid
         {
             Integrate(deltaTime);
 
-            //DumbGrid.Invalidate(-1);
+            DumbGrid.Invalidate(-1);
 
             foreach (var body in Rigidbodies)
             {
+                body.CalculateInverseInertiaTensor();
                 var bounds = body.collider.CalculateBounds(body.position);
-                // DumbGrid.Add(bounds, body.index);
+                DumbGrid.Add(bounds, body.index);
             }
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);
@@ -138,8 +139,8 @@ namespace stupid
             // Angular velocity handling
             Vector3S ra = contact.point - a.position;
             Vector3S rb = contact.point - b.position;
-            Matrix3S inverseInertiaTensorA = a.GetInverseInertiaTensorWorld();
-            Matrix3S inverseInertiaTensorB = b.GetInverseInertiaTensorWorld();
+            Matrix3S inverseInertiaTensorA = a.inertiaTensorInverse;
+            Matrix3S inverseInertiaTensorB = b.inertiaTensorInverse;
 
             // Update angular velocities
             angularVelocityBuffer[a.index] -= inverseInertiaTensorA * Vector3S.Cross(ra, impulse);

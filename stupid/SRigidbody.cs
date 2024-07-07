@@ -13,6 +13,7 @@ namespace stupid
         public Vector3S position;
         public SQuaternion rotation;
         public Matrix3S inertiaTensor;
+        public Matrix3S inertiaTensorInverse;
 
         public Vector3S velocity;
         public Vector3S angularVelocity;
@@ -65,6 +66,11 @@ namespace stupid
             Matrix3S rotationMatrix = Matrix3S.Rotate(rotation);
             Matrix3S inverseInertiaTensorLocal = inertiaTensor.Inverse();
             return rotationMatrix * inverseInertiaTensorLocal * rotationMatrix.Transpose();
+        }
+
+        public void CalculateInverseInertiaTensor()
+        {
+            inertiaTensorInverse = GetInverseInertiaTensorWorld();
         }
     }
 }

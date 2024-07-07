@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using stupid.Maths;
 using stupid.Colliders;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Collections
 {
     public class DumbGrid<T>
     {
-        public T[] Contents;
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-        public int Depth { get; private set; }
-        public f32 CellSize { get; private set; }
-        public f32 HalfSize { get; private set; }
-
+        public readonly T[] Contents;
+        public readonly int Width;
+        public readonly int Height;
+        public readonly int Depth;
+        public readonly f32 CellSize;
+        public readonly f32 HalfSize;
+        public readonly f32 _InvCellSize;
         public DumbGrid(int width, int height, int depth, f32 cellSize)
         {
             Width = width;
@@ -23,6 +24,7 @@ namespace stupid.Collections
             Contents = new T[width * height * depth];
 
             HalfSize = cellSize * f32.half;
+            _InvCellSize = f32.one / this.CellSize;
         }
 
         public void Add(Vector3S position, T value)
@@ -36,11 +38,9 @@ namespace stupid.Collections
             }
         }
 
+
         public void Add(SBounds bounds, T value)
         {
-            // Precompute the division by CellSize
-            f32 invCellSize = (f32)1.0f / CellSize;
-
             // Precompute bounds adjusted for cell center
             f32 adjustedMinX = bounds.min.x + HalfSize;
             f32 adjustedMinY = bounds.min.y + HalfSize;
@@ -50,12 +50,12 @@ namespace stupid.Collections
             f32 adjustedMaxZ = bounds.max.z + HalfSize;
 
             // Calculate the minimum and maximum indices for the bounds
-            int minI = (int)MathS.Floor(adjustedMinX * invCellSize);
-            int minJ = (int)MathS.Floor(adjustedMinY * invCellSize);
-            int minK = (int)MathS.Floor(adjustedMinZ * invCellSize);
-            int maxI = (int)MathS.Floor(adjustedMaxX * invCellSize);
-            int maxJ = (int)MathS.Floor(adjustedMaxY * invCellSize);
-            int maxK = (int)MathS.Floor(adjustedMaxZ * invCellSize);
+            int minI = (int)MathS.Floor(adjustedMinX * _InvCellSize);
+            int minJ = (int)MathS.Floor(adjustedMinY * _InvCellSize);
+            int minK = (int)MathS.Floor(adjustedMinZ * _InvCellSize);
+            int maxI = (int)MathS.Floor(adjustedMaxX * _InvCellSize);
+            int maxJ = (int)MathS.Floor(adjustedMaxY * _InvCellSize);
+            int maxK = (int)MathS.Floor(adjustedMaxZ * _InvCellSize);
 
             // Add the value to all cells covered by the bounds
             for (int i = minI; i <= maxI; i++)
@@ -73,12 +73,13 @@ namespace stupid.Collections
             }
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsValidIndex(int i, int j, int k)
         {
             return i >= 0 && i < Width && j >= 0 && j < Height && k >= 0 && k < Depth;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetIndex(int i, int j, int k)
         {
             if (!IsValidIndex(i, j, k))
@@ -89,6 +90,7 @@ namespace stupid.Collections
             return (i * Height * Depth) + (j * Depth) + k;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (int i, int j, int k) ReverseIndex(int index)
         {
             int i = index / (Height * Depth);
