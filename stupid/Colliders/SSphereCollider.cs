@@ -39,12 +39,14 @@ namespace stupid.Colliders
         {
             contact = new Contact();
 
-            f32 distance = Vector3S.Distance(positionA, positionB);
+            f32 squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
             f32 combinedRadius = Radius + otherSphere.Radius;
+            f32 squaredCombinedRadius = combinedRadius * combinedRadius;
 
-            if (distance <= combinedRadius)
+            if (squaredDistance <= squaredCombinedRadius)
             {
-                Vector3S direction = (positionB - positionA).Normalize();
+                Vector3S direction = (positionB - positionA).NormalizeWithMagnitude(out var distance);
+                //f32 distance = Vector3S.Distance(positionA, positionB); // We calculate the distance only when necessary
                 contact.point = positionA + direction * Radius;
                 contact.normal = direction;
                 contact.penetrationDepth = combinedRadius - distance;
@@ -53,5 +55,6 @@ namespace stupid.Colliders
 
             return false;
         }
+
     }
 }

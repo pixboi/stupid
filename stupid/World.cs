@@ -82,7 +82,7 @@ namespace stupid
                 {
                     Vector3S angDelta = rb.angularVelocity * deltaTime;
 
-                    var nrmAng = angDelta.NormaliseWithMagnitude(out var mag);
+                    var nrmAng = angDelta.NormalizeWithMagnitude(out var mag);
                     SQuaternion deltaRot = SQuaternion.FromAxisAngle(nrmAng, mag);
 
                     rb.rotation *= deltaRot;
