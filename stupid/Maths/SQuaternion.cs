@@ -89,13 +89,20 @@ namespace stupid.Maths
         public f32 Magnitude()
         {
             f32 magnitudeSquared = MagnitudeSquared();
-            return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
+            return magnitudeSquared > f32.epsilon ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
         public SQuaternion Normalize()
         {
             f32 magnitude = Magnitude();
-            return magnitude > f32.zero ? this / magnitude : Identity;
+
+            if (magnitude > f32.epsilon)
+            {
+                f32 invMagnitude = f32.one / magnitude;
+                return new SQuaternion(x * invMagnitude, y * invMagnitude, z * invMagnitude, w * invMagnitude);
+            }
+
+            return Identity;
         }
 
         public SQuaternion Conjugate()
