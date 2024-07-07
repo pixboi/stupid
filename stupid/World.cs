@@ -52,6 +52,7 @@ namespace stupid
             foreach (var body in Rigidbodies)
             {
                 body.CalculateInverseInertiaTensor();
+
                 var bounds = body.collider.CalculateBounds(body.position);
                 DumbGrid.Add(bounds, body.index);
             }
@@ -80,10 +81,12 @@ namespace stupid
                 if (rb.angularVelocity.MagnitudeSquared() > f32.zero)
                 {
                     Vector3S angDelta = rb.angularVelocity * deltaTime;
-                    SQuaternion deltaRot = SQuaternion.FromAxisAngle(angDelta.Normalize(), angDelta.Magnitude());
 
-                    rb.rotation = (rb.rotation * deltaRot).Normalize();
-                    rb.angularVelocity *= (f32)0.95f;
+                    var nrmAng = angDelta.NormaliseWithMagnitude(out var mag);
+                    SQuaternion deltaRot = SQuaternion.FromAxisAngle(nrmAng, mag);
+
+                    rb.rotation *= deltaRot;
+                    rb.angularVelocity *= (f32)0.98f;
                 }
             }
         }
@@ -102,7 +105,7 @@ namespace stupid
                 }
             }
 
-            ApplyBuffers(pairs);
+            ApplyBuffers();
         }
 
         private void ResolveCollision(SRigidbody a, SRigidbody b, Contact contact)
@@ -159,28 +162,17 @@ namespace stupid
             angularVelocityBuffer[b.index] += inverseInertiaTensorB * Vector3S.Cross(rb, frictionImpulse);
         }
 
-        private void ApplyBuffers(HashSet<BodyPair> pairs)
+        private void ApplyBuffers()
         {
-            foreach (var pair in pairs)
+            foreach (var a in Rigidbodies)
             {
-                var a = Rigidbodies[pair.aIndex];
-                var b = Rigidbodies[pair.bIndex];
-
                 a.velocity += velocityBuffer[a.index];
                 a.angularVelocity += angularVelocityBuffer[a.index];
                 a.position += positionBuffer[a.index];
 
-                b.velocity += velocityBuffer[b.index];
-                b.angularVelocity += angularVelocityBuffer[b.index];
-                b.position += positionBuffer[b.index];
-
                 velocityBuffer[a.index] = Vector3S.zero;
                 positionBuffer[a.index] = Vector3S.zero;
                 angularVelocityBuffer[a.index] = Vector3S.zero;
-
-                velocityBuffer[b.index] = Vector3S.zero;
-                positionBuffer[b.index] = Vector3S.zero;
-                angularVelocityBuffer[b.index] = Vector3S.zero;
             }
         }
 
@@ -202,12 +194,12 @@ namespace stupid
         {
             if (minBound < worldMin)
             {
-                velocity *= f32.negativeOne * (f32)0.5f;
+                velocity *= f32.negativeOne * f32.half;
                 position = worldMin + radius;
             }
             else if (maxBound > worldMax)
             {
-                velocity *= f32.negativeOne * (f32)0.5f;
+                velocity *= f32.negativeOne * f32.half;
                 position = worldMax - radius;
             }
         }

@@ -10,23 +10,23 @@ namespace stupid.Maths
         }
     }
 
-    public struct f32 : IEquatable<f32>, IComparable<f32>
+    public readonly struct f32 : IEquatable<f32>, IComparable<f32>
     {
         public readonly long _value;
         public const int FractionalBits = 16;
         private const long One = 1L << FractionalBits;
-        public static f32 zero => FromRaw(0);
-        public static f32 one => FromRaw(One);
-        public static f32 two => FromRaw(2L << FractionalBits);
-        public static f32 half => FromRaw(One >> 1);
-        public static f32 negativeOne => FromRaw(-One);
-        public static f32 negativeTwo => FromRaw(-(2L << FractionalBits));
-        public static f32 pi => FromFloat(3.14159265358979323846f);
-        public static f32 twoPi => FromFloat(6.28318530717958647692f);
-        public static f32 halfPi => FromFloat(1.57079632679489661923f);
-        public static f32 epsilon => FromRaw(1); // Smallest possible value greater than zero
-        public static f32 maxValue => FromRaw(long.MaxValue);
-        public static f32 minValue => FromRaw(long.MinValue);
+        public static readonly f32 zero = FromRaw(0);
+        public static readonly f32 one = FromRaw(One);
+        public static readonly f32 two = FromRaw(2L << FractionalBits);
+        public static readonly f32 half = FromRaw(One >> 1);
+        public static readonly f32 negativeOne = FromRaw(-One);
+        public static readonly f32 negativeTwo = FromRaw(-(2L << FractionalBits));
+        public static readonly f32 pi = FromFloat(3.14159265358979323846f);
+        public static readonly f32 twoPi = FromFloat(6.28318530717958647692f);
+        public static readonly f32 halfPi = FromFloat(1.57079632679489661923f);
+        public static readonly f32 epsilon = FromRaw(1); // Smallest possible value greater than zero
+        public static readonly f32 maxValue = FromRaw(long.MaxValue);
+        public static readonly f32 minValue = FromRaw(long.MinValue);
 
         private f32(long value)
         {

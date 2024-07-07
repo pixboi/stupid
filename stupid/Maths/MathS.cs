@@ -30,13 +30,13 @@ namespace stupid.Maths
             f32 result = value;
             f32 term = value;
             f32 square = value * value;
+            const int iterations = 3; // Number of iterations can be adjusted
 
-            term *= -square / f32.FromRaw(6L << f32.FractionalBits);  // -value^3 / 3!
-            result += term;
-            term *= -square / f32.FromRaw(20L << f32.FractionalBits); // +value^5 / 5!
-            result += term;
-            term *= -square / f32.FromRaw(42L << f32.FractionalBits); // -value^7 / 7!
-            result += term;
+            for (int i = 3; i <= 2 * iterations + 1; i += 2)
+            {
+                term *= -square / f32.FromRaw((i - 1) << f32.FractionalBits);
+                result += term;
+            }
 
             return result;
         }
@@ -47,13 +47,13 @@ namespace stupid.Maths
             f32 result = f32.one;
             f32 term = f32.one;
             f32 square = value * value;
+            const int iterations = 3; // Number of iterations can be adjusted
 
-            term *= -square / f32.FromRaw(2L << f32.FractionalBits);  // -value^2 / 2!
-            result += term;
-            term *= -square / f32.FromRaw(24L << f32.FractionalBits); // +value^4 / 4!
-            result += term;
-            term *= -square / f32.FromRaw(120L << f32.FractionalBits); // -value^6 / 6!
-            result += term;
+            for (int i = 2; i <= 2 * iterations; i += 2)
+            {
+                term *= -square / f32.FromRaw((i - 1) << f32.FractionalBits);
+                result += term;
+            }
 
             return result;
         }
@@ -78,11 +78,11 @@ namespace stupid.Maths
         {
             f32 result = f32.one;
             f32 term = f32.one;
-            const int iterations = 8; // Number of iterations can be adjusted
+            const int iterations = 3; // Number of iterations can be adjusted
 
             for (int i = 1; i <= iterations; i++)
             {
-                term *= value / f32.FromRaw(i << f32.FractionalBits); // value^i / i!
+                term *= value / f32.FromRaw(i << f32.FractionalBits);
                 result += term;
             }
 
@@ -97,7 +97,7 @@ namespace stupid.Maths
             f32 x = (value - f32.one) / (value + f32.one);
             f32 term = x;
             f32 xSquared = x * x;
-            const int iterations = 8; // Number of iterations can be adjusted
+            const int iterations = 3; // Number of iterations can be adjusted
 
             for (int i = 1; i <= iterations; i += 2)
             {

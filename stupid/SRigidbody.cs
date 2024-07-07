@@ -62,15 +62,18 @@ namespace stupid
 
         public Matrix3S GetInverseInertiaTensorWorld()
         {
-            // Compute the world space inertia tensor
+            // Compute the world space inertia tensor using cached and precomputed values
             Matrix3S rotationMatrix = Matrix3S.Rotate(rotation);
             Matrix3S inverseInertiaTensorLocal = inertiaTensor.Inverse();
-            return rotationMatrix * inverseInertiaTensorLocal * rotationMatrix.Transpose();
+
+            // Combined matrix multiplication
+            Matrix3S rotationTranspose = rotationMatrix.Transpose();
+            return rotationMatrix * inverseInertiaTensorLocal * rotationTranspose;
         }
 
         public void CalculateInverseInertiaTensor()
         {
-            inertiaTensorInverse = GetInverseInertiaTensorWorld();
+            this.inertiaTensorInverse = GetInverseInertiaTensorWorld();
         }
     }
 }

@@ -79,6 +79,14 @@ namespace stupid.Maths
             return zero;
         }
 
+        public Vector3S NormaliseWithMagnitude(out f32 mag)
+        {
+            mag = Magnitude();
+            if (mag > f32.zero)
+                return this / mag;
+            return zero;
+        }
+
         public static Vector3S Min(Vector3S a, Vector3S b)
         {
             return new Vector3S(
