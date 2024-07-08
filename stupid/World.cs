@@ -80,8 +80,6 @@ namespace stupid
                 var bounds = body.collider.CalculateBounds(body.position);
             }
 
-            AABBTree.Rebuild(Rigidbodies);
-
             var pairs = Broadphase.ComputePairs(Rigidbodies);
             NaiveNarrowPhase(pairs);
             WorldCollision();
@@ -174,7 +172,7 @@ namespace stupid
             angularVelocityBuffer[b.index] += b.inertiaTensorInverse * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
-            f32 percent = (f32)1f; // Percentage of penetration to correct
+            f32 percent = (f32)0.2f; // Percentage of penetration to correct
             f32 slop = (f32)0.01f; // Allowable penetration slop
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / invMassSum) * percent * contact.normal;
