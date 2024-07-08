@@ -50,10 +50,18 @@ namespace stupid
             return rb;
         }
 
+
+        List<RaycastHit> _hits = new List<RaycastHit>();
         void RayTest()
         {
             var ray = new Ray(Vector3S.zero, Vector3S.one * (f32)32);
 
+            AABBTree.RaycastAll(ray, ref _hits);
+            BruteRay(ray);
+        }
+
+        void BruteRay(Ray ray)
+        {
             foreach (var body in Rigidbodies)
             {
                 if (ray.Intersects(body.collider.GetBounds(), out var dist, out var p, out var n))
@@ -71,12 +79,9 @@ namespace stupid
             {
                 body.CalculateInverseInertiaTensor();
                 var bounds = body.collider.CalculateBounds(body.position);
-
             }
 
-            //AABBTree.RefitAndBalance();
-            AABBTree = new AABBTree(Rigidbodies);
-
+            AABBTree.RefitAndBalance();
 
             RayTest();
 
@@ -217,7 +222,7 @@ namespace stupid
             foreach (var rb in Rigidbodies)
             {
                 var bounds = rb.collider.GetBounds();
-                if (WorldBounds.ContainsBounds(bounds)) continue;
+                if (WorldBounds.Contains(bounds)) continue;
 
                 var sc = (SSphereCollider)rb.collider;
                 CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.min.x, bounds.max.x, WorldBounds.min.x, WorldBounds.max.x, sc.Radius);

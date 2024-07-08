@@ -12,27 +12,24 @@ namespace stupid.Colliders
         {
             if (bodies.Count > 0)
             {
-                Root = Build(bodies);
+                Root = Build(bodies, 0, bodies.Count);
             }
         }
 
-        private AABBNode Build(List<SRigidbody> bodies)
+        private AABBNode Build(List<SRigidbody> bodies, int start, int count)
         {
-            if (bodies.Count == 1)
+            if (count == 1)
             {
-                return new AABBNode(bodies[0]);
+                return new AABBNode(bodies[start]);
             }
 
-            SBounds overallBox = CalculateOverallBoundingBox(bodies);
+            SBounds overallBox = CalculateOverallBoundingBox(bodies, start, count);
             int axis = overallBox.MaximumExtent();
-            bodies.Sort((a, b) => CompareByAxis(a.collider.GetBounds(), b.collider.GetBounds(), axis));
+            bodies.Sort(start, count, new AxisComparer(axis));
 
-            int mid = bodies.Count / 2;
-            List<SRigidbody> leftBodies = bodies.GetRange(0, mid);
-            List<SRigidbody> rightBodies = bodies.GetRange(mid, bodies.Count - mid);
-
-            var leftNode = Build(leftBodies);
-            var rightNode = Build(rightBodies);
+            int mid = start + count / 2;
+            var leftNode = Build(bodies, start, mid - start);
+            var rightNode = Build(bodies, mid, start + count - mid);
 
             return new AABBNode(null)
             {
@@ -42,25 +39,14 @@ namespace stupid.Colliders
             };
         }
 
-        private int CompareByAxis(SBounds a, SBounds b, int axis)
-        {
-            return axis switch
-            {
-                0 => a.min.x.CompareTo(b.min.x),
-                1 => a.min.y.CompareTo(b.min.y),
-                2 => a.min.z.CompareTo(b.min.z),
-                _ => throw new ArgumentException("Invalid axis"),
-            };
-        }
-
-        private SBounds CalculateOverallBoundingBox(List<SRigidbody> bodies)
+        private SBounds CalculateOverallBoundingBox(List<SRigidbody> bodies, int start, int count)
         {
             Vector3S min = new Vector3S(f32.maxValue, f32.maxValue, f32.maxValue);
             Vector3S max = new Vector3S(f32.minValue, f32.minValue, f32.minValue);
 
-            foreach (var body in bodies)
+            for (int i = start; i < start + count; i++)
             {
-                SBounds bounds = body.collider.GetBounds();
+                SBounds bounds = bodies[i].collider.GetBounds();
                 min = Vector3S.Min(min, bounds.min);
                 max = Vector3S.Max(max, bounds.max);
             }
@@ -179,7 +165,7 @@ namespace stupid.Colliders
             {
                 Refit(node.Left);
                 Refit(node.Right);
-                node.Box = SBounds.Union(node.Left.Box, node.Right.Box);
+                node.Box = SBounds.Union(node.Left?.Box ?? node.ObjectBounds, node.Right?.Box ?? node.ObjectBounds);
             }
         }
 
@@ -247,6 +233,61 @@ namespace stupid.Colliders
             node.Right = BalanceTree(node.Right);
 
             return Balance(node);
+        }
+
+        private int CompareByAxis(SBounds a, SBounds b, int axis)
+        {
+            return axis switch
+            {
+                0 => a.min.x.CompareTo(b.min.x),
+                1 => a.min.y.CompareTo(b.min.y),
+                2 => a.min.z.CompareTo(b.min.z),
+                _ => throw new ArgumentException("Invalid axis"),
+            };
+        }
+
+        private class AxisComparer : IComparer<SRigidbody>
+        {
+            private readonly int axis;
+
+            public AxisComparer(int axis)
+            {
+                this.axis = axis;
+            }
+
+            public int Compare(SRigidbody a, SRigidbody b)
+            {
+                SBounds boundsA = a.collider.GetBounds();
+                SBounds boundsB = b.collider.GetBounds();
+
+                return axis switch
+                {
+                    0 => boundsA.min.x.CompareTo(boundsB.min.x),
+                    1 => boundsA.min.y.CompareTo(boundsB.min.y),
+                    2 => boundsA.min.z.CompareTo(boundsB.min.z),
+                    _ => throw new ArgumentException("Invalid axis"),
+                };
+            }
+        }
+
+        public void Rebuild(List<SRigidbody> bodies)
+        {
+            Root = Build(bodies, 0, bodies.Count);
+        }
+
+        private void CollectBodies(AABBNode node, List<SRigidbody> bodies)
+        {
+            if (node == null) return;
+
+            if (node.IsLeaf)
+            {
+                bodies.Add(node.Data);
+            }
+            else
+            {
+                CollectBodies(node.Left, bodies);
+                CollectBodies(node.Right, bodies);
+            }
         }
     }
 }

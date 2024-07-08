@@ -14,8 +14,6 @@ namespace stupid.Colliders
         {
             Data = data;
             Box = ObjectBounds;
-            Left = null;
-            Right = null;
         }
 
         public bool IsLeaf => Left == null && Right == null;

@@ -54,8 +54,6 @@ namespace stupid
                     CalculateSphereInertiaTensor(sphereCollider.Radius);
                     break;
             }
-
-            CalculateInverseInertiaTensor();
         }
 
         private void CalculateSphereInertiaTensor(f32 radius)
