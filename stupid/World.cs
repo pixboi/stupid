@@ -74,7 +74,8 @@ namespace stupid
 
             }
 
-            AABBTree.RefitAndBalance();
+            //AABBTree.RefitAndBalance();
+            AABBTree = new AABBTree(Rigidbodies);
 
 
             RayTest();
