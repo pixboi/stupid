@@ -86,7 +86,7 @@ namespace stupid
                     SQuaternion deltaRot = SQuaternion.FromAxisAngle(nrmAng, mag);
 
                     rb.rotation *= deltaRot;
-                    rb.angularVelocity *= (f32)0.98f;
+                    rb.angularVelocity *= (f32)0.9f;
                 }
             }
         }
@@ -123,19 +123,23 @@ namespace stupid
             // Calculate inverse masses
             f32 invMassA = f32.one / a.mass;
             f32 invMassB = f32.one / b.mass;
+            f32 invMassSum = invMassA + invMassB;
 
             // Calculate the impulse scalar
-            f32 j = -(f32.one + e) * velocityAlongNormal / (invMassA + invMassB);
+            f32 j = -(f32.one + e) * velocityAlongNormal / invMassSum;
 
             // Apply linear impulse
             Vector3S impulse = j * contact.normal;
-            velocityBuffer[a.index] -= invMassA * impulse;
-            velocityBuffer[b.index] += invMassB * impulse;
+            Vector3S invMassImpulseA = invMassA * impulse;
+            Vector3S invMassImpulseB = invMassB * impulse;
+            velocityBuffer[a.index] -= invMassImpulseA;
+            velocityBuffer[b.index] += invMassImpulseB;
 
             // Positional correction to prevent sinking
             f32 percent = (f32)0.2f; // Percentage of penetration to correct
             f32 slop = (f32)0.01f; // Allowable penetration slop
-            Vector3S correction = (MathS.Max(contact.penetrationDepth - slop, f32.zero) / (invMassA + invMassB)) * percent * contact.normal;
+            f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
+            Vector3S correction = (penetrationDepth / invMassSum) * percent * contact.normal;
             positionBuffer[a.index] -= invMassA * correction;
             positionBuffer[b.index] += invMassB * correction;
 
@@ -145,21 +149,30 @@ namespace stupid
             Matrix3S inverseInertiaTensorA = a.inertiaTensorInverse;
             Matrix3S inverseInertiaTensorB = b.inertiaTensorInverse;
 
-            // Update angular velocities
-            angularVelocityBuffer[a.index] -= inverseInertiaTensorA * Vector3S.Cross(ra, impulse);
-            angularVelocityBuffer[b.index] += inverseInertiaTensorB * Vector3S.Cross(rb, impulse);
+            Vector3S raCrossImpulse = Vector3S.Cross(ra, impulse);
+            Vector3S rbCrossImpulse = Vector3S.Cross(rb, impulse);
+            angularVelocityBuffer[a.index] -= inverseInertiaTensorA * raCrossImpulse;
+            angularVelocityBuffer[b.index] += inverseInertiaTensorB * rbCrossImpulse;
+
+            // Calculate relative tangential velocity
+            Vector3S relativeTangentialVelocity = relativeVelocity + Vector3S.Cross(a.angularVelocity, ra) - Vector3S.Cross(b.angularVelocity, rb);
 
             // Calculate friction impulse
-            Vector3S tangent = (relativeVelocity - velocityAlongNormal * contact.normal).Normalize();
-            f32 jt = -Vector3S.Dot(relativeVelocity, tangent) / (invMassA + invMassB);
+            Vector3S tangent = (relativeTangentialVelocity - Vector3S.Dot(relativeTangentialVelocity, contact.normal) * contact.normal).Normalize();
+            f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / invMassSum;
             f32 mu = f32.half;
             Vector3S frictionImpulse = MathS.Abs(jt) < j * mu ? jt * tangent : -j * mu * tangent;
 
             // Apply friction impulse
-            velocityBuffer[a.index] -= invMassA * frictionImpulse;
-            velocityBuffer[b.index] += invMassB * frictionImpulse;
-            angularVelocityBuffer[a.index] -= inverseInertiaTensorA * Vector3S.Cross(ra, frictionImpulse);
-            angularVelocityBuffer[b.index] += inverseInertiaTensorB * Vector3S.Cross(rb, frictionImpulse);
+            Vector3S invMassFrictionImpulseA = invMassA * frictionImpulse;
+            Vector3S invMassFrictionImpulseB = invMassB * frictionImpulse;
+            velocityBuffer[a.index] -= invMassFrictionImpulseA;
+            velocityBuffer[b.index] += invMassFrictionImpulseB;
+
+            raCrossImpulse = Vector3S.Cross(ra, frictionImpulse);
+            rbCrossImpulse = Vector3S.Cross(rb, frictionImpulse);
+            angularVelocityBuffer[a.index] -= inverseInertiaTensorA * raCrossImpulse;
+            angularVelocityBuffer[b.index] += inverseInertiaTensorB * rbCrossImpulse;
         }
 
         private void ApplyBuffers()
