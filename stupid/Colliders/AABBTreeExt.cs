@@ -5,6 +5,7 @@ namespace stupid.Colliders
 {
     public static class AABBTreeExt
     {
+        /*
         public static List<RaycastHit> RaycastAll(this AABBTree tree, Ray ray, ref List<RaycastHit> hits)
         {
             RaycastAll(tree.Root, ray, ref hits);
@@ -66,6 +67,7 @@ namespace stupid.Colliders
 
             return null;
         }
+        */
 
         public static List<SBounds> CollectBounds(this AABBTree tree)
         {
@@ -78,7 +80,7 @@ namespace stupid.Colliders
         {
             if (node == null) return;
 
-            boundsList.Add(node.Box);
+            boundsList.Add(node.Bounds);
 
             if (!node.IsLeaf)
             {

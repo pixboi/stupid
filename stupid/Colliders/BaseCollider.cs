@@ -18,5 +18,6 @@ namespace stupid.Colliders
         public abstract SBounds GetBounds();
         public abstract bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact);
 
+        public abstract Matrix3S CalculateInertiaTensor(f32 mass);
     }
 }

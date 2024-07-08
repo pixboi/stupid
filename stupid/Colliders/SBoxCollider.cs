@@ -5,6 +5,7 @@ namespace stupid.Colliders
     public class SBoxCollider : BaseCollider
     {
         public Vector3S Size { get; private set; }
+
         public SBoxCollider(Vector3S size)
         {
             Size = size;
@@ -53,6 +54,24 @@ namespace stupid.Colliders
             }
 
             return false;
+        }
+
+        public override Matrix3S CalculateInertiaTensor(f32 mass)
+        {
+            // For a solid box: Ixx = 1/12 * m * (h^2 + d^2), Iyy = 1/12 * m * (w^2 + d^2), Izz = 1/12 * m * (w^2 + h^2)
+            f32 w = Size.x;
+            f32 h = Size.y;
+            f32 d = Size.z;
+            f32 factor = mass / f32.FromRaw(12);
+            f32 ixx = factor * (h * h + d * d);
+            f32 iyy = factor * (w * w + d * d);
+            f32 izz = factor * (w * w + h * h);
+
+            return new Matrix3S(
+                new Vector3S(ixx, f32.zero, f32.zero),
+                new Vector3S(f32.zero, iyy, f32.zero),
+                new Vector3S(f32.zero, f32.zero, izz)
+            );
         }
 
         private bool IntersectsBox(Vector3S positionA, Vector3S positionB, SBoxCollider other, out Contact contact)

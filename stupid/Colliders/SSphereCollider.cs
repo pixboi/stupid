@@ -5,6 +5,7 @@ namespace stupid.Colliders
     public class SSphereCollider : BaseCollider
     {
         public f32 Radius { get; private set; }
+
         public SSphereCollider(f32 radius)
         {
             Radius = radius;
@@ -35,6 +36,17 @@ namespace stupid.Colliders
             return false;
         }
 
+        public override Matrix3S CalculateInertiaTensor(f32 mass)
+        {
+            // For a solid sphere: I = 2/5 * m * r^2
+            f32 inertia = (f32.FromRaw(2) / f32.FromRaw(5)) * mass * Radius * Radius;
+            return new Matrix3S(
+                new Vector3S(inertia, f32.zero, f32.zero),
+                new Vector3S(f32.zero, inertia, f32.zero),
+                new Vector3S(f32.zero, f32.zero, inertia)
+            );
+        }
+
         private bool IntersectsSphere(Vector3S positionA, Vector3S positionB, SSphereCollider otherSphere, out Contact contact)
         {
             contact = new Contact();
@@ -62,7 +74,5 @@ namespace stupid.Colliders
 
             return true;
         }
-
-
     }
 }

@@ -42,31 +42,8 @@ namespace stupid
         {
             this.collider = collider;
             collider.Attach(this);
-
-            switch (collider)
-            {
-                case SSphereCollider sphereCollider:
-                    CalculateSphereInertiaTensor(sphereCollider.Radius);
-                    break;
-                    // Add cases for other collider types if necessary
-            }
-        }
-
-        private void CalculateSphereInertiaTensor(f32 radius)
-        {
-            // For a solid sphere: I = 2/5 * m * r^2
-            f32 inertia = (f32.FromRaw(2) / f32.FromRaw(5)) * mass * radius * radius;
-            SetInertiaTensor(new Matrix3S(
-                new Vector3S(inertia, f32.zero, f32.zero),
-                new Vector3S(f32.zero, inertia, f32.zero),
-                new Vector3S(f32.zero, f32.zero, inertia)
-            ));
-        }
-
-        private void SetInertiaTensor(Matrix3S inertiaTensor)
-        {
-            this.inertiaTensor = inertiaTensor;
-            this.inverseInertiaTensorLocal = inertiaTensor.Inverse();
+            this.inertiaTensor = collider.CalculateInertiaTensor(this.mass);
+            this.inverseInertiaTensorLocal = this.inertiaTensor.Inverse();
         }
 
         public Matrix3S GetInverseInertiaTensorWorld()

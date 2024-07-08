@@ -1,21 +1,26 @@
-﻿using stupid.Maths;
+﻿using stupid.Colliders;
+using System;
 
-namespace stupid.Colliders
+namespace stupid
 {
     public class AABBNode
     {
+        public AABBNode Parent { get; set; }
         public AABBNode Left { get; set; }
         public AABBNode Right { get; set; }
-        public SRigidbody Data { get; set; }
-        public SBounds Box { get; set; }
-        public SBounds ObjectBounds => Data?.collider.GetBounds() ?? Box;
+        public SRigidbody Body { get; set; }
+        public SBounds Bounds { get; set; }
+        public bool IsLeaf => Body != null;
 
-        public AABBNode(SRigidbody data)
+        public AABBNode(SRigidbody body)
         {
-            Data = data;
-            Box = ObjectBounds;
+            Body = body;
+            Bounds = body.GetBounds();
         }
 
-        public bool IsLeaf => Left == null && Right == null;
+        public AABBNode(SBounds bounds)
+        {
+            Bounds = bounds;
+        }
     }
 }

@@ -13,8 +13,6 @@ namespace stupid
         public List<SRigidbody> Rigidbodies { get; private set; }
         public Vector3S Gravity { get; private set; }
         public uint SimulationFrame { get; private set; }
-
-        public AABBTree AABBTree { get; private set; }
         public DumbGrid<int> DumbGrid { get; private set; }
 
         private int counter;
@@ -29,9 +27,9 @@ namespace stupid
             WorldBounds = worldBounds;
             Gravity = gravity;
             Rigidbodies = new List<SRigidbody>(startSize);
+            DumbGrid = new DumbGrid<int>(32, 32, 32, (f32)4);
 
             Broadphase = broadphase;
-            AABBTree = new AABBTree(Rigidbodies);
 
             //These need to resize on rigid body adds
             velocityBuffer = new Vector3S[startSize * 2];
@@ -42,42 +40,23 @@ namespace stupid
         public SRigidbody AddRigidbody(ICollider collider, Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
         {
             var rb = new SRigidbody(counter++, position, velocity, angularVelocity);
-
             rb.Attach(collider);
-            AABBTree.Insert(rb);
 
             Rigidbodies.Add(rb);
             return rb;
-        }
-
-
-        List<RaycastHit> _hits = new List<RaycastHit>();
-        void RayTest()
-        {
-            var ray = new Ray(Vector3S.zero, Vector3S.one * (f32)32);
-            var _hits = AABBTree.QueryRay(ray);
-            BruteRay(ray);
-        }
-
-        void BruteRay(Ray ray)
-        {
-            foreach (var body in Rigidbodies)
-            {
-                if (body.collider.GetBounds().IntersectRay(ray))
-                {
-
-                }
-            }
         }
 
         public void Simulate(f32 deltaTime)
         {
             Integrate(deltaTime);
 
+            DumbGrid.Invalidate(-1);
+
             foreach (var body in Rigidbodies)
             {
                 body.CalculateInverseInertiaTensor();
                 var bounds = body.collider.CalculateBounds(body.position);
+                DumbGrid.Add(bounds, body.index);
             }
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);
@@ -218,14 +197,21 @@ namespace stupid
                 var bounds = rb.collider.GetBounds();
                 if (WorldBounds.Contains(bounds)) continue;
 
-                var sc = (SSphereCollider)rb.collider;
-                CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.min.x, bounds.max.x, WorldBounds.min.x, WorldBounds.max.x, sc.Radius);
-                CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.min.y, bounds.max.y, WorldBounds.min.y, WorldBounds.max.y, sc.Radius);
-                CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.min.z, bounds.max.z, WorldBounds.min.z, WorldBounds.max.z, sc.Radius);
+                if (rb.collider is SSphereCollider sc)
+                {
+                    CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.min.x, bounds.max.x, WorldBounds.min.x, WorldBounds.max.x, sc.Radius);
+                    CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.min.y, bounds.max.y, WorldBounds.min.y, WorldBounds.max.y, sc.Radius);
+                    CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.min.z, bounds.max.z, WorldBounds.min.z, WorldBounds.max.z, sc.Radius);
+                }
+                else if (rb.collider is SBoxCollider box)
+                {
+                    CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.min.x, bounds.max.x, WorldBounds.min.x, WorldBounds.max.x, box.Size.Magnitude());
+                    CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.min.y, bounds.max.y, WorldBounds.min.y, WorldBounds.max.y, box.Size.Magnitude());
+                    CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.min.z, bounds.max.z, WorldBounds.min.z, WorldBounds.max.z, box.Size.Magnitude());
+                }
 
                 rb.velocity.x *= (f32)0.95;
                 rb.velocity.z *= (f32)0.95;
-
                 rb.angularVelocity *= (f32)0.95;
             }
         }
