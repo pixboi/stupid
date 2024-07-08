@@ -55,8 +55,7 @@ namespace stupid
         void RayTest()
         {
             var ray = new Ray(Vector3S.zero, Vector3S.one * (f32)32);
-
-            AABBTree.RaycastAll(ray, ref _hits);
+            var _hits = AABBTree.QueryRay(ray);
             BruteRay(ray);
         }
 
@@ -64,7 +63,7 @@ namespace stupid
         {
             foreach (var body in Rigidbodies)
             {
-                if (ray.Intersects(body.collider.GetBounds(), out var dist, out var p, out var n))
+                if (body.collider.GetBounds().IntersectRay(ray))
                 {
 
                 }
@@ -81,9 +80,7 @@ namespace stupid
                 var bounds = body.collider.CalculateBounds(body.position);
             }
 
-            AABBTree.RefitAndBalance();
-
-            RayTest();
+            AABBTree.Rebuild(Rigidbodies);
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);
             NaiveNarrowPhase(pairs);
@@ -113,7 +110,7 @@ namespace stupid
                     var nrmAng = angDelta.NormalizeWithMagnitude(out var mag);
                     SQuaternion deltaRot = SQuaternion.FromAxisAngle(nrmAng, mag);
 
-                    rb.rotation *= deltaRot;
+                    rb.rotation = deltaRot * rb.rotation;
                     rb.angularVelocity *= (f32)0.9f;
                 }
             }
@@ -136,32 +133,45 @@ namespace stupid
             ApplyBuffers();
         }
 
+
         private void ResolveCollision(SRigidbody a, SRigidbody b, Contact contact)
         {
             // Calculate relative velocity at contact point
             Vector3S relativeVelocity = b.velocity - a.velocity;
-            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocity, contact.normal);
+            Vector3S ra = contact.point - a.position;
+            Vector3S rb = contact.point - b.position;
+
+            // Include the angular velocities in the relative velocity calculation
+            Vector3S relativeVelocityAtContact = relativeVelocity
+                + Vector3S.Cross(a.angularVelocity, ra)
+                - Vector3S.Cross(b.angularVelocity, rb);
+
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, contact.normal);
 
             // Do not resolve if velocities are separating
             if (velocityAlongNormal > f32.zero) return;
 
             // Restitution (coefficient of restitution)
-            f32 e = f32.half;
+            f32 e = f32.half; // This can be parameterized for different materials
 
             // Calculate inverse masses
             f32 invMassA = f32.one / a.mass;
             f32 invMassB = f32.one / b.mass;
-            f32 invMassSum = invMassA + invMassB;
+
+            // Compute the effective mass along the normal direction
+            f32 invEffectiveMassA = invMassA + Vector3S.Dot(Vector3S.Cross(a.inertiaTensorInverse * Vector3S.Cross(ra, contact.normal), ra), contact.normal);
+            f32 invEffectiveMassB = invMassB + Vector3S.Dot(Vector3S.Cross(b.inertiaTensorInverse * Vector3S.Cross(rb, contact.normal), rb), contact.normal);
+            f32 invMassSum = invEffectiveMassA + invEffectiveMassB;
 
             // Calculate the impulse scalar
             f32 j = -(f32.one + e) * velocityAlongNormal / invMassSum;
 
-            // Apply linear impulse
+            // Apply linear and angular impulse
             Vector3S impulse = j * contact.normal;
-            Vector3S invMassImpulseA = invMassA * impulse;
-            Vector3S invMassImpulseB = invMassB * impulse;
-            velocityBuffer[a.index] -= invMassImpulseA;
-            velocityBuffer[b.index] += invMassImpulseB;
+            velocityBuffer[a.index] -= invMassA * impulse;
+            velocityBuffer[b.index] += invMassB * impulse;
+            angularVelocityBuffer[a.index] -= a.inertiaTensorInverse * Vector3S.Cross(ra, impulse);
+            angularVelocityBuffer[b.index] += b.inertiaTensorInverse * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
             f32 percent = (f32)1f; // Percentage of penetration to correct
@@ -171,37 +181,23 @@ namespace stupid
             positionBuffer[a.index] -= invMassA * correction;
             positionBuffer[b.index] += invMassB * correction;
 
-            // Angular velocity handling
-            Vector3S ra = contact.point - a.position;
-            Vector3S rb = contact.point - b.position;
-            Matrix3S inverseInertiaTensorA = a.inertiaTensorInverse;
-            Matrix3S inverseInertiaTensorB = b.inertiaTensorInverse;
-
-            Vector3S raCrossImpulse = Vector3S.Cross(ra, impulse);
-            Vector3S rbCrossImpulse = Vector3S.Cross(rb, impulse);
-            angularVelocityBuffer[a.index] -= inverseInertiaTensorA * raCrossImpulse;
-            angularVelocityBuffer[b.index] += inverseInertiaTensorB * rbCrossImpulse;
-
             // Calculate relative tangential velocity
-            Vector3S relativeTangentialVelocity = relativeVelocity + Vector3S.Cross(a.angularVelocity, ra) - Vector3S.Cross(b.angularVelocity, rb);
+            Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * contact.normal);
 
             // Calculate friction impulse
-            Vector3S tangent = (relativeTangentialVelocity - Vector3S.Dot(relativeTangentialVelocity, contact.normal) * contact.normal).Normalize();
+            Vector3S tangent = relativeTangentialVelocity.Normalize();
             f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / invMassSum;
-            f32 mu = f32.half;
+            f32 mu = f32.half; // This can be parameterized for different materials
             Vector3S frictionImpulse = MathS.Abs(jt) < j * mu ? jt * tangent : -j * mu * tangent;
 
             // Apply friction impulse
-            Vector3S invMassFrictionImpulseA = invMassA * frictionImpulse;
-            Vector3S invMassFrictionImpulseB = invMassB * frictionImpulse;
-            velocityBuffer[a.index] -= invMassFrictionImpulseA;
-            velocityBuffer[b.index] += invMassFrictionImpulseB;
-
-            raCrossImpulse = Vector3S.Cross(ra, frictionImpulse);
-            rbCrossImpulse = Vector3S.Cross(rb, frictionImpulse);
-            angularVelocityBuffer[a.index] -= inverseInertiaTensorA * raCrossImpulse;
-            angularVelocityBuffer[b.index] += inverseInertiaTensorB * rbCrossImpulse;
+            velocityBuffer[a.index] -= invMassA * frictionImpulse;
+            velocityBuffer[b.index] += invMassB * frictionImpulse;
+            angularVelocityBuffer[a.index] -= a.inertiaTensorInverse * Vector3S.Cross(ra, frictionImpulse);
+            angularVelocityBuffer[b.index] += b.inertiaTensorInverse * Vector3S.Cross(rb, frictionImpulse);
         }
+
+
 
         private void ApplyBuffers()
         {
@@ -228,6 +224,11 @@ namespace stupid
                 CheckAxisCollision(ref rb.position.x, ref rb.velocity.x, bounds.min.x, bounds.max.x, WorldBounds.min.x, WorldBounds.max.x, sc.Radius);
                 CheckAxisCollision(ref rb.position.y, ref rb.velocity.y, bounds.min.y, bounds.max.y, WorldBounds.min.y, WorldBounds.max.y, sc.Radius);
                 CheckAxisCollision(ref rb.position.z, ref rb.velocity.z, bounds.min.z, bounds.max.z, WorldBounds.min.z, WorldBounds.max.z, sc.Radius);
+
+                rb.velocity.x *= (f32)0.95;
+                rb.velocity.z *= (f32)0.95;
+
+                rb.angularVelocity *= (f32)0.95;
             }
         }
 

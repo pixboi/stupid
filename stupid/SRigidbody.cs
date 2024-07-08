@@ -13,12 +13,12 @@ namespace stupid
         public Vector3S position;
         public SQuaternion rotation;
 
-        //Tensors
+        // Tensors
         public Matrix3S inertiaTensor;
         public Matrix3S inertiaTensorInverse;
         public Matrix3S inverseInertiaTensorLocal; // Precalculated local inverse inertia tensor
 
-        //Integration
+        // Integration
         public Vector3S velocity;
         public Vector3S angularVelocity;
         public ICollider collider;
@@ -28,12 +28,7 @@ namespace stupid
         public bool useGravity = true;
         public bool isKinematic = false;
 
-        public SRigidbody(int index)
-        {
-            this.index = index;
-            this.rotation = SQuaternion.Identity;
-        }
-
+        // Simplified constructor with default parameters
         public SRigidbody(int index, Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
         {
             this.index = index;
@@ -53,13 +48,14 @@ namespace stupid
                 case SSphereCollider sphereCollider:
                     CalculateSphereInertiaTensor(sphereCollider.Radius);
                     break;
+                    // Add cases for other collider types if necessary
             }
         }
 
         private void CalculateSphereInertiaTensor(f32 radius)
         {
             // For a solid sphere: I = 2/5 * m * r^2
-            f32 inertia = f32.FromRaw(2) / f32.FromRaw(5) * mass * radius * radius;
+            f32 inertia = (f32.FromRaw(2) / f32.FromRaw(5)) * mass * radius * radius;
             SetInertiaTensor(new Matrix3S(
                 new Vector3S(inertia, f32.zero, f32.zero),
                 new Vector3S(f32.zero, inertia, f32.zero),
@@ -115,6 +111,11 @@ namespace stupid
         public void CalculateInverseInertiaTensor()
         {
             this.inertiaTensorInverse = GetInverseInertiaTensorWorld();
+        }
+
+        public SBounds GetBounds()
+        {
+            return this.collider.GetBounds();
         }
     }
 }

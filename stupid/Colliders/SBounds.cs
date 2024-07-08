@@ -1,4 +1,6 @@
 using stupid.Maths;
+using System.Numerics;
+using System;
 
 namespace stupid.Colliders
 {
@@ -15,6 +17,9 @@ namespace stupid.Colliders
             this.min = min;
             this.max = max;
         }
+
+        public Vector3S Center => (min + max) * f32.half;
+        public Vector3S Size => max - min;
 
         public bool Intersects(SBounds other)
         {
@@ -33,9 +38,6 @@ namespace stupid.Colliders
         }
 
         public void Union(SBounds other) => this = Union(this, other);
-
-        public Vector3S Center => (min + max) * f32.half;
-        public Vector3S Size => max - min;
 
         public int MaximumExtent()
         {
@@ -77,41 +79,24 @@ namespace stupid.Colliders
             return f32.two * (x_size + y_size);
         }
 
-        /// <summary>
-        /// Expands the bounds by the given amount in all directions.
-        /// </summary>
-        /// <param name="amount">The amount to expand the bounds by.</param>
         public void Expand(f32 amount)
         {
             min -= new Vector3S(amount, amount, amount);
             max += new Vector3S(amount, amount, amount);
         }
 
-        /// <summary>
-        /// Expands the bounds to encapsulate a given point.
-        /// </summary>
-        /// <param name="point">The point to encapsulate.</param>
         public void Encapsulate(Vector3S point)
         {
             min = Vector3S.Min(min, point);
             max = Vector3S.Max(max, point);
         }
 
-        /// <summary>
-        /// Expands the bounds to encapsulate another bounding box.
-        /// </summary>
-        /// <param name="other">The bounding box to encapsulate.</param>
         public void Encapsulate(SBounds other)
         {
             min = Vector3S.Min(min, other.min);
             max = Vector3S.Max(max, other.max);
         }
 
-        /// <summary>
-        /// Checks if a given ray intersects the bounding box.
-        /// </summary>
-        /// <param name="ray">The ray to test for intersection.</param>
-        /// <returns>True if the ray intersects the bounding box; otherwise, false.</returns>
         public bool IntersectRay(Ray ray)
         {
             f32 tmin = (min.x - ray.Origin.x) / ray.Direction.x;

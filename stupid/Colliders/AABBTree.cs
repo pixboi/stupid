@@ -7,7 +7,6 @@ namespace stupid.Colliders
     public class AABBTree
     {
         public AABBNode Root { get; private set; }
-
         public AABBTree(List<SRigidbody> bodies)
         {
             if (bodies.Count > 0)
@@ -72,22 +71,17 @@ namespace stupid.Colliders
                 var combinedBox = SBounds.Union(oldLeaf.Box, newLeaf.Box);
                 node.Data = null;
 
-                if (CompareByAxis(oldLeaf.Box, newLeaf.Box, combinedBox.MaximumExtent()) < 0)
-                {
-                    node.Left = oldLeaf;
-                    node.Right = newLeaf;
-                }
-                else
-                {
-                    node.Left = newLeaf;
-                    node.Right = oldLeaf;
-                }
-
+                node.Left = oldLeaf;
+                node.Right = newLeaf;
                 node.Box = combinedBox;
             }
             else
             {
-                if (SBounds.Union(node.Left.Box, body.collider.GetBounds()).Size.SqrMagnitude < SBounds.Union(node.Right.Box, body.collider.GetBounds()).Size.SqrMagnitude)
+                SBounds bodyBounds = body.collider.GetBounds();
+                f32 leftUnionSize = SBounds.Union(node.Left.Box, bodyBounds).Size.SqrMagnitude;
+                f32 rightUnionSize = SBounds.Union(node.Right.Box, bodyBounds).Size.SqrMagnitude;
+
+                if (leftUnionSize < rightUnionSize)
                 {
                     node.Left = Insert(node.Left, body);
                 }
@@ -235,17 +229,6 @@ namespace stupid.Colliders
             return Balance(node);
         }
 
-        private int CompareByAxis(SBounds a, SBounds b, int axis)
-        {
-            return axis switch
-            {
-                0 => a.min.x.CompareTo(b.min.x),
-                1 => a.min.y.CompareTo(b.min.y),
-                2 => a.min.z.CompareTo(b.min.z),
-                _ => throw new ArgumentException("Invalid axis"),
-            };
-        }
-
         private class AxisComparer : IComparer<SRigidbody>
         {
             private readonly int axis;
@@ -288,6 +271,44 @@ namespace stupid.Colliders
                 CollectBodies(node.Left, bodies);
                 CollectBodies(node.Right, bodies);
             }
+        }
+
+        public List<SRigidbody> QueryRay(Ray ray)
+        {
+            List<SRigidbody> result = new List<SRigidbody>();
+            if (Root != null && Root.Box.IntersectRay(ray))
+            {
+                Stack<AABBNode> stack = new Stack<AABBNode>();
+                stack.Push(Root);
+
+                while (stack.Count > 0)
+                {
+                    AABBNode node = stack.Pop();
+
+                    if (node.Box.IntersectRay(ray))
+                    {
+                        if (node.IsLeaf)
+                        {
+                            if (node.Data.collider.GetBounds().IntersectRay(ray))
+                            {
+                                result.Add(node.Data);
+                            }
+                        }
+                        else
+                        {
+                            if (node.Left != null && node.Left.Box.IntersectRay(ray))
+                            {
+                                stack.Push(node.Left);
+                            }
+                            if (node.Right != null && node.Right.Box.IntersectRay(ray))
+                            {
+                                stack.Push(node.Right);
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
         }
     }
 }

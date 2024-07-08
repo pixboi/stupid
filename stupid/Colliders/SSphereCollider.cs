@@ -39,22 +39,30 @@ namespace stupid.Colliders
         {
             contact = new Contact();
 
-            f32 squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
-            f32 combinedRadius = Radius + otherSphere.Radius;
-            f32 squaredCombinedRadius = combinedRadius * combinedRadius;
+            // Calculate the squared distance between the two positions
+            var squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
 
-            if (squaredDistance <= squaredCombinedRadius)
+            // Calculate the combined radius of both spheres
+            var combinedRadius = Radius + otherSphere.Radius;
+            var squaredCombinedRadius = combinedRadius * combinedRadius;
+
+            // If the squared distance is greater than the squared combined radius, there is no intersection
+            if (squaredDistance > squaredCombinedRadius)
             {
-                Vector3S direction = (positionB - positionA).NormalizeWithMagnitude(out var distance);
-                //f32 distance = Vector3S.Distance(positionA, positionB); // We calculate the distance only when necessary
-                contact.point = positionA + direction * Radius;
-                contact.normal = direction;
-                contact.penetrationDepth = combinedRadius - distance;
-                return true;
+                return false;
             }
 
-            return false;
+            // Calculate direction and distance between the spheres
+            var direction = (positionB - positionA).NormalizeWithMagnitude(out var distance);
+
+            // Set contact information
+            contact.point = positionA + direction * Radius;
+            contact.normal = direction;
+            contact.penetrationDepth = combinedRadius - distance;
+
+            return true;
         }
+
 
     }
 }
