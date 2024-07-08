@@ -13,49 +13,71 @@ namespace stupid
         public List<SRigidbody> Rigidbodies { get; private set; }
         public Vector3S Gravity { get; private set; }
         public uint SimulationFrame { get; private set; }
+
+        public AABBTree AABBTree { get; private set; }
         public DumbGrid<int> DumbGrid { get; private set; }
 
         private int counter;
-        private readonly bool multiThread;
         private readonly Vector3S[] velocityBuffer;
         private readonly Vector3S[] angularVelocityBuffer;
         private readonly Vector3S[] positionBuffer;
 
-        public World(SBounds worldBounds, SortAndSweepBroadphase broadphase, Vector3S gravity, int gridSize = 4, int gridDim = 32, int startSize = 1000, bool multiThread = false)
+        public World(SBounds worldBounds, SortAndSweepBroadphase broadphase, Vector3S gravity, int startSize = 1000)
         {
             counter = 0;
             SimulationFrame = 0;
             WorldBounds = worldBounds;
-            this.multiThread = multiThread;
             Gravity = gravity;
             Rigidbodies = new List<SRigidbody>(startSize);
+
             Broadphase = broadphase;
+            AABBTree = new AABBTree(Rigidbodies);
+
+            //These need to resize on rigid body adds
             velocityBuffer = new Vector3S[startSize * 2];
             angularVelocityBuffer = new Vector3S[startSize * 2];
             positionBuffer = new Vector3S[startSize * 2];
-            DumbGrid = new DumbGrid<int>(gridDim, gridDim, gridDim, (f32)gridSize);
         }
 
-        public SRigidbody AddRigidbody(Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
+        public SRigidbody AddRigidbody(ICollider collider, Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default)
         {
             var rb = new SRigidbody(counter++, position, velocity, angularVelocity);
+
+            rb.Attach(collider);
+            AABBTree.Insert(rb);
+
             Rigidbodies.Add(rb);
             return rb;
+        }
+
+        void RayTest()
+        {
+            var ray = new Ray(Vector3S.zero, Vector3S.one * (f32)32);
+
+            foreach (var body in Rigidbodies)
+            {
+                if (ray.Intersects(body.collider.GetBounds(), out var dist, out var p, out var n))
+                {
+
+                }
+            }
         }
 
         public void Simulate(f32 deltaTime)
         {
             Integrate(deltaTime);
 
-            DumbGrid.Invalidate(-1);
-
             foreach (var body in Rigidbodies)
             {
                 body.CalculateInverseInertiaTensor();
-
                 var bounds = body.collider.CalculateBounds(body.position);
-                DumbGrid.Add(bounds, body.index);
+
             }
+
+            AABBTree.RefitAndBalance();
+
+
+            RayTest();
 
             var pairs = Broadphase.ComputePairs(Rigidbodies);
             NaiveNarrowPhase(pairs);
@@ -78,7 +100,7 @@ namespace stupid
                 rb.position += rb.velocity * deltaTime;
 
                 // Angular integration
-                if (rb.angularVelocity.MagnitudeSquared() > f32.zero)
+                if (rb.angularVelocity.SqrMagnitude > f32.zero)
                 {
                     Vector3S angDelta = rb.angularVelocity * deltaTime;
 
@@ -136,7 +158,7 @@ namespace stupid
             velocityBuffer[b.index] += invMassImpulseB;
 
             // Positional correction to prevent sinking
-            f32 percent = (f32)0.2f; // Percentage of penetration to correct
+            f32 percent = (f32)1f; // Percentage of penetration to correct
             f32 slop = (f32)0.01f; // Allowable penetration slop
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / invMassSum) * percent * contact.normal;
@@ -177,15 +199,15 @@ namespace stupid
 
         private void ApplyBuffers()
         {
-            foreach (var a in Rigidbodies)
+            foreach (var body in Rigidbodies)
             {
-                a.velocity += velocityBuffer[a.index];
-                a.angularVelocity += angularVelocityBuffer[a.index];
-                a.position += positionBuffer[a.index];
+                body.velocity += velocityBuffer[body.index];
+                body.angularVelocity += angularVelocityBuffer[body.index];
+                body.position += positionBuffer[body.index];
 
-                velocityBuffer[a.index] = Vector3S.zero;
-                positionBuffer[a.index] = Vector3S.zero;
-                angularVelocityBuffer[a.index] = Vector3S.zero;
+                velocityBuffer[body.index] = Vector3S.zero;
+                positionBuffer[body.index] = Vector3S.zero;
+                angularVelocityBuffer[body.index] = Vector3S.zero;
             }
         }
 

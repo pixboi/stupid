@@ -59,17 +59,20 @@ namespace stupid.Maths
 
         public f32 Magnitude()
         {
-            f32 magnitudeSquared = MagnitudeSquared();
+            f32 magnitudeSquared = SqrMagnitude;
             return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
-        public f32 MagnitudeSquared()
+        public f32 SqrMagnitude
         {
-            return ((x * x) + (y * y) + (z * z));
+            get
+            {
+                return (x * x + y * y + z * z);
+            }
         }
 
         public static f32 Distance(Vector3S a, Vector3S b) => (a - b).Magnitude();
-        public static f32 DistanceSquared(Vector3S a, Vector3S b) => (a - b).MagnitudeSquared();
+        public static f32 DistanceSquared(Vector3S a, Vector3S b) => (a - b).SqrMagnitude;
 
         public Vector3S Normalize()
         {

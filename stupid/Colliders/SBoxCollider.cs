@@ -160,7 +160,7 @@ namespace stupid.Colliders
             );
 
             Vector3S diff = positionB - closestPoint;
-            f32 distanceSquared = diff.MagnitudeSquared();
+            f32 distanceSquared = diff.SqrMagnitude;
 
             if (distanceSquared <= sphere.Radius * sphere.Radius)
             {

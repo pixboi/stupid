@@ -51,6 +51,8 @@ namespace stupid
                 endpointsZ[i * 2] = new AxisEndpoint { Value = bounds.min.z, IsMin = true, Body = body };
                 endpointsZ[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.z, IsMin = false, Body = body };
             }
+
+            activeList = new SRigidbody[rigidbodies.Count];
             rbCount = rigidbodies.Count;
             overlapCount = new int[rbCount * rbCount];
         }
