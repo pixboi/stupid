@@ -40,9 +40,9 @@
             f32 m33 = r31 * i13 + r32 * i23 + r33 * i33;
 
             return new Matrix3S(
-                new Vector3S(m11, m21, m31),
-                new Vector3S(m12, m22, m32),
-                new Vector3S(m13, m23, m33)
+                new Vector3S(m11, m12, m13),
+                new Vector3S(m21, m22, m23),
+                new Vector3S(m31, m32, m33)
             );
         }
     }
