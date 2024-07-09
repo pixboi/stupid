@@ -75,6 +75,9 @@ namespace stupid.Colliders
             return true;
         }
 
-
+        public override int Intersects(Collidable other, ref ContactS[] contactCache)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

@@ -24,6 +24,8 @@ namespace stupid
 
         // Settings
         public f32 mass = f32.one;
+        public f32 drag = f32.zero;
+        public f32 angularDrag = f32.one;
         public f32 inverseMass => f32.one / mass;
         public bool useGravity = true;
         public bool isKinematic = false;

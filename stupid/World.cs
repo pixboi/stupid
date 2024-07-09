@@ -17,7 +17,7 @@ namespace stupid
         public DumbGrid<int> DumbGrid { get; private set; }
 
         private int counter;
-        private readonly Vector3S[] positionBuffer;
+        private readonly Vector3S[] positionBuffer, velocityBuffer, angularBuffer;
 
         public World(BoundsS worldBounds, SortAndSweepBroadphase broadphase, Vector3S gravity, int startSize = 1000)
         {
@@ -31,6 +31,8 @@ namespace stupid
             Broadphase = broadphase;
 
             positionBuffer = new Vector3S[startSize * 2];
+            velocityBuffer = new Vector3S[startSize * 2];
+            angularBuffer = new Vector3S[startSize * 2];
         }
 
 
@@ -59,28 +61,55 @@ namespace stupid
         public void Simulate(f32 deltaTime)
         {
             DeltaTime = deltaTime;
+
             Integrate(deltaTime);
 
-            //DumbGrid.Invalidate(-1);
-
-            foreach (var body in Collidables)
+            foreach (var c in Collidables)
             {
-                if (body is RigidbodyS rb)
+                if (c is RigidbodyS rb)
                 {
                     rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
                 }
 
-                body.CalculateBounds();
+                c.CalculateBounds();
             }
 
             var pairs = Broadphase.ComputePairs(Collidables);
             NarrowPhase(pairs);
 
-            WorldCollision();
+            var worldCollision = new InsideAABBColliderS(WorldBounds.min, WorldBounds.max);
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb)
+                {
+                    if (worldCollision.Intersects(c, out var contact))
+                    {
+                        OnContact?.Invoke(new ContactManifoldS { a = null, b = null, contact = contact });
+                        ResolveCollisionWithWorldBounds(rb, contact);
+                    }
+                }
+            }
 
             ApplyBuffers();
 
             SimulationFrame++;
+        }
+
+        public void ApplyBuffers()
+        {
+            foreach (var c in Collidables)
+            {
+                c.transform.position += positionBuffer[c.index];
+                if (c is RigidbodyS rb)
+                {
+                    rb.velocity += velocityBuffer[c.index];
+                    rb.angularVelocity += angularBuffer[c.index];
+                }
+
+                positionBuffer[c.index] = Vector3S.zero;
+                velocityBuffer[c.index] = Vector3S.zero;
+                angularBuffer[c.index] = Vector3S.zero;
+            }
         }
 
 
@@ -97,14 +126,22 @@ namespace stupid
                 }
 
                 // Update linear velocity with accumulated forces
-                rb.velocity += rb.forceBucket / rb.mass;
+                if (rb.forceBucket != Vector3S.zero)
+                    rb.velocity += rb.forceBucket / rb.mass;
+
+                // Apply linear drag
+                if (rb.drag != f32.zero)
+                    rb.velocity *= MathS.Max((f32)1.0f - rb.drag * deltaTime, (f32)0.0f);
 
                 // Update position
                 rb.transform.position += rb.velocity * deltaTime;
 
                 // Update angular velocity with accumulated torques
-                rb.angularVelocity += rb.tensor.inertiaWorld * rb.torqueBucket / rb.mass;
-                rb.angularVelocity *= (f32)0.95f; // Damping
+                if (rb.torqueBucket != Vector3S.zero)
+                    rb.angularVelocity += rb.tensor.inertiaWorld * rb.torqueBucket / rb.mass;
+
+                // Apply angular drag
+                rb.angularVelocity *= MathS.Max((f32)1.0f - rb.angularDrag * deltaTime, (f32)0.0f);
 
                 // Update rotation
                 if (rb.angularVelocity.SqrMagnitude > f32.zero)
@@ -121,8 +158,7 @@ namespace stupid
         }
 
 
-
-
+        public event Action<ContactManifoldS> OnContact;
         private void NarrowPhase(HashSet<BodyPair> pairs)
         {
             foreach (var pair in pairs)
@@ -135,6 +171,8 @@ namespace stupid
                 {
                     if (a.collider.Intersects(b, out var contact))
                     {
+                        OnContact?.Invoke(new ContactManifoldS { a = a, b = b, contact = contact });
+
                         ResolveCollision(ab, bb, contact);
                     }
                 }
@@ -142,6 +180,60 @@ namespace stupid
                 //Dyn v stat?
             }
         }
+
+        private void ResolveCollisionWithWorldBounds(RigidbodyS rb, ContactS contact)
+        {
+            // Calculate the relative velocity at the contact point
+            Vector3S relativeVelocity = rb.velocity;
+            Vector3S ra = contact.point - rb.transform.position;
+
+            // Include the angular velocity in the relative velocity calculation
+            Vector3S relativeVelocityAtContact = relativeVelocity + Vector3S.Cross(rb.angularVelocity, ra);
+
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, contact.normal);
+
+            // Do not resolve if velocities are separating
+            if (velocityAlongNormal > f32.zero) return;
+
+            // Restitution (coefficient of restitution)
+            f32 bounce = MathS.Clamp(rb.material.bounciness, f32.zero, f32.one); // Ensure bounce is within a valid range
+
+            // Calculate inverse mass
+            f32 invMass = rb.mass > f32.zero ? f32.one / rb.mass : f32.zero;
+
+            // Compute the effective mass along the normal direction
+            f32 invEffectiveMass = invMass + Vector3S.Dot(Vector3S.Cross(rb.tensor.inertiaWorld * Vector3S.Cross(ra, contact.normal), ra), contact.normal);
+
+            // Calculate the impulse scalar
+            f32 j = -(f32.one + bounce) * velocityAlongNormal / invEffectiveMass;
+
+            // Apply linear and angular impulse
+            Vector3S impulse = j * contact.normal;
+            velocityBuffer[rb.index] += invMass * impulse;
+            angularBuffer[rb.index] += rb.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+
+            // Positional correction to prevent sinking
+            f32 percent = (f32)0.8f; // Adjustment factor for positional correction
+            f32 slop = (f32)0.01f; // Small value to avoid jitter
+            f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
+            Vector3S correction = (penetrationDepth / invEffectiveMass) * percent * contact.normal;
+            positionBuffer[rb.index] += invMass * correction;
+
+            // Calculate relative tangential velocity
+            Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * contact.normal);
+
+            f32 effectiveFriction = rb.material.friction;
+            // Apply scaled friction based on tangential velocity
+            f32 frictionScale = MathS.Min(relativeTangentialVelocity.Magnitude() / DeltaTime, effectiveFriction);
+            Vector3S frictionImpulse = -relativeTangentialVelocity * frictionScale;
+
+            // Apply friction impulse
+            velocityBuffer[rb.index] += invMass * frictionImpulse;
+            angularBuffer[rb.index] += rb.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
+        }
+
+
+
 
         private void ResolveCollision(RigidbodyS a, RigidbodyS b, ContactS contact)
         {
@@ -161,11 +253,11 @@ namespace stupid
             if (velocityAlongNormal > f32.zero) return;
 
             // Restitution (coefficient of restitution)
-            f32 bounce = (a.material.bounciness + b.material.bounciness) * f32.half;
+            f32 bounce = MathS.Max(a.material.bounciness, b.material.bounciness);
 
             // Calculate inverse masses
-            f32 invMassA = f32.one / a.mass;
-            f32 invMassB = f32.one / b.mass;
+            f32 invMassA = a.mass > f32.zero ? f32.one / a.mass : f32.zero;
+            f32 invMassB = b.mass > f32.zero ? f32.one / b.mass : f32.zero;
 
             // Compute the effective mass along the normal direction
             f32 invEffectiveMassA = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, contact.normal), ra), contact.normal);
@@ -177,14 +269,14 @@ namespace stupid
 
             // Apply linear and angular impulse
             Vector3S impulse = j * contact.normal;
-            a.velocity -= invMassA * impulse;
-            b.velocity += invMassB * impulse;
-            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
-            b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+            velocityBuffer[a.index] -= invMassA * impulse;
+            velocityBuffer[b.index] += invMassB * impulse;
+            angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+            angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
-            f32 percent = (f32)0.5f;
-            f32 slop = (f32)0.01f;
+            f32 percent = (f32)0.8f; // usually between 0.2 and 0.8
+            f32 slop = (f32)0.01f; // usually a small value
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / invMassSum) * percent * contact.normal;
             positionBuffer[a.index] -= invMassA * correction;
@@ -196,108 +288,25 @@ namespace stupid
             // Calculate friction impulse
             Vector3S tangent = relativeTangentialVelocity.Normalize();
             f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / invMassSum;
-            f32 effectiveFriction = (a.material.friction + b.material.friction) * f32.half;
-            Vector3S frictionImpulse = MathS.Abs(jt) < j * effectiveFriction ? jt * tangent : -j * effectiveFriction * tangent;
+
+            // Coulomb's law of friction
+            f32 effectiveFriction = MathS.Sqrt(a.material.friction * b.material.friction);
+            Vector3S frictionImpulse;
+            if (MathS.Abs(jt) < j * effectiveFriction)
+            {
+                frictionImpulse = jt * tangent;
+            }
+            else
+            {
+                frictionImpulse = -j * effectiveFriction * tangent;
+            }
 
             // Apply friction impulse
-            a.velocity -= invMassA * frictionImpulse;
-            b.velocity += invMassB * frictionImpulse;
-            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
-            b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+            velocityBuffer[a.index] -= invMassA * frictionImpulse;
+            velocityBuffer[b.index] += invMassB * frictionImpulse;
+            angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
+            angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
-
-
-        private void ApplyBuffers()
-        {
-            foreach (var c in Collidables)
-            {
-                if (c is RigidbodyS body)
-                {
-                    body.transform.position += positionBuffer[c.index];
-                    positionBuffer[c.index] = Vector3S.zero;
-                }
-            }
-        }
-
-        private void WorldCollision()
-        {
-            foreach (var col in Collidables)
-            {
-                if (col is RigidbodyS rb)
-                {
-                    var bounds = rb.GetBounds();
-                    var position = rb.transform.position;
-                    var velocity = rb.velocity;
-
-                    // Check for collisions along the x-axis
-                    if (bounds.min.x < WorldBounds.min.x)
-                    {
-                        var newX = WorldBounds.min.x + bounds.halfSize.x;
-                        var correction = new Vector3S(newX - position.x, f32.zero, f32.zero);
-                        positionBuffer[rb.index] += correction;
-
-                        var newXVel = velocity.x * -f32.half;
-                        var Vn = newXVel - velocity.x;
-                        rb.velocity.x += Vn;  // Directly apply the impulse to velocity
-                    }
-                    else if (bounds.max.x > WorldBounds.max.x)
-                    {
-                        var newX = WorldBounds.max.x - bounds.halfSize.x;
-                        var correction = new Vector3S(newX - position.x, f32.zero, f32.zero);
-                        positionBuffer[rb.index] += correction;
-
-                        var newXVel = velocity.x * -f32.half;
-                        var Vn = newXVel - velocity.x;
-                        rb.velocity.x += Vn;   // Directly apply the impulse to velocity
-                    }
-
-                    // Check for collisions along the y-axis
-                    if (bounds.min.y < WorldBounds.min.y)
-                    {
-                        var newY = WorldBounds.min.y + bounds.halfSize.y;
-                        var correction = new Vector3S(f32.zero, newY - position.y, f32.zero);
-                        positionBuffer[rb.index] += correction;
-
-                        var newYVel = velocity.y * -f32.half;
-                        var Vn = newYVel - velocity.y;
-                        rb.velocity.y += Vn;   // Directly apply the impulse to velocity
-                    }
-                    else if (bounds.max.y > WorldBounds.max.y)
-                    {
-                        var newY = WorldBounds.max.y - bounds.halfSize.y;
-                        var correction = new Vector3S(f32.zero, newY - position.y, f32.zero);
-                        positionBuffer[rb.index] += correction;
-
-                        var newYVel = velocity.y * -f32.half;
-                        var Vn = newYVel - velocity.y;
-                        rb.velocity.y += Vn;  // Directly apply the impulse to velocity
-                    }
-
-                    // Check for collisions along the z-axis
-                    if (bounds.min.z < WorldBounds.min.z)
-                    {
-                        var newZ = WorldBounds.min.z + bounds.halfSize.z;
-                        var correction = new Vector3S(f32.zero, f32.zero, newZ - position.z);
-                        positionBuffer[rb.index] += correction;
-
-                        var newZVel = velocity.z * -f32.half;
-                        var Vn = newZVel - velocity.z;
-                        rb.velocity.z += Vn;   // Directly apply the impulse to velocity
-                    }
-                    else if (bounds.max.z > WorldBounds.max.z)
-                    {
-                        var newZ = WorldBounds.max.z - bounds.halfSize.z;
-                        var correction = new Vector3S(f32.zero, f32.zero, newZ - position.z);
-                        positionBuffer[rb.index] += correction;
-
-                        var newZVel = velocity.z * -f32.half;
-                        var Vn = newZVel - velocity.z;
-                        rb.velocity.z += Vn;  // Directly apply the impulse to velocity
-                    }
-                }
-            }
-        }
-
 
 
     }
