@@ -3,26 +3,26 @@ using System;
 
 namespace stupid.Maths
 {
-    public struct Ray
+    public struct RayS
     {
         public Vector3S Origin;
         public Vector3S Direction;
 
-        public Ray(Vector3S origin, Vector3S direction)
+        public RayS(Vector3S origin, Vector3S direction)
         {
             Origin = origin;
             Direction = direction;
         }
     }
 
-    public struct RaycastHit
+    public struct RaycastHitS
     {
-        public SRigidbody Rigidbody;
+        public RigidbodyS Rigidbody;
         public f32 Distance;
         public Vector3S Point;
         public Vector3S Normal;
 
-        public RaycastHit(SRigidbody rigidbody, f32 distance, Vector3S point, Vector3S normal)
+        public RaycastHitS(RigidbodyS rigidbody, f32 distance, Vector3S point, Vector3S normal)
         {
             Rigidbody = rigidbody;
             Distance = distance;
@@ -33,7 +33,7 @@ namespace stupid.Maths
 
     public static class RayExtensions
     {
-        public static bool Intersects(this Ray ray, SBounds bounds, out f32 distance, out Vector3S point, out Vector3S normal)
+        public static bool Intersects(this RayS ray, BoundsS bounds, out f32 distance, out Vector3S point, out Vector3S normal)
         {
             Vector3S invDir = new Vector3S(f32.one / ray.Direction.x, f32.one / ray.Direction.y, f32.one / ray.Direction.z);
 

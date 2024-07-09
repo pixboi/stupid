@@ -70,7 +70,7 @@ namespace stupid.Maths
             );
         }
 
-        public static Matrix3S Rotate(SQuaternion q)
+        public static Matrix3S Rotate(QuaternionS q)
         {
             f32 xx = q.x * q.x;
             f32 yy = q.y * q.y;

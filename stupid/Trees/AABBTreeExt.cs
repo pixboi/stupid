@@ -1,7 +1,8 @@
-﻿using stupid.Maths;
+﻿using stupid.Colliders;
+using stupid.Maths;
 using System.Collections.Generic;
 
-namespace stupid.Colliders
+namespace stupid.Trees
 {
     public static class AABBTreeExt
     {
@@ -69,14 +70,14 @@ namespace stupid.Colliders
         }
         */
 
-        public static List<SBounds> CollectBounds(this AABBTree tree)
+        public static List<BoundsS> CollectBounds(this AABBTree tree)
         {
-            List<SBounds> boundsList = new List<SBounds>();
+            List<BoundsS> boundsList = new List<BoundsS>();
             CollectBounds(tree.Root, boundsList);
             return boundsList;
         }
 
-        private static void CollectBounds(AABBNode node, List<SBounds> boundsList)
+        private static void CollectBounds(AABBNode node, List<BoundsS> boundsList)
         {
             if (node == null) return;
 

@@ -1,13 +1,13 @@
 ﻿using stupid.Colliders;
 using System.Collections.Generic;
 
-namespace stupid
+namespace stupid.Trees
 {
     public class AABBTree
     {
         public AABBNode Root { get; private set; }
 
-        public void Insert(SRigidbody body)
+        public void Insert(RigidbodyS body)
         {
             var node = new AABBNode(body);
             if (Root == null)
@@ -24,7 +24,7 @@ namespace stupid
         {
             if (root.IsLeaf)
             {
-                var newParent = new AABBNode(SBounds.Union(root.Bounds, node.Bounds))
+                var newParent = new AABBNode(BoundsS.Union(root.Bounds, node.Bounds))
                 {
                     Left = root,
                     Right = node
@@ -33,18 +33,18 @@ namespace stupid
                 root.Parent = newParent;
                 node.Parent = newParent;
 
-                if (root == this.Root)
+                if (root == Root)
                 {
-                    this.Root = newParent;
+                    Root = newParent;
                 }
             }
             else
             {
-                var leftUnion = SBounds.Union(root.Left.Bounds, node.Bounds);
-                var rightUnion = SBounds.Union(root.Right.Bounds, node.Bounds);
+                var leftUnion = BoundsS.Union(root.Left.Bounds, node.Bounds);
+                var rightUnion = BoundsS.Union(root.Right.Bounds, node.Bounds);
 
-                var leftGrowth = leftUnion.Size.SqrMagnitude - root.Left.Bounds.Size.SqrMagnitude;
-                var rightGrowth = rightUnion.Size.SqrMagnitude - root.Right.Bounds.Size.SqrMagnitude;
+                var leftGrowth = leftUnion.size.SqrMagnitude - root.Left.Bounds.size.SqrMagnitude;
+                var rightGrowth = rightUnion.size.SqrMagnitude - root.Right.Bounds.size.SqrMagnitude;
 
                 if (leftGrowth < rightGrowth)
                 {
@@ -55,11 +55,11 @@ namespace stupid
                     InsertNode(root.Right, node);
                 }
 
-                root.Bounds = SBounds.Union(root.Left.Bounds, root.Right.Bounds);
+                root.Bounds = BoundsS.Union(root.Left.Bounds, root.Right.Bounds);
             }
         }
 
-        public void Remove(SRigidbody body)
+        public void Remove(RigidbodyS body)
         {
             var node = FindNode(Root, body);
             if (node == null) return;
@@ -107,13 +107,13 @@ namespace stupid
             {
                 if (node.Left != null && node.Right != null)
                 {
-                    node.Bounds = SBounds.Union(node.Left.Bounds, node.Right.Bounds);
+                    node.Bounds = BoundsS.Union(node.Left.Bounds, node.Right.Bounds);
                 }
                 node = node.Parent;
             }
         }
 
-        private AABBNode FindNode(AABBNode root, SRigidbody body)
+        private AABBNode FindNode(AABBNode root, RigidbodyS body)
         {
             if (root == null) return null;
 

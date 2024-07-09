@@ -7,21 +7,21 @@ namespace stupid.Colliders
     /// <summary>
     /// Represents an axis-aligned bounding box defined by minimum and maximum points.
     /// </summary>
-    public struct SBounds
+    public struct BoundsS
     {
         public Vector3S min;
         public Vector3S max;
+        public Vector3S center => (min + max) * f32.half;
+        public Vector3S size => max - min;
+        public Vector3S halfSize => size * f32.half;
 
-        public SBounds(Vector3S min, Vector3S max)
+        public BoundsS(Vector3S min, Vector3S max)
         {
             this.min = min;
             this.max = max;
         }
 
-        public Vector3S Center => (min + max) * f32.half;
-        public Vector3S Size => max - min;
-
-        public bool Intersects(SBounds other)
+        public bool Intersects(BoundsS other)
         {
             if (max.x < other.min.x || min.x > other.max.x) return false;
             if (max.y < other.min.y || min.y > other.max.y) return false;
@@ -29,19 +29,18 @@ namespace stupid.Colliders
             return true;
         }
 
-        public static SBounds Union(SBounds a, SBounds b)
+        public void Union(BoundsS other) => this = Union(this, other);
+        public static BoundsS Union(BoundsS a, BoundsS b)
         {
-            return new SBounds(
+            return new BoundsS(
                 new Vector3S(MathS.Min(a.min.x, b.min.x), MathS.Min(a.min.y, b.min.y), MathS.Min(a.min.z, b.min.z)),
                 new Vector3S(MathS.Max(a.max.x, b.max.x), MathS.Max(a.max.y, b.max.y), MathS.Max(a.max.z, b.max.z))
             );
         }
 
-        public void Union(SBounds other) => this = Union(this, other);
-
         public int MaximumExtent()
         {
-            Vector3S diag = Size;
+            Vector3S diag = size;
             if (diag.x > diag.y && diag.x > diag.z)
                 return 0;
             else if (diag.y > diag.z)
@@ -57,7 +56,7 @@ namespace stupid.Colliders
                    point.z >= min.z && point.z <= max.z;
         }
 
-        public bool Contains(SBounds other)
+        public bool Contains(BoundsS other)
         {
             return Contains(other.min) && Contains(other.max);
         }
@@ -91,13 +90,13 @@ namespace stupid.Colliders
             max = Vector3S.Max(max, point);
         }
 
-        public void Encapsulate(SBounds other)
+        public void Encapsulate(BoundsS other)
         {
             min = Vector3S.Min(min, other.min);
             max = Vector3S.Max(max, other.max);
         }
 
-        public bool IntersectRay(Ray ray)
+        public bool IntersectRay(RayS ray)
         {
             f32 tmin = (min.x - ray.Origin.x) / ray.Direction.x;
             f32 tmax = (max.x - ray.Origin.x) / ray.Direction.x;

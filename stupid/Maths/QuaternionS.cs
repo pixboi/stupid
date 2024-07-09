@@ -1,17 +1,19 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 
 namespace stupid.Maths
 {
-    public struct SQuaternion
+    public struct QuaternionS
     {
         public f32 x;
         public f32 y;
         public f32 z;
         public f32 w;
 
-        public static readonly SQuaternion Identity = new SQuaternion(f32.zero, f32.zero, f32.zero, f32.one);
+        public static readonly QuaternionS identity = new QuaternionS(f32.zero, f32.zero, f32.zero, f32.one);
+        public static readonly QuaternionS zero = new QuaternionS(f32.zero, f32.zero, f32.zero, f32.zero);
 
-        public SQuaternion(f32 x, f32 y, f32 z, f32 w)
+        public QuaternionS(f32 x, f32 y, f32 z, f32 w)
         {
             this.x = x;
             this.y = y;
@@ -19,7 +21,7 @@ namespace stupid.Maths
             this.w = w;
         }
 
-        public SQuaternion(float x, float y, float z, float w)
+        public QuaternionS(float x, float y, float z, float w)
         {
             this.x = f32.FromFloat(x);
             this.y = f32.FromFloat(y);
@@ -27,11 +29,11 @@ namespace stupid.Maths
             this.w = f32.FromFloat(w);
         }
 
-        public static SQuaternion FromAxisAngle(Vector3S axis, f32 angle)
+        public static QuaternionS FromAxisAngle(Vector3S axis, f32 angle)
         {
             f32 halfAngle = angle * f32.half;
             f32 sinHalfAngle = MathS.Sin(halfAngle);
-            return new SQuaternion(
+            return new QuaternionS(
                 axis.x * sinHalfAngle,
                 axis.y * sinHalfAngle,
                 axis.z * sinHalfAngle,
@@ -39,7 +41,7 @@ namespace stupid.Maths
             );
         }
 
-        public static SQuaternion FromEulerAngles(Vector3S eulerAngles)
+        public static QuaternionS FromEulerAngles(Vector3S eulerAngles)
         {
             f32 c1 = MathS.Cos(eulerAngles.y * f32.half);
             f32 c2 = MathS.Cos(eulerAngles.z * f32.half);
@@ -48,7 +50,7 @@ namespace stupid.Maths
             f32 s2 = MathS.Sin(eulerAngles.z * f32.half);
             f32 s3 = MathS.Sin(eulerAngles.x * f32.half);
 
-            return new SQuaternion(
+            return new QuaternionS(
                 s1 * c2 * c3 + c1 * s2 * s3,
                 c1 * s2 * c3 - s1 * c2 * s3,
                 c1 * c2 * s3 + s1 * s2 * c3,
@@ -56,9 +58,9 @@ namespace stupid.Maths
             );
         }
 
-        public static SQuaternion operator *(SQuaternion a, SQuaternion b)
+        public static QuaternionS operator *(QuaternionS a, QuaternionS b)
         {
-            return new SQuaternion(
+            return new QuaternionS(
                 a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
                 a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
                 a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
@@ -66,7 +68,7 @@ namespace stupid.Maths
             );
         }
 
-        public static Vector3S operator *(SQuaternion q, Vector3S v)
+        public static Vector3S operator *(QuaternionS q, Vector3S v)
         {
             Vector3S u = new Vector3S(q.x, q.y, q.z);
             f32 s = q.w;
@@ -76,9 +78,9 @@ namespace stupid.Maths
                  + (f32)2 * s * Vector3S.Cross(u, v);
         }
 
-        public static SQuaternion operator /(SQuaternion q, f32 scalar)
+        public static QuaternionS operator /(QuaternionS q, f32 scalar)
         {
-            return new SQuaternion(q.x / scalar, q.y / scalar, q.z / scalar, q.w / scalar);
+            return new QuaternionS(q.x / scalar, q.y / scalar, q.z / scalar, q.w / scalar);
         }
 
         public f32 MagnitudeSquared()
@@ -92,27 +94,45 @@ namespace stupid.Maths
             return magnitudeSquared > f32.epsilon ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
-        public SQuaternion Normalize()
+        public QuaternionS Normalize()
         {
             f32 magnitude = Magnitude();
 
             if (magnitude > f32.epsilon)
             {
                 f32 invMagnitude = f32.one / magnitude;
-                return new SQuaternion(x * invMagnitude, y * invMagnitude, z * invMagnitude, w * invMagnitude);
+                return new QuaternionS(x * invMagnitude, y * invMagnitude, z * invMagnitude, w * invMagnitude);
             }
 
-            return Identity;
+            return identity;
         }
 
-        public SQuaternion Conjugate()
+        public QuaternionS Conjugate()
         {
-            return new SQuaternion(-x, -y, -z, w);
+            return new QuaternionS(-x, -y, -z, w);
         }
 
         public override string ToString()
         {
             return $"Quaternion({x}, {y}, {z}, {w})";
         }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is QuaternionS quaternion &&
+                   x.Equals(quaternion.x) &&
+                   y.Equals(quaternion.y) &&
+                   z.Equals(quaternion.z) &&
+                   w.Equals(quaternion.w);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(x, y, z, w);
+        }
+
+        public static bool operator ==(QuaternionS left, QuaternionS right) => left.Equals(right);
+
+        public static bool operator !=(QuaternionS left, QuaternionS right) => !(left == right);
     }
 }

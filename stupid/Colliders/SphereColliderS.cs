@@ -2,35 +2,33 @@ using stupid.Maths;
 
 namespace stupid.Colliders
 {
-    public class SSphereCollider : BaseCollider
+    public class SphereColliderS : BaseShape
     {
-        public f32 Radius { get; private set; }
-
-        public SSphereCollider(f32 radius)
+        public f32 radius { get; private set; }
+        public SphereColliderS(f32 radius)
         {
-            Radius = radius;
+            this.radius = radius;
         }
 
-        public override SBounds CalculateBounds(Vector3S position)
+        public override BoundsS CalculateBounds(Vector3S position)
         {
-            var size = new Vector3S(Radius, Radius, Radius);
-            _bounds = new SBounds(position - size, position + size);
+            var size = new Vector3S(radius, radius, radius);
+            _bounds = new BoundsS(position - size, position + size);
             return _bounds;
         }
 
-        public override SBounds GetBounds() => _bounds;
-
-        public override bool Intersects(Vector3S positionA, Vector3S positionB, ICollider other, out Contact contact)
+        public override bool Intersects(Collidable other, out ContactS contact)
         {
-            contact = new Contact();
+            contact = new ContactS();
 
-            if (other is SSphereCollider otherSphere)
+            if (other.collider is SphereColliderS otherSphere)
             {
-                return IntersectsSphere(positionA, positionB, otherSphere, out contact);
-            }
-            else if (other is SBoxCollider otherBox)
-            {
-                return otherBox.Intersects(positionB, positionA, this, out contact);
+                return IntersectSphere(
+                    this.attachedCollidable.transform.position,
+                    otherSphere.attachedCollidable.transform.position,
+                    this.radius,
+                    otherSphere.radius,
+                    out contact);
             }
 
             return false;
@@ -39,7 +37,8 @@ namespace stupid.Colliders
         public override Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // For a solid sphere: I = 2/5 * m * r^2
-            f32 inertia = (f32.FromRaw(2) / f32.FromRaw(5)) * mass * Radius * Radius;
+            f32 inertia = ((f32)2 / (f32)5) * mass * radius * radius;
+
             return new Matrix3S(
                 new Vector3S(inertia, f32.zero, f32.zero),
                 new Vector3S(f32.zero, inertia, f32.zero),
@@ -47,15 +46,16 @@ namespace stupid.Colliders
             );
         }
 
-        private bool IntersectsSphere(Vector3S positionA, Vector3S positionB, SSphereCollider otherSphere, out Contact contact)
+
+        public static bool IntersectSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, out ContactS contact)
         {
-            contact = new Contact();
+            contact = new ContactS();
 
             // Calculate the squared distance between the two positions
             var squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
 
             // Calculate the combined radius of both spheres
-            var combinedRadius = Radius + otherSphere.Radius;
+            var combinedRadius = radA + radB;
             var squaredCombinedRadius = combinedRadius * combinedRadius;
 
             // If the squared distance is greater than the squared combined radius, there is no intersection
@@ -68,11 +68,13 @@ namespace stupid.Colliders
             var direction = (positionB - positionA).NormalizeWithMagnitude(out var distance);
 
             // Set contact information
-            contact.point = positionA + direction * Radius;
+            contact.point = positionA + direction * radA;
             contact.normal = direction;
             contact.penetrationDepth = combinedRadius - distance;
 
             return true;
         }
+
+
     }
 }

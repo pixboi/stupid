@@ -6,7 +6,7 @@ namespace stupid
 {
     public interface IBroadphase
     {
-        HashSet<BodyPair> ComputePairs(List<SRigidbody> rigidbodies);
+        HashSet<BodyPair> ComputePairs(List<Collidable> rigidbodies);
     }
 
     public class SortAndSweepBroadphase : IBroadphase
@@ -18,7 +18,7 @@ namespace stupid
         private readonly HashSet<BodyPair> pairs;
         private int[] overlapCount;
         private int rbCount = 0;
-        private SRigidbody[] activeList;
+        private Collidable[] activeList;
         private int activeListCount;
 
         public SortAndSweepBroadphase(int initialCapacity = 100)
@@ -27,10 +27,10 @@ namespace stupid
             endpointsY = new AxisEndpoint[initialCapacity * 2];
             endpointsZ = new AxisEndpoint[initialCapacity * 2];
             pairs = new HashSet<BodyPair>(initialCapacity * initialCapacity, new BodyPairComparer());
-            activeList = new SRigidbody[initialCapacity];
+            activeList = new Collidable[initialCapacity];
         }
 
-        private void Rebuild(List<SRigidbody> rigidbodies)
+        private void Rebuild(List<Collidable> rigidbodies)
         {
             int endpointCapacity = rigidbodies.Count * 2;
             if (endpointsX.Length < endpointCapacity)
@@ -52,12 +52,12 @@ namespace stupid
                 endpointsZ[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.z, IsMin = false, Body = body };
             }
 
-            activeList = new SRigidbody[rigidbodies.Count];
+            activeList = new Collidable[rigidbodies.Count];
             rbCount = rigidbodies.Count;
             overlapCount = new int[rbCount * rbCount];
         }
 
-        public HashSet<BodyPair> ComputePairs(List<SRigidbody> rigidbodies)
+        public HashSet<BodyPair> ComputePairs(List<Collidable> rigidbodies)
         {
             if (rbCount != rigidbodies.Count)
             {
@@ -90,7 +90,7 @@ namespace stupid
                     var bodyA = rigidbodies[aIndex];
                     var bodyB = rigidbodies[bIndex];
 
-                    if (bodyA.collider.GetBounds().Intersects(bodyB.collider.GetBounds()))
+                    if (bodyA.GetBounds().Intersects(bodyB.GetBounds()))
                     {
                         pairs.Add(new BodyPair(aIndex, bIndex));
                     }
@@ -187,7 +187,7 @@ namespace stupid
         {
             public f32 Value;
             public bool IsMin;
-            public SRigidbody Body;
+            public Collidable Body;
         }
     }
 
@@ -196,7 +196,6 @@ namespace stupid
         public int aIndex;
         public int bIndex;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BodyPair(int aIndex, int bIndex)
         {
             bool condition = aIndex < bIndex;

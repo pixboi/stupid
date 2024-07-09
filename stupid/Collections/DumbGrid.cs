@@ -39,7 +39,7 @@ namespace stupid.Collections
         }
 
 
-        public void Add(SBounds bounds, T value)
+        public void Add(BoundsS bounds, T value)
         {
             // Precompute bounds adjusted for cell center
             f32 adjustedMinX = bounds.min.x + HalfSize;
