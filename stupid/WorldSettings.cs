@@ -21,7 +21,7 @@ namespace stupid
         {
             return new WorldSettings
             {
-                Gravity = new Vector3S(0, -10, 0),
+                Gravity = new Vector3S(0, -20, 0),
                 DefaultMaterial = PhysicsMaterialS.DEFAULT_MATERIAL,
                 BounceTreshold = f32.two,
                 DefaultMaxDepenetrationVelocity = (f32)10,
