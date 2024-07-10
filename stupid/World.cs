@@ -201,7 +201,6 @@ namespace stupid
         }
 
 
-
         private void ResolveCollision(RigidbodyS a, RigidbodyS b, ContactS contact)
         {
             // Calculate relative positions from the centers of mass to the contact point
@@ -231,10 +230,10 @@ namespace stupid
             f32 invEffectiveMassB = invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, contact.normal), rb), contact.normal);
             f32 invMassSum = invEffectiveMassA + invEffectiveMassB;
 
-            // Calculate the impulse scalar
+            // Calculate the normal impulse scalar
             f32 j = -(f32.one + bounce) * velocityAlongNormal / invMassSum;
 
-            // Apply linear and angular impulse
+            // Apply linear impulse
             Vector3S impulse = j * contact.normal;
             velocityBuffer[a.index] -= invMassA * impulse;
             velocityBuffer[b.index] += invMassB * impulse;
@@ -242,7 +241,7 @@ namespace stupid
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
-            f32 slop = Settings.DefaultContactOffset; // usually a small value
+            f32 slop = Settings.DefaultContactOffset;
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / invMassSum) * POSITION_PERCENT * contact.normal;
             positionBuffer[a.index] -= invMassA * correction;
@@ -250,29 +249,22 @@ namespace stupid
 
             // Calculate relative tangential velocity
             Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * contact.normal);
-
-            // Define the tangent vector
             Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
 
             // Calculate the magnitude of the friction impulse
             f32 denominatorA = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent);
             f32 denominatorB = invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
             f32 denominator = denominatorA + denominatorB;
-
             f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / denominator;
 
-            // Determine whether to use static or dynamic friction
-            f32 dynamicFriction = MathS.Max(a.material.dynamicFriction, b.material.dynamicFriction);
-
-            f32 effectiveFriction = dynamicFriction;
+            // Use the maximum of the static and dynamic friction coefficients
+            f32 effectiveFriction = MathS.Max(MathS.Max(a.material.staticFriction, a.material.dynamicFriction), MathS.Max(b.material.staticFriction, b.material.dynamicFriction));
 
             // Limit the friction impulse to prevent excessive angular velocities
             Vector3S frictionImpulse = MathS.Abs(jt) < j * effectiveFriction ? jt * tangent : -j * effectiveFriction * tangent;
-
-            f32 maxFrictionImpulse = j * effectiveFriction;
-            if (frictionImpulse.Magnitude() > maxFrictionImpulse)
+            if (frictionImpulse.Magnitude() > j * effectiveFriction)
             {
-                frictionImpulse = frictionImpulse.Normalize() * maxFrictionImpulse;
+                frictionImpulse = frictionImpulse.Normalize() * (j * effectiveFriction);
             }
 
             // Apply friction impulse
@@ -281,5 +273,6 @@ namespace stupid
             angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
+
     }
 }

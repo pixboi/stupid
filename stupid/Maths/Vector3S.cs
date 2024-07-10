@@ -131,6 +131,14 @@ namespace stupid.Maths
             return v;
         }
 
+        public Vector3S Rotate(QuaternionS rotation)
+        {
+            var qVector = new QuaternionS(x, y, z, f32.zero);
+            var qConjugate = rotation.Conjugate();
+            var qResult = rotation * qVector * qConjugate;
+            return new Vector3S(qResult.x, qResult.y, qResult.z);
+        }
+
 
         public bool Equals(Vector3S other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);
 

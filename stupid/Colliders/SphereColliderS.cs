@@ -31,6 +31,16 @@ namespace stupid.Colliders
                     out contact);
             }
 
+            if (other.collider is BoxColliderS otherBox)
+            {
+                return BoxColliderS.IntersectBoxSphere(
+                    other.transform.position,
+                    other.transform.rotation,
+                    otherBox.size,
+                    this.attachedCollidable.transform.position,
+                    this.radius, out contact);
+            }
+
             return false;
         }
 

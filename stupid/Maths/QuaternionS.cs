@@ -94,6 +94,12 @@ namespace stupid.Maths
             return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
+        public static QuaternionS Inverse(QuaternionS q)
+        {
+            f32 magnitudeSquared = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+            return new QuaternionS(-q.x / magnitudeSquared, -q.y / magnitudeSquared, -q.z / magnitudeSquared, q.w / magnitudeSquared);
+        }
+
         public QuaternionS Normalize()
         {
             f32 magnitude = Magnitude();
