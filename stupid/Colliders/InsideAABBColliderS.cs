@@ -92,7 +92,7 @@ namespace stupid.Colliders
 
         public override bool Intersects(Collidable other, out ContactS contact)
         {
-            if (other.collider is SphereColliderS sphere)
+            if (other.collider is SphereColliderS)
             {
                 return IntersectsSphere(other, out contact);
             }

@@ -37,7 +37,7 @@ namespace stupid.Colliders
         public override Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // For a solid sphere: I = 2/5 * m * r^2
-            f32 inertia = ((f32)2 / (f32)5) * mass * radius * radius;
+            f32 inertia = ((f32)2f / (f32)5f) * mass * radius * radius;
 
             return new Matrix3S(
                 new Vector3S(inertia, f32.zero, f32.zero),

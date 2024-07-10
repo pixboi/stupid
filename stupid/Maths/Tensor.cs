@@ -13,7 +13,8 @@
             this.inertiaWorld = inertiaInverseLocal;
 
             if (initialRotation == QuaternionS.zero) initialRotation = QuaternionS.identity;
-            CalculateInverseInertiaTensor(QuaternionS.identity);
+
+            CalculateInverseInertiaTensor(initialRotation);
         }
 
         public Matrix3S inertiaWorld { get; private set; }
