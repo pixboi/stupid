@@ -233,21 +233,19 @@ namespace stupid
             // Calculate the normal impulse scalar
             f32 j = -(f32.one + bounce) * velocityAlongNormal / invEffectiveMassB;
 
-            // Apply linear and angular impulse
+            // Apply linear impulse
             Vector3S impulse = j * contact.normal;
-            Vector3S totalImpulse = invMassB * impulse;
-            velocityBuffer[body.index] += totalImpulse;
+            velocityBuffer[body.index] += invMassB * impulse;
 
-            Vector3S totalAngularImpulse = body.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
-            angularBuffer[body.index] += totalAngularImpulse;
+            // Apply angular impulse
+            angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
             f32 percent = (f32)0.8f;
             f32 slop = (f32)0.01f;
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / invEffectiveMassB) * percent * contact.normal;
-            Vector3S totalCorrection = invMassB * correction;
-            positionBuffer[body.index] += totalCorrection;
+            positionBuffer[body.index] += invMassB * correction;
 
             // Calculate relative tangential velocity
             Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * contact.normal);
@@ -261,26 +259,17 @@ namespace stupid
             f32 effectiveFriction = MathS.Max(body.material.staticFriction, body.material.dynamicFriction);
 
             // Limit the friction impulse to prevent excessive angular velocities
-            Vector3S frictionImpulse;
-            if (MathS.Abs(jt) < j * effectiveFriction)
+            Vector3S frictionImpulse = MathS.Abs(jt) < j * effectiveFriction ? jt * tangent : -j * effectiveFriction * tangent;
+            if (frictionImpulse.Magnitude() > j * effectiveFriction)
             {
-                frictionImpulse = jt * tangent;
-            }
-            else
-            {
-                frictionImpulse = -j * effectiveFriction * tangent;
-            }
-
-            f32 maxFrictionImpulse = j * effectiveFriction;
-            if (frictionImpulse.Magnitude() > maxFrictionImpulse)
-            {
-                frictionImpulse = frictionImpulse.Normalize() * maxFrictionImpulse;
+                frictionImpulse = frictionImpulse.Normalize() * (j * effectiveFriction);
             }
 
             // Apply friction impulse
             velocityBuffer[body.index] += invMassB * frictionImpulse;
             angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
+
 
 
         private void ResolveCollision(RigidbodyS a, RigidbodyS b, ContactS contact)
