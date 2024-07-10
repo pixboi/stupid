@@ -10,30 +10,29 @@ namespace stupid
 {
     public class World
     {
+        public WorldSettings Settings { get; private set; }
         public SortAndSweepBroadphase Broadphase { get; set; }
-        public BoundsS WorldBounds { get; private set; }
         public List<Collidable> Collidables { get; private set; }
-        public Vector3S Gravity { get; private set; }
         public uint SimulationFrame { get; private set; }
         public DumbGrid<int> DumbGrid { get; private set; }
 
         private int counter;
         public readonly Vector3S[] positionBuffer, velocityBuffer, angularBuffer;
 
-        public World(BoundsS worldBounds, SortAndSweepBroadphase broadphase, Vector3S gravity, int startSize = 1000)
+        public World(WorldSettings worldSettings, int startSize = 1000)
         {
-            counter = 0;
-            SimulationFrame = 0;
-            WorldBounds = worldBounds;
-            Gravity = gravity;
+            this.Settings = worldSettings;
+
             Collidables = new List<Collidable>(startSize);
             DumbGrid = new DumbGrid<int>(32, 32, 32, (f32)4);
-
-            Broadphase = broadphase;
+            Broadphase = new SortAndSweepBroadphase(startSize);
 
             positionBuffer = new Vector3S[startSize * 2];
             velocityBuffer = new Vector3S[startSize * 2];
             angularBuffer = new Vector3S[startSize * 2];
+
+            counter = 0;
+            SimulationFrame = 0;
         }
 
 
@@ -79,7 +78,7 @@ namespace stupid
             var pairs = Broadphase.ComputePairs(Collidables);
             NarrowPhase(pairs);
 
-            var worldCollision = new InsideAABBColliderS(WorldBounds.min, WorldBounds.max);
+            var worldCollision = new InsideAABBColliderS(Settings.WorldBounds.min, Settings.WorldBounds.max);
             foreach (var c in Collidables)
             {
                 if (c is RigidbodyS rb)
@@ -123,7 +122,7 @@ namespace stupid
             Array.Clear(positionBuffer, 0, velocityBuffer.Length);
         }
 
-        f32 MAX_ANGULAR = (f32)7;
+        f32 MAX_ANG = (f32)7;
         private void Integrate(f32 deltaTime)
         {
             foreach (RigidbodyS rb in Collidables)
@@ -133,7 +132,7 @@ namespace stupid
                 // Apply accumulated forces
                 if (rb.useGravity)
                 {
-                    rb.AddForce(Gravity, ForceModeS.Acceleration); // Apply gravity as acceleration
+                    rb.AddForce(Settings.Gravity, ForceModeS.Acceleration); // Apply gravity as acceleration
                 }
 
                 // Update linear velocity with accumulated forces
@@ -153,7 +152,11 @@ namespace stupid
 
                 // Apply angular drag
                 rb.angularVelocity *= MathS.Max((f32)1.0f - rb.angularDrag * deltaTime, (f32)0.0f);
-                //rb.angularVelocity = Vector3S.Clamp(rb.angularVelocity, -MAX_ANGULAR, MAX_ANGULAR);
+
+                if (rb.angularVelocity.SqrMagnitude > rb.maxAngularVelocitySqr)
+                {
+                    rb.angularVelocity = rb.angularVelocity.ClampMagnitude(-MAX_ANG, MAX_ANG);
+                }
 
                 // Update rotation
                 if (rb.angularVelocity.SqrMagnitude > f32.epsilon)
@@ -222,7 +225,7 @@ namespace stupid
             if (velocityAlongNormal > f32.zero) return;
 
             // Restitution (coefficient of restitution)
-            f32 bounce = body.material.bounciness;
+            f32 bounce = relativeVelocityAtContact.Magnitude() >= Settings.BounceTreshold ? body.material.bounciness : f32.zero;
 
             // Calculate inverse mass
             f32 invMassB = body.mass > f32.zero ? f32.one / body.mass : f32.zero;
@@ -241,10 +244,9 @@ namespace stupid
             angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
-            f32 percent = (f32)0.2f;
-            f32 slop = (f32)0.01f;
+            f32 slop = Settings.DefaultContactOffset;
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-            Vector3S correction = (penetrationDepth / invEffectiveMassB) * percent * contact.normal;
+            Vector3S correction = (penetrationDepth / invEffectiveMassB) * POSITION_PERCENT * contact.normal;
             positionBuffer[body.index] += invMassB * correction;
 
             // Calculate relative tangential velocity
@@ -270,6 +272,7 @@ namespace stupid
             angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
 
+        f32 POSITION_PERCENT = f32.half;
         private void ResolveCollision(RigidbodyS a, RigidbodyS b, ContactS contact)
         {
             // Calculate relative positions from the centers of mass to the contact point
@@ -288,7 +291,7 @@ namespace stupid
             if (velocityAlongNormal > f32.zero) return;
 
             // Restitution (coefficient of restitution)
-            f32 bounce = MathS.Max(a.material.bounciness, b.material.bounciness);
+            f32 bounce = relativeVelocityAtContact.Magnitude() >= Settings.BounceTreshold ? (a.material.bounciness + b.material.bounciness) * f32.half : f32.zero;
 
             // Calculate inverse masses
             f32 invMassA = a.mass > f32.zero ? f32.one / a.mass : f32.zero;
@@ -310,10 +313,9 @@ namespace stupid
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
-            f32 percent = (f32)0.2f; // usually between 0.2 and 0.8
-            f32 slop = (f32)0.01f; // usually a small value
+            f32 slop = Settings.DefaultContactOffset; // usually a small value
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-            Vector3S correction = (penetrationDepth / invMassSum) * percent * contact.normal;
+            Vector3S correction = (penetrationDepth / invMassSum) * POSITION_PERCENT * contact.normal;
             positionBuffer[a.index] -= invMassA * correction;
             positionBuffer[b.index] += invMassB * correction;
 
@@ -330,8 +332,11 @@ namespace stupid
 
             f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / denominator;
 
-            // Use the maximum of the static and dynamic friction coefficients
-            f32 effectiveFriction = MathS.Max(a.material.staticFriction, b.material.staticFriction);
+            // Determine whether to use static or dynamic friction
+            f32 staticFriction = MathS.Max(a.material.staticFriction, b.material.staticFriction);
+            f32 dynamicFriction = MathS.Max(a.material.dynamicFriction, b.material.dynamicFriction);
+
+            f32 effectiveFriction = relativeTangentialVelocity.Magnitude() < f32.epsilon ? staticFriction : dynamicFriction;
 
             // Limit the friction impulse to prevent excessive angular velocities
             Vector3S frictionImpulse = MathS.Abs(jt) < j * effectiveFriction ? jt * tangent : -j * effectiveFriction * tangent;
@@ -348,6 +353,5 @@ namespace stupid
             angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
-
     }
 }

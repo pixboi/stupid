@@ -114,6 +114,24 @@ namespace stupid.Maths
             return new Vector3S(MathS.Clamp(v.x, min, max), MathS.Clamp(v.y, min, max), MathS.Clamp(v.z, min, max));
         }
 
+        public Vector3S ClampMagnitude(f32 min, f32 max) => ClampMagnitude(this, min, max);
+        public static Vector3S ClampMagnitude(Vector3S v, f32 min, f32 max)
+        {
+            f32 sqrMagnitude = v.SqrMagnitude;
+            if (sqrMagnitude > max * max)
+            {
+                f32 scale = max / MathS.Sqrt(sqrMagnitude);
+                return v * scale;
+            }
+            else if (sqrMagnitude < min * min)
+            {
+                f32 scale = min / MathS.Sqrt(sqrMagnitude);
+                return v * scale;
+            }
+            return v;
+        }
+
+
         public bool Equals(Vector3S other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);
 
         public override bool Equals(object obj) => obj is Vector3S other && Equals(other);
