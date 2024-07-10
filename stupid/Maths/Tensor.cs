@@ -3,9 +3,20 @@
     public struct Tensor
     {
         // Tensors
-        public Matrix3S inertia;
-        public Matrix3S inertiaWorld;
-        public Matrix3S inertiaInverseLocal; // Precalculated local inverse inertia tensor
+        public readonly Matrix3S inertia; //Precalc
+        public readonly Matrix3S inertiaInverseLocal; // Precalculated local inverse inertia tensor
+
+        public Tensor(Matrix3S inertia, QuaternionS initialRotation = default)
+        {
+            this.inertia = inertia;
+            this.inertiaInverseLocal = inertia.Inverse();
+            this.inertiaWorld = inertiaInverseLocal;
+
+            if (initialRotation == QuaternionS.zero) initialRotation = QuaternionS.identity;
+            CalculateInverseInertiaTensor(QuaternionS.identity);
+        }
+
+        public Matrix3S inertiaWorld { get; private set; }
 
         public void CalculateInverseInertiaTensor(QuaternionS rotation)
         {

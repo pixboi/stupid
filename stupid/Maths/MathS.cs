@@ -12,6 +12,12 @@ namespace stupid.Maths
             return Max(min, Min(max, value));
         }
 
+        public static f32 Sign(f32 value)
+        {
+            if (value < f32.zero) return f32.negativeOne;
+            return f32.one;
+        }
+
         public static f32 Floor(f32 value)
         {
             long raw = value.ToRaw();

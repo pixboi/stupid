@@ -227,8 +227,6 @@ namespace stupid.Colliders
             return true;
         }
 
-
-
         public override Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // This collider doesn't have its own inertia tensor since it's used for bounds checking

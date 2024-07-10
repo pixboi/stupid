@@ -108,7 +108,7 @@ namespace stupid.Maths
             );
         }
 
-        public Vector3S Clamp(f32 min, f32 max) => Vector3S.Clamp(this, min, max);
+        public Vector3S Clamp(f32 min, f32 max) => Clamp(this, min, max);
         public static Vector3S Clamp(Vector3S v, f32 min, f32 max)
         {
             return new Vector3S(MathS.Clamp(v.x, min, max), MathS.Clamp(v.y, min, max), MathS.Clamp(v.z, min, max));

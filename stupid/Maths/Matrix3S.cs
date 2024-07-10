@@ -110,12 +110,5 @@ namespace stupid.Maths
 
             return new Matrix3S(invM11, invM12, invM13, invM21, invM22, invM23, invM31, invM32, invM33);
         }
-
-        private static void Swap(ref f32 a, ref f32 b)
-        {
-            f32 temp = a;
-            a = b;
-            b = temp;
-        }
     }
 }

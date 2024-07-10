@@ -19,8 +19,9 @@ namespace stupid
         public Vector3S angularVelocity;
 
         //Runtime
-        public Vector3S forceBucket;
-        public Vector3S torqueBucket;
+        public Vector3S forceBucket { get; private set; }
+        public Vector3S torqueBucket { get; private set; }
+        public Tensor tensor { get; private set; }
 
         // Settings
         public f32 mass = f32.one;
@@ -30,14 +31,12 @@ namespace stupid
         public bool useGravity = true;
         public bool isKinematic = false;
 
-        public Tensor tensor;
-
         public RigidbodyS(int index, IShape collider, bool isDynamic = true, TransformS transform = default,
             Vector3S velocity = default,
             Vector3S angularVelocity = default,
-            f32 mass = default, bool
-            useGravity = true, bool
-            isKinematic = false) : base(index, collider, isDynamic, transform)
+            f32 mass = default,
+            bool useGravity = true,
+            bool isKinematic = false) : base(index, collider, isDynamic, transform)
         {
 
             this.mass = mass;
@@ -45,10 +44,8 @@ namespace stupid
 
             if (collider != null)
             {
-                this.tensor = new Tensor();
-                tensor.inertia = collider.CalculateInertiaTensor(this.mass);
-                tensor.inertiaInverseLocal = tensor.inertia.Inverse();
-                tensor.inertiaWorld = tensor.inertiaInverseLocal;
+                var inertia = collider.CalculateInertiaTensor(this.mass);
+                this.tensor = new Tensor(inertia);
             }
 
             this.velocity = velocity;
