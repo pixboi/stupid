@@ -241,7 +241,7 @@ namespace stupid
             angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
-            f32 percent = (f32)0.8f;
+            f32 percent = (f32)0.2f;
             f32 slop = (f32)0.01f;
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / invEffectiveMassB) * percent * contact.normal;
@@ -269,8 +269,6 @@ namespace stupid
             velocityBuffer[body.index] += invMassB * frictionImpulse;
             angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
-
-
 
         private void ResolveCollision(RigidbodyS a, RigidbodyS b, ContactS contact)
         {
@@ -312,7 +310,7 @@ namespace stupid
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
-            f32 percent = (f32)0.8f; // usually between 0.2 and 0.8
+            f32 percent = (f32)0.2f; // usually between 0.2 and 0.8
             f32 slop = (f32)0.01f; // usually a small value
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / invMassSum) * percent * contact.normal;
@@ -350,5 +348,6 @@ namespace stupid
             angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
+
     }
 }
