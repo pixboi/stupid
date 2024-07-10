@@ -55,7 +55,7 @@ namespace stupid
             this.isKinematic = isKinematic;
         }
 
-        public void AddForce(Vector3S force, ForceModeS mode)
+        public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {
             switch (mode)
             {
@@ -81,7 +81,7 @@ namespace stupid
             }
         }
 
-        public void AddTorque(Vector3S force, ForceModeS mode)
+        public void AddTorque(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {
             switch (mode)
             {

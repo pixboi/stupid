@@ -14,6 +14,6 @@ namespace stupid
             this.bounciness = bounciness;
         }
 
-        public static readonly PhysicsMaterialS DEFAULT_MATERIAL = new PhysicsMaterialS((f32)0.9, (f32)0.9, (f32)0.6);
+        public static readonly PhysicsMaterialS DEFAULT_MATERIAL = new PhysicsMaterialS((f32)32, (f32)32, f32.zero);
     }
 }
