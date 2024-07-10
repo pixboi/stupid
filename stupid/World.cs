@@ -332,16 +332,16 @@ namespace stupid
 
             f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / denominator;
 
-            // Coulomb's law of friction
-            f32 effectiveFriction = a.material.staticFriction;
-            Vector3S frictionImpulse;
-            if (MathS.Abs(jt) < j * effectiveFriction)
+            // Use the maximum of the static and dynamic friction coefficients
+            f32 effectiveFriction = MathS.Max(a.material.staticFriction, b.material.staticFriction);
+
+            // Limit the friction impulse to prevent excessive angular velocities
+            Vector3S frictionImpulse = MathS.Abs(jt) < j * effectiveFriction ? jt * tangent : -j * effectiveFriction * tangent;
+
+            f32 maxFrictionImpulse = j * effectiveFriction;
+            if (frictionImpulse.Magnitude() > maxFrictionImpulse)
             {
-                frictionImpulse = jt * tangent;
-            }
-            else
-            {
-                frictionImpulse = -j * effectiveFriction * tangent;
+                frictionImpulse = frictionImpulse.Normalize() * maxFrictionImpulse;
             }
 
             // Apply friction impulse
@@ -350,7 +350,5 @@ namespace stupid
             angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
-
-
     }
 }
