@@ -174,6 +174,14 @@ namespace stupid
         f32 POSITION_PERCENT = (f32)0.8;
         private void ResolveCollisionWithStatic(RigidbodyS body, ContactS contact)
         {
+            // Ensure the normal always points from a to b
+            Vector3S normal = contact.normal;
+
+            if (Vector3S.Dot(contact.normal, body.transform.position - contact.point) < f32.zero)
+            {
+                normal = -contact.normal;
+            }
+
             // Calculate relative position from the center of mass to the contact point
             Vector3S rb = contact.point - body.transform.position;
 
@@ -181,7 +189,7 @@ namespace stupid
             Vector3S relativeVelocityAtContact = body.velocity + Vector3S.Cross(body.angularVelocity, rb);
 
             // Calculate the velocity along the normal
-            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, contact.normal);
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
 
             // Do not resolve if velocities are separating
             if (velocityAlongNormal > f32.zero) return;
@@ -193,24 +201,24 @@ namespace stupid
             f32 invMassB = body.mass > f32.zero ? f32.one / body.mass : f32.zero;
 
             // Compute the effective mass along the normal direction
-            f32 invEffectiveMassB = invMassB + Vector3S.Dot(Vector3S.Cross(body.tensor.inertiaWorld * Vector3S.Cross(rb, contact.normal), rb), contact.normal);
+            f32 invEffectiveMassB = invMassB + Vector3S.Dot(Vector3S.Cross(body.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
 
             // Calculate the normal impulse scalar
             f32 j = -(f32.one + bounce) * velocityAlongNormal / invEffectiveMassB;
 
             // Apply linear impulse
-            Vector3S impulse = j * contact.normal;
+            Vector3S impulse = j * normal;
             velocityBuffer[body.index] += invMassB * impulse;
             angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
             // Positional correction to prevent sinking
             f32 slop = Settings.DefaultContactOffset;
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-            Vector3S correction = (penetrationDepth / invEffectiveMassB) * POSITION_PERCENT * contact.normal;
+            Vector3S correction = (penetrationDepth / invEffectiveMassB) * POSITION_PERCENT * normal;
             positionBuffer[body.index] += invMassB * correction;
 
             // Calculate relative tangential velocity
-            Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * contact.normal);
+            Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
             Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
 
             // Calculate the magnitude of the friction impulse

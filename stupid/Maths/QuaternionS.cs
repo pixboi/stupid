@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Numerics;
 
 namespace stupid.Maths
 {
@@ -73,9 +72,9 @@ namespace stupid.Maths
             Vector3S u = new Vector3S(q.x, q.y, q.z);
             f32 s = q.w;
 
-            return (f32)2 * Vector3S.Dot(u, v) * u
+            return f32.two * Vector3S.Dot(u, v) * u
                  + (s * s - Vector3S.Dot(u, u)) * v
-                 + (f32)2 * s * Vector3S.Cross(u, v);
+                 + f32.two * s * Vector3S.Cross(u, v);
         }
 
         public static QuaternionS operator /(QuaternionS q, f32 scalar)
@@ -83,22 +82,27 @@ namespace stupid.Maths
             return new QuaternionS(q.x / scalar, q.y / scalar, q.z / scalar, q.w / scalar);
         }
 
-        public f32 MagnitudeSquared()
-        {
-            return (x * x) + (y * y) + (z * z) + (w * w);
-        }
+        public f32 SqrMagnitude => (x * x) + (y * y) + (z * z) + (w * w);
 
         public f32 Magnitude()
         {
-            f32 magnitudeSquared = MagnitudeSquared();
+            f32 magnitudeSquared = SqrMagnitude;
             return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
         public static QuaternionS Inverse(QuaternionS q)
         {
-            f32 magnitudeSquared = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
-            return new QuaternionS(-q.x / magnitudeSquared, -q.y / magnitudeSquared, -q.z / magnitudeSquared, q.w / magnitudeSquared);
+            f32 magSq = q.SqrMagnitude;
+            if (magSq > f32.epsilon)
+            {
+                f32 invMagSq = f32.one / magSq;
+                return new QuaternionS(-q.x * invMagSq, -q.y * invMagSq, -q.z * invMagSq, q.w * invMagSq);
+            }
+            // Handle zero magnitude quaternion
+            return QuaternionS.identity;
         }
+
+        public QuaternionS Inverse() => Inverse(this);
 
         public QuaternionS Normalize()
         {

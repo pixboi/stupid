@@ -43,7 +43,7 @@ namespace stupid
             for (int i = 0; i < rigidbodies.Count; i++)
             {
                 var body = rigidbodies[i];
-                var bounds = body.collider.GetBounds();
+                var bounds = body.collider.GetAABB();
                 endpointsX[i * 2] = new AxisEndpoint { Value = bounds.min.x, IsMin = true, Body = body };
                 endpointsX[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.x, IsMin = false, Body = body };
                 endpointsY[i * 2] = new AxisEndpoint { Value = bounds.min.y, IsMin = true, Body = body };
@@ -150,7 +150,7 @@ namespace stupid
             {
                 var endpoint = endpoints[i];
 
-                var bounds = endpoint.Body.collider.GetBounds();
+                var bounds = endpoint.Body.collider.GetAABB();
                 switch (axis)
                 {
                     case 0:

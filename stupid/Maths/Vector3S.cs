@@ -108,6 +108,13 @@ namespace stupid.Maths
             );
         }
 
+        public static Vector3S Abs(Vector3S a)
+        {
+            return new Vector3S(MathS.Abs(a.x), MathS.Abs(a.y), MathS.Abs(a.z));
+        }
+
+        public Vector3S Abs() => Abs(this);
+
         public Vector3S Clamp(f32 min, f32 max) => Clamp(this, min, max);
         public static Vector3S Clamp(Vector3S v, f32 min, f32 max)
         {

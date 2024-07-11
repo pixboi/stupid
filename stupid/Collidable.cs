@@ -28,7 +28,7 @@ namespace stupid
             this.material = PhysicsMaterialS.DEFAULT_MATERIAL;
         }
 
-        public BoundsS GetBounds() => this.collider.GetBounds();
-        public BoundsS CalculateBounds() => this.collider.CalculateBounds(transform.position);
+        public BoundsS GetBounds() => this.collider.GetAABB();
+        public BoundsS CalculateBounds() => this.collider.CalculateAABB(transform.position);
     }
 }

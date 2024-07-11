@@ -10,7 +10,7 @@ namespace stupid.Colliders
             this.radius = radius;
         }
 
-        public override BoundsS CalculateBounds(Vector3S position)
+        public override BoundsS CalculateAABB(Vector3S position)
         {
             var size = new Vector3S(radius, radius, radius);
             _bounds = new BoundsS(position - size, position + size);
@@ -33,7 +33,7 @@ namespace stupid.Colliders
 
             if (other.collider is BoxColliderS otherBox)
             {
-                return otherBox.Intersects(this.attachedCollidable, out contact);
+                return BoxHelpers.IntersectBoxSphere(other.transform.position, other.transform.rotation, otherBox.size, this.attachedCollidable.transform.position, this.radius, out contact);
             }
 
             return false;
