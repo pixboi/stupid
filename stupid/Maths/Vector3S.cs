@@ -5,6 +5,7 @@ namespace stupid.Maths
     public struct Vector3S : IEquatable<Vector3S>
     {
         public f32 x, y, z;
+
         public Vector3S(f32 x, f32 y, f32 z)
         {
             this.x = x;
@@ -50,7 +51,9 @@ namespace stupid.Maths
         public static readonly Vector3S back = new Vector3S(0f, 0f, -1f);
 
         public override string ToString() => $"({x}, {y}, {z})";
+
         public static f32 Dot(Vector3S a, Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
+
         public static Vector3S Cross(Vector3S a, Vector3S b) => new Vector3S(
             a.y * b.z - a.z * b.y,
             a.z * b.x - a.x * b.z,
@@ -63,63 +66,44 @@ namespace stupid.Maths
             return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
-        public f32 SqrMagnitude
-        {
-            get
-            {
-                return (x * x + y * y + z * z);
-            }
-        }
+        public f32 SqrMagnitude => (x * x + y * y + z * z);
 
         public static f32 Distance(Vector3S a, Vector3S b) => (a - b).Magnitude();
         public static f32 DistanceSquared(Vector3S a, Vector3S b) => (a - b).SqrMagnitude;
 
         public Vector3S Normalize()
         {
-            var mag = Magnitude();
-            if (mag > f32.zero)
-                return this / mag;
-            return zero;
+            f32 mag = Magnitude();
+            return mag > f32.zero ? this / mag : zero;
         }
 
         public Vector3S NormalizeWithMagnitude(out f32 mag)
         {
             mag = Magnitude();
-            if (mag > f32.zero)
-                return this / mag;
-            return zero;
+            return mag > f32.zero ? this / mag : zero;
         }
 
-        public static Vector3S Min(Vector3S a, Vector3S b)
-        {
-            return new Vector3S(
-                MathS.Min(a.x, b.x),
-                MathS.Min(a.y, b.y),
-                MathS.Min(a.z, b.z)
-            );
-        }
+        public static Vector3S Min(Vector3S a, Vector3S b) => new Vector3S(
+            MathS.Min(a.x, b.x),
+            MathS.Min(a.y, b.y),
+            MathS.Min(a.z, b.z)
+        );
 
-        public static Vector3S Max(Vector3S a, Vector3S b)
-        {
-            return new Vector3S(
-                MathS.Max(a.x, b.x),
-                MathS.Max(a.y, b.y),
-                MathS.Max(a.z, b.z)
-            );
-        }
+        public static Vector3S Max(Vector3S a, Vector3S b) => new Vector3S(
+            MathS.Max(a.x, b.x),
+            MathS.Max(a.y, b.y),
+            MathS.Max(a.z, b.z)
+        );
 
-        public static Vector3S Abs(Vector3S a)
-        {
-            return new Vector3S(MathS.Abs(a.x), MathS.Abs(a.y), MathS.Abs(a.z));
-        }
-
+        public static Vector3S Abs(Vector3S a) => new Vector3S(MathS.Abs(a.x), MathS.Abs(a.y), MathS.Abs(a.z));
         public Vector3S Abs() => Abs(this);
 
         public Vector3S Clamp(f32 min, f32 max) => Clamp(this, min, max);
-        public static Vector3S Clamp(Vector3S v, f32 min, f32 max)
-        {
-            return new Vector3S(MathS.Clamp(v.x, min, max), MathS.Clamp(v.y, min, max), MathS.Clamp(v.z, min, max));
-        }
+        public static Vector3S Clamp(Vector3S v, f32 min, f32 max) => new Vector3S(
+            MathS.Clamp(v.x, min, max),
+            MathS.Clamp(v.y, min, max),
+            MathS.Clamp(v.z, min, max)
+        );
 
         public Vector3S ClampMagnitude(f32 min, f32 max) => ClampMagnitude(this, min, max);
         public static Vector3S ClampMagnitude(Vector3S v, f32 min, f32 max)

@@ -47,56 +47,64 @@ namespace stupid.Colliders
         {
             contact = new ContactS();
 
-            // Calculate the relative position
-            Vector3S relativePosition = positionB - positionA;
-
-            // Calculate the half sizes
             Vector3S halfSizeA = sizeA * f32.half;
             Vector3S halfSizeB = sizeB * f32.half;
 
-            // Calculate the axes to test
+            Matrix3S rotA = Matrix3S.Rotate(rotationA);
+            Matrix3S rotB = Matrix3S.Rotate(rotationB);
+
+            Vector3S relativePosition = positionB - positionA;
+            //Vector3S t = rotA.Transpose() * relativePosition;
+
             List<Vector3S> axes = new List<Vector3S>
             {
-                rotationA * Vector3S.right,
-                rotationA * Vector3S.up,
-                rotationA * Vector3S.forward,
-                rotationB * Vector3S.right,
-                rotationB * Vector3S.up,
-                rotationB * Vector3S.forward
+                new Vector3S(rotA.m00, rotA.m01, rotA.m02),
+                new Vector3S(rotA.m10, rotA.m11, rotA.m12),
+                new Vector3S(rotA.m20, rotA.m21, rotA.m22),
+                new Vector3S(rotB.m00, rotB.m01, rotB.m02),
+                new Vector3S(rotB.m10, rotB.m11, rotB.m12),
+                new Vector3S(rotB.m20, rotB.m21, rotB.m22)
             };
 
-            // Add the cross products of the axes of both boxes to the axis list
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
                     Vector3S cross = Vector3S.Cross(axes[i], axes[3 + j]);
-                    if (cross.SqrMagnitude > f32.epsilon) // Avoid near-zero length vectors
+                    if (cross.SqrMagnitude > f32.epsilon)
                     {
                         axes.Add(cross.Normalize());
                     }
                 }
             }
 
-            // Check for separation on each axis and collect contact points and normals
+            f32 minOverlap = f32.maxValue;
+            Vector3S minAxis = Vector3S.zero;
+
             foreach (Vector3S axis in axes)
             {
-                if (!OverlapOnAxis(relativePosition, axis, halfSizeA, halfSizeB, rotationA, rotationB, out f32 penetration))
+                if (!OverlapOnAxis(relativePosition, axis, halfSizeA, halfSizeB, rotA, rotB, out f32 penetration))
                 {
-                    return false; // Separation found
+                    return false;
                 }
-                contact.normal = axis;
-                contact.penetrationDepth = penetration;
-                contact.point = CalculateContactPoint(positionA, halfSizeA, rotationA, positionB, halfSizeB, rotationB, axis);
+                if (penetration < minOverlap)
+                {
+                    minOverlap = penetration;
+                    minAxis = axis;
+                }
             }
+
+            contact.normal = minAxis;
+            contact.penetrationDepth = minOverlap;
+            contact.point = CalculateContactPoint(positionA, halfSizeA, rotA, positionB, halfSizeB, rotB, minAxis);
 
             return true;
         }
 
-        private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, Vector3S halfSizeA, Vector3S halfSizeB, QuaternionS rotationA, QuaternionS rotationB, out f32 penetration)
+        private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, Vector3S halfSizeA, Vector3S halfSizeB, Matrix3S rotA, Matrix3S rotB, out f32 penetration)
         {
-            f32 projectionA = ProjectBox(halfSizeA, axis, rotationA);
-            f32 projectionB = ProjectBox(halfSizeB, axis, rotationB);
+            f32 projectionA = ProjectBox(halfSizeA, axis, rotA);
+            f32 projectionB = ProjectBox(halfSizeB, axis, rotB);
             f32 distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
             f32 overlap = projectionA + projectionB - distance;
 
@@ -104,40 +112,35 @@ namespace stupid.Colliders
             return overlap > f32.zero;
         }
 
-        private static f32 ProjectBox(Vector3S halfSize, Vector3S axis, QuaternionS rotation)
+        private static f32 ProjectBox(Vector3S halfSize, Vector3S axis, Matrix3S rotation)
         {
             Vector3S absAxis = new Vector3S(
-                MathS.Abs(Vector3S.Dot(rotation * Vector3S.right, axis)),
-                MathS.Abs(Vector3S.Dot(rotation * Vector3S.up, axis)),
-                MathS.Abs(Vector3S.Dot(rotation * Vector3S.forward, axis))
+                MathS.Abs(Vector3S.Dot(new Vector3S(rotation.m00, rotation.m01, rotation.m02), axis)),
+                MathS.Abs(Vector3S.Dot(new Vector3S(rotation.m10, rotation.m11, rotation.m12), axis)),
+                MathS.Abs(Vector3S.Dot(new Vector3S(rotation.m20, rotation.m21, rotation.m22), axis))
             );
 
             return absAxis.x * halfSize.x + absAxis.y * halfSize.y + absAxis.z * halfSize.z;
         }
 
-        private static Vector3S CalculateContactPoint(Vector3S positionA, Vector3S halfSizeA, QuaternionS rotationA, Vector3S positionB, Vector3S halfSizeB, QuaternionS rotationB, Vector3S normal)
+        private static Vector3S CalculateContactPoint(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S normal)
         {
-            // Find the closest points on each box to the other box along the collision normal
             Vector3S pointA = FindClosestPointOnBox(positionA, halfSizeA, rotationA, positionB, normal);
             Vector3S pointB = FindClosestPointOnBox(positionB, halfSizeB, rotationB, positionA, -normal);
 
-            // Return the midpoint of the closest points as the contact point
             return (pointA + pointB) * f32.half;
         }
 
-        private static Vector3S FindClosestPointOnBox(Vector3S boxPosition, Vector3S boxHalfSize, QuaternionS boxRotation, Vector3S point, Vector3S direction)
+        private static Vector3S FindClosestPointOnBox(Vector3S boxPosition, Vector3S boxHalfSize, Matrix3S boxRotation, Vector3S point, Vector3S direction)
         {
-            // Transform the point and direction into the box's local space
-            Vector3S localPoint = QuaternionS.Inverse(boxRotation) * (point - boxPosition);
+            Vector3S localPoint = boxRotation.Transpose() * (point - boxPosition);
 
-            // Calculate the closest point in local space
             Vector3S closestPoint = new Vector3S(
                 MathS.Clamp(localPoint.x, -boxHalfSize.x, boxHalfSize.x),
                 MathS.Clamp(localPoint.y, -boxHalfSize.y, boxHalfSize.y),
                 MathS.Clamp(localPoint.z, -boxHalfSize.z, boxHalfSize.z)
             );
 
-            // Transform the closest point back to world space
             return boxPosition + (boxRotation * closestPoint);
         }
     }
