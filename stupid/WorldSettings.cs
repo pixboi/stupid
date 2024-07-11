@@ -8,7 +8,7 @@ namespace stupid
     {
         public Vector3S Gravity;
         public PhysicsMaterialS DefaultMaterial;
-        public f32 BounceTreshold;
+        public f32 BounceThreshold;
         public f32 DefaultMaxDepenetrationVelocity;
         public f32 SleepTreshold;
         public f32 DefaultContactOffset;
@@ -23,7 +23,7 @@ namespace stupid
             {
                 Gravity = new Vector3S(0, -20, 0),
                 DefaultMaterial = PhysicsMaterialS.DEFAULT_MATERIAL,
-                BounceTreshold = f32.two,
+                BounceThreshold = f32.two,
                 DefaultMaxDepenetrationVelocity = (f32)10,
                 SleepTreshold = (f32)0.005,
                 DefaultContactOffset = (f32)0.01,

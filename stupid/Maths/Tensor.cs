@@ -3,14 +3,14 @@
     public struct Tensor
     {
         // Tensors
-        public readonly Matrix3S inertia; //Precalc
-        public readonly Matrix3S inertiaInverseLocal; // Precalculated local inverse inertia tensor
+        public readonly Matrix3S inertia; // Precalculated local inertia tensor
+        public readonly Matrix3S inertiaInverse; // Precalculated local inverse inertia tensor
 
         public Tensor(Matrix3S inertia, QuaternionS initialRotation = default)
         {
             this.inertia = inertia;
-            this.inertiaInverseLocal = inertia.Inverse();
-            this.inertiaWorld = inertiaInverseLocal;
+            this.inertiaInverse = inertia.Inverse();
+            this.inertiaWorld = inertiaInverse;
 
             if (initialRotation == QuaternionS.zero) initialRotation = QuaternionS.identity;
 
@@ -25,19 +25,19 @@
             Matrix3S rotationMatrix = Matrix3S.Rotate(rotation);
 
             // Perform in-place combined matrix multiplication
-            inertiaWorld = MultiplyTransposed(rotationMatrix, inertiaInverseLocal);
+            inertiaWorld = MultiplyTransposed(rotationMatrix, inertiaInverse);
         }
 
         private Matrix3S MultiplyTransposed(Matrix3S rotationMatrix, Matrix3S inertiaTensorLocal)
         {
             // Optimize combined multiplication without explicitly calculating the transpose
-            f32 r11 = rotationMatrix.M11, r12 = rotationMatrix.M12, r13 = rotationMatrix.M13;
-            f32 r21 = rotationMatrix.M21, r22 = rotationMatrix.M22, r23 = rotationMatrix.M23;
-            f32 r31 = rotationMatrix.M31, r32 = rotationMatrix.M32, r33 = rotationMatrix.M33;
+            f32 r11 = rotationMatrix.m00, r12 = rotationMatrix.m01, r13 = rotationMatrix.m02;
+            f32 r21 = rotationMatrix.m10, r22 = rotationMatrix.m11, r23 = rotationMatrix.m12;
+            f32 r31 = rotationMatrix.m20, r32 = rotationMatrix.m21, r33 = rotationMatrix.m22;
 
-            f32 i11 = inertiaTensorLocal.M11, i12 = inertiaTensorLocal.M12, i13 = inertiaTensorLocal.M13;
-            f32 i21 = inertiaTensorLocal.M21, i22 = inertiaTensorLocal.M22, i23 = inertiaTensorLocal.M23;
-            f32 i31 = inertiaTensorLocal.M31, i32 = inertiaTensorLocal.M32, i33 = inertiaTensorLocal.M33;
+            f32 i11 = inertiaTensorLocal.m00, i12 = inertiaTensorLocal.m01, i13 = inertiaTensorLocal.m02;
+            f32 i21 = inertiaTensorLocal.m10, i22 = inertiaTensorLocal.m11, i23 = inertiaTensorLocal.m12;
+            f32 i31 = inertiaTensorLocal.m20, i32 = inertiaTensorLocal.m21, i33 = inertiaTensorLocal.m22;
 
             f32 m11 = r11 * i11 + r12 * i21 + r13 * i31;
             f32 m12 = r11 * i12 + r12 * i22 + r13 * i32;

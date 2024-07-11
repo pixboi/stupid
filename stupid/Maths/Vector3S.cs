@@ -139,15 +139,10 @@ namespace stupid.Maths
             return new Vector3S(qResult.x, qResult.y, qResult.z);
         }
 
-
         public bool Equals(Vector3S other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);
-
         public override bool Equals(object obj) => obj is Vector3S other && Equals(other);
-
         public override int GetHashCode() => HashCode.Combine(x, y, z);
-
         public static bool operator ==(Vector3S left, Vector3S right) => left.Equals(right);
-
         public static bool operator !=(Vector3S left, Vector3S right) => !(left == right);
     }
 }

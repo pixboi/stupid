@@ -1,4 +1,5 @@
 ﻿using stupid.Colliders;
+using stupid.Maths;
 
 namespace stupid
 {
@@ -10,14 +11,10 @@ namespace stupid
         public override int GetHashCode() => index;
 
         public bool isDynamic = false;
+        public IShape collider { get; private set; }
 
-        public IShape collider;
-
-        public TransformS transform;
-
-        public PhysicsMaterialS material;
-
-
+        public TransformS transform = new TransformS(Vector3S.zero, QuaternionS.zero, Vector3S.one);
+        public PhysicsMaterialS material { get; private set; } = PhysicsMaterialS.DEFAULT_MATERIAL;
 
         public Collidable(int index, IShape collider, bool isDynamic = false, TransformS transform = default, PhysicsMaterialS material = default)
         {
@@ -26,10 +23,7 @@ namespace stupid
             this.collider = collider;
             this.transform = transform;
 
-            if (collider != null)
-            {
-                collider.Attach(this);
-            }
+            collider?.Attach(this);
 
             this.material = PhysicsMaterialS.DEFAULT_MATERIAL;
         }

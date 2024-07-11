@@ -4,60 +4,60 @@ namespace stupid.Maths
 {
     public struct Matrix3S
     {
-        public f32 M11, M12, M13;
-        public f32 M21, M22, M23;
-        public f32 M31, M32, M33;
+        public f32 m00, m01, m02;
+        public f32 m10, m11, m12;
+        public f32 m20, m21, m22;
 
         public Matrix3S(f32 m11, f32 m12, f32 m13, f32 m21, f32 m22, f32 m23, f32 m31, f32 m32, f32 m33)
         {
-            M11 = m11;
-            M12 = m12;
-            M13 = m13;
-            M21 = m21;
-            M22 = m22;
-            M23 = m23;
-            M31 = m31;
-            M32 = m32;
-            M33 = m33;
+            this.m00 = m11;
+            this.m01 = m12;
+            this.m02 = m13;
+            this.m10 = m21;
+            this.m11 = m22;
+            this.m12 = m23;
+            this.m20 = m31;
+            this.m21 = m32;
+            this.m22 = m33;
         }
 
         public Matrix3S(Vector3S row1, Vector3S row2, Vector3S row3)
         {
-            M11 = row1.x;
-            M12 = row1.y;
-            M13 = row1.z;
-            M21 = row2.x;
-            M22 = row2.y;
-            M23 = row2.z;
-            M31 = row3.x;
-            M32 = row3.y;
-            M33 = row3.z;
+            m00 = row1.x;
+            m01 = row1.y;
+            m02 = row1.z;
+            m10 = row2.x;
+            m11 = row2.y;
+            m12 = row2.z;
+            m20 = row3.x;
+            m21 = row3.y;
+            m22 = row3.z;
         }
 
         public static Vector3S operator *(Matrix3S m, Vector3S v)
         {
             return new Vector3S(
-                m.M11 * v.x + m.M12 * v.y + m.M13 * v.z,
-                m.M21 * v.x + m.M22 * v.y + m.M23 * v.z,
-                m.M31 * v.x + m.M32 * v.y + m.M33 * v.z
+                m.m00 * v.x + m.m01 * v.y + m.m02 * v.z,
+                m.m10 * v.x + m.m11 * v.y + m.m12 * v.z,
+                m.m20 * v.x + m.m21 * v.y + m.m22 * v.z
             );
         }
 
         public static Matrix3S operator *(Matrix3S a, Matrix3S b)
         {
             return new Matrix3S(
-                a.M11 * b.M11 + a.M12 * b.M21 + a.M13 * b.M31, a.M11 * b.M12 + a.M12 * b.M22 + a.M13 * b.M32, a.M11 * b.M13 + a.M12 * b.M23 + a.M13 * b.M33,
-                a.M21 * b.M11 + a.M22 * b.M21 + a.M23 * b.M31, a.M21 * b.M12 + a.M22 * b.M22 + a.M23 * b.M32, a.M21 * b.M13 + a.M22 * b.M23 + a.M23 * b.M33,
-                a.M31 * b.M11 + a.M32 * b.M21 + a.M33 * b.M31, a.M31 * b.M12 + a.M32 * b.M22 + a.M33 * b.M32, a.M31 * b.M13 + a.M32 * b.M23 + a.M33 * b.M33
+                a.m00 * b.m00 + a.m01 * b.m10 + a.m02 * b.m20, a.m00 * b.m01 + a.m01 * b.m11 + a.m02 * b.m21, a.m00 * b.m02 + a.m01 * b.m12 + a.m02 * b.m22,
+                a.m10 * b.m00 + a.m11 * b.m10 + a.m12 * b.m20, a.m10 * b.m01 + a.m11 * b.m11 + a.m12 * b.m21, a.m10 * b.m02 + a.m11 * b.m12 + a.m12 * b.m22,
+                a.m20 * b.m00 + a.m21 * b.m10 + a.m22 * b.m20, a.m20 * b.m01 + a.m21 * b.m11 + a.m22 * b.m21, a.m20 * b.m02 + a.m21 * b.m12 + a.m22 * b.m22
             );
         }
 
         public Matrix3S Transpose()
         {
             return new Matrix3S(
-                M11, M21, M31,
-                M12, M22, M32,
-                M13, M23, M33
+                m00, m10, m20,
+                m01, m11, m21,
+                m02, m12, m22
             );
         }
 
@@ -92,21 +92,21 @@ namespace stupid.Maths
         public Matrix3S Inverse()
         {
             f32 determinant =
-                M11 * (M22 * M33 - M23 * M32) -
-                M12 * (M21 * M33 - M23 * M31) +
-                M13 * (M21 * M32 - M22 * M31);
+                m00 * (m11 * m22 - m12 * m21) -
+                m01 * (m10 * m22 - m12 * m20) +
+                m02 * (m10 * m21 - m11 * m20);
 
             f32 invDet = f32.one / determinant;
 
-            var invM11 = invDet * (M22 * M33 - M23 * M32);
-            var invM12 = invDet * (M13 * M32 - M12 * M33);
-            var invM13 = invDet * (M12 * M23 - M13 * M22);
-            var invM21 = invDet * (M23 * M31 - M21 * M33);
-            var invM22 = invDet * (M11 * M33 - M13 * M31);
-            var invM23 = invDet * (M13 * M21 - M11 * M23);
-            var invM31 = invDet * (M21 * M32 - M22 * M31);
-            var invM32 = invDet * (M12 * M31 - M11 * M32);
-            var invM33 = invDet * (M11 * M22 - M12 * M21);
+            var invM11 = invDet * (m11 * m22 - m12 * m21);
+            var invM12 = invDet * (m02 * m21 - m01 * m22);
+            var invM13 = invDet * (m01 * m12 - m02 * m11);
+            var invM21 = invDet * (m12 * m20 - m10 * m22);
+            var invM22 = invDet * (m00 * m22 - m02 * m20);
+            var invM23 = invDet * (m02 * m10 - m00 * m12);
+            var invM31 = invDet * (m10 * m21 - m11 * m20);
+            var invM32 = invDet * (m01 * m20 - m00 * m21);
+            var invM33 = invDet * (m00 * m11 - m01 * m10);
 
             return new Matrix3S(invM11, invM12, invM13, invM21, invM22, invM23, invM31, invM32, invM33);
         }

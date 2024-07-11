@@ -33,21 +33,17 @@ namespace stupid.Colliders
 
             if (other.collider is BoxColliderS otherBox)
             {
-                return BoxColliderS.IntersectBoxSphere(
-                    other.transform.position,
-                    other.transform.rotation,
-                    otherBox.size,
-                    this.attachedCollidable.transform.position,
-                    this.radius, out contact);
+                return otherBox.Intersects(this.attachedCollidable, out contact);
             }
 
             return false;
         }
 
+        static readonly f32 sphereInertia = ((f32)2f / (f32)5f);
         public override Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // For a solid sphere: I = 2/5 * m * r^2
-            f32 inertia = ((f32)2f / (f32)5f) * mass * radius * radius;
+            f32 inertia = sphereInertia * mass * radius * radius;
 
             return new Matrix3S(
                 new Vector3S(inertia, f32.zero, f32.zero),
@@ -83,11 +79,6 @@ namespace stupid.Colliders
             contact.penetrationDepth = combinedRadius - distance;
 
             return true;
-        }
-
-        public override int Intersects(Collidable other, ref ContactS[] contactCache)
-        {
-            throw new System.NotImplementedException();
         }
     }
 }
