@@ -34,6 +34,19 @@ namespace stupid
             SimulationFrame = 0;
         }
 
+        public Collidable AddCollidable(Collidable c)
+        {
+            c.Register(counter++);
+            Collidables.Add(c);
+            return c;
+        }
+
+        public Collidable AddCollidable(TransformS transform, IShape collider, bool isDynamic = false)
+        {
+            var c = new Collidable(counter++, collider, isDynamic, transform);
+            Collidables.Add(c);
+            return c;
+        }
 
         public Collidable AddCollidable(IShape collider, bool isDynamic = false, Vector3S position = default, QuaternionS rotation = default, Vector3S localScale = default)
         {
@@ -41,6 +54,13 @@ namespace stupid
             Collidables.Add(c);
             return c;
 
+        }
+
+        public RigidbodyS AddRigidbody(RigidbodyS rb)
+        {
+            rb.Register(counter++);
+            Collidables.Add(rb);
+            return rb;
         }
 
         public RigidbodyS AddRigidbody(IShape collider, Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default, f32 mass = default)
@@ -71,7 +91,8 @@ namespace stupid
             //Recalc things
             foreach (var c in Collidables)
             {
-                c.CalculateBounds();
+                if (c.isDynamic)
+                    c.CalculateBounds();
 
                 if (c is RigidbodyS rb)
                 {

@@ -5,7 +5,8 @@ namespace stupid
 
     public class Collidable
     {
-        public readonly int index;
+        public int index { get; private set; }
+        public void Register(int index) => this.index = index;
         public override int GetHashCode() => index;
 
         public bool isDynamic = false;
@@ -15,6 +16,8 @@ namespace stupid
         public TransformS transform;
 
         public PhysicsMaterialS material;
+
+
 
         public Collidable(int index, IShape collider, bool isDynamic = false, TransformS transform = default, PhysicsMaterialS material = default)
         {

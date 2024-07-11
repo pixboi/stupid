@@ -110,10 +110,10 @@ namespace stupid.Colliders
         static readonly Vector3S[] DIRS =
         {
                 Vector3S.right,
-               Vector3S.up,
-               Vector3S.forward,
-             Vector3S.right,
-             Vector3S.up,
+                Vector3S.up,
+                Vector3S.forward,
+                Vector3S.right,
+                Vector3S.up,
                 Vector3S.forward
         };
 
