@@ -70,35 +70,23 @@ namespace stupid.Colliders
             return true;
         }
 
-        static Vector3S[] _axes = new Vector3S[6];
-        static List<Vector3S> _testAxes = new List<Vector3S>();
+        static Vector3S[] _axes = new Vector3S[15];
         static List<Vector3S> _contactPoints = new List<Vector3S>();
 
         public static bool BoxVsBox(BoxColliderS a, BoxColliderS b, out ContactS contact)
         {
             contact = new ContactS();
 
-            var at = a.attachedCollidable.transform;
-            var bt = b.attachedCollidable.transform;
+            Vector3S relativePosition = b.attachedCollidable.transform.position - a.attachedCollidable.transform.position;
 
-            Vector3S halfSizeA = a.size * f32.half;
-            Vector3S halfSizeB = b.size * f32.half;
+            _axes[0] = a.axes[0];
+            _axes[1] = a.axes[1];
+            _axes[2] = a.axes[2];
+            _axes[3] = b.axes[0];
+            _axes[4] = b.axes[1];
+            _axes[5] = b.axes[2];
 
-            Matrix3S rotA = at.rotationMatrix;
-            Matrix3S rotB = bt.rotationMatrix;
-
-            Vector3S relativePosition = bt.position - at.position;
-
-            _axes[0] = rotA.GetColumn(0);
-            _axes[1] = rotA.GetColumn(1);
-            _axes[2] = rotA.GetColumn(2);
-            _axes[3] = rotB.GetColumn(0);
-            _axes[4] = rotB.GetColumn(1);
-            _axes[5] = rotB.GetColumn(2);
-
-            _testAxes.Clear();
-            _testAxes.AddRange(_axes);
-
+            int axisCount = 6;
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
@@ -106,7 +94,7 @@ namespace stupid.Colliders
                     Vector3S cross = Vector3S.Cross(_axes[i], _axes[3 + j]);
                     if (cross.SqrMagnitude > f32.epsilon)
                     {
-                        _testAxes.Add(cross.Normalize());
+                        _axes[axisCount++] = cross.Normalize();
                     }
                 }
             }
@@ -114,9 +102,10 @@ namespace stupid.Colliders
             f32 minOverlap = f32.maxValue;
             Vector3S minAxis = Vector3S.zero;
 
-            foreach (Vector3S axis in _testAxes)
+            for (int i = 0; i < axisCount; i++)
             {
-                if (!OverlapOnAxis(relativePosition, axis, halfSizeA, halfSizeB, rotA, rotB, out f32 overlap))
+                Vector3S axis = _axes[i];
+                if (!OverlapOnAxis(relativePosition, axis, a, b, out f32 overlap))
                 {
                     return false; // No overlap on this axis, no collision
                 }
@@ -133,28 +122,42 @@ namespace stupid.Colliders
                 normal = -minAxis;
             }
 
+            var aRot = a.attachedCollidable.transform.rotationMatrix;
+            var bRot = b.attachedCollidable.transform.rotationMatrix;
+
             contact.normal = normal;
             contact.penetrationDepth = minOverlap;
-            contact.point = FindContactPoints(at.position, halfSizeA, rotA, bt.position, halfSizeB, rotB, a.vertices, b.vertices);
+            contact.point = FindContactPoints(a.attachedCollidable.transform.position, a.size * f32.half, aRot, b.attachedCollidable.transform.position, b.size * f32.half, bRot, a.vertices, b.vertices);
 
             return true;
         }
 
-        private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, Vector3S halfSizeA, Vector3S halfSizeB, Matrix3S rotA, Matrix3S rotB, out f32 overlap)
+        private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, out f32 overlap)
         {
-            f32 projectionA = ProjectBox(halfSizeA, axis, rotA);
-            f32 projectionB = ProjectBox(halfSizeB, axis, rotB);
+            f32 projectionA = ProjectBox(axis, a);
+            f32 projectionB = ProjectBox(axis, b);
             f32 distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
             overlap = projectionA + projectionB - distance;
             return overlap > f32.zero;
         }
 
-        private static f32 ProjectBox(Vector3S halfSize, Vector3S axis, Matrix3S rotation)
+        private static f32 ProjectBox(Vector3S axis, BoxColliderS box)
         {
+            for (int i = 0; i < 3; i++)
+            {
+                if (axis == box.axes[i])
+                {
+                    return box.projections[i];
+                }
+            }
+
+            // Handle case where axis is not a primary axis (cross product axis)
+            Vector3S halfSize = box.size * f32.half;
+            var rotMat = box.attachedCollidable.transform.rotationMatrix;
             return
-                halfSize.x * MathS.Abs(Vector3S.Dot(rotation.GetColumn(0), axis)) +
-                halfSize.y * MathS.Abs(Vector3S.Dot(rotation.GetColumn(1), axis)) +
-                halfSize.z * MathS.Abs(Vector3S.Dot(rotation.GetColumn(2), axis));
+                halfSize.x * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(0), axis)) +
+                halfSize.y * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(1), axis)) +
+                halfSize.z * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(2), axis));
         }
 
         private static Vector3S FindContactPoints(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S[] verticesA, Vector3S[] verticesB)
@@ -196,8 +199,6 @@ namespace stupid.Colliders
             Vector3S localPoint = rotation.Transpose() * (point - position);
             return MathS.Abs(localPoint.x) <= halfSize.x && MathS.Abs(localPoint.y) <= halfSize.y && MathS.Abs(localPoint.z) <= halfSize.z;
         }
-
-
 
     }
 }
