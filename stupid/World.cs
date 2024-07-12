@@ -224,7 +224,7 @@ namespace stupid
             f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
 
             // Use the maximum of the static and dynamic friction coefficients
-            f32 effectiveFriction = MathS.Max(body.material.staticFriction, body.material.dynamicFriction);
+            f32 effectiveFriction = (body.material.staticFriction);
 
             // Limit the friction impulse to prevent excessive angular velocities
             Vector3S frictionImpulse = frictionImpulseScalar * tangent;
@@ -302,8 +302,7 @@ namespace stupid
             f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
 
             // Use the maximum of the static and dynamic friction coefficients
-            f32 effectiveFriction = MathS.Max((a.material.staticFriction + b.material.staticFriction) * f32.half,
-                                              (a.material.dynamicFriction + b.material.dynamicFriction) * f32.half);
+            f32 effectiveFriction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
 
             // Limit the friction impulse to prevent excessive angular velocities
             Vector3S frictionImpulse = frictionImpulseScalar * tangent;

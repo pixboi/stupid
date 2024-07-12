@@ -14,7 +14,7 @@ namespace stupid
         public IShape collider { get; private set; }
 
         public TransformS transform = new TransformS(Vector3S.zero, QuaternionS.zero, Vector3S.one);
-        public PhysicsMaterialS material { get; private set; } = PhysicsMaterialS.DEFAULT_MATERIAL;
+        public PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL;
 
         public Collidable(int index, IShape collider, bool isDynamic = false, TransformS transform = default, PhysicsMaterialS material = default)
         {
