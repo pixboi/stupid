@@ -11,6 +11,8 @@ namespace stupid
         public QuaternionS rotation;
         public Vector3S localScale;
 
+        public Matrix3S rotationMatrix { get; private set; }
+
         public TransformS(Vector3S position = default, QuaternionS rotation = default, Vector3S localScale = default)
         {
             this.position = position;
@@ -20,6 +22,13 @@ namespace stupid
 
             this.localScale = localScale;
             if (this.localScale == Vector3S.zero) this.localScale = Vector3S.one;
+
+            this.rotationMatrix = Matrix3S.Rotate(this.rotation);
+        }
+
+        public void UpdateRotationMatrix()
+        {
+            this.rotationMatrix = Matrix3S.Rotate(this.rotation);
         }
     }
 }

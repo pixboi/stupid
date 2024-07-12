@@ -70,36 +70,41 @@ namespace stupid.Colliders
             return true;
         }
 
-        public static bool BoxVsBox(Vector3S positionA, QuaternionS rotationA, Vector3S sizeA, Vector3S positionB, QuaternionS rotationB, Vector3S sizeB, out ContactS contact)
+        static Vector3S[] _axes = new Vector3S[6];
+        static List<Vector3S> _testAxes = new List<Vector3S>();
+        public static bool BoxVsBox(BoxColliderS a, BoxColliderS b, out ContactS contact)
         {
             contact = new ContactS();
 
-            Vector3S halfSizeA = sizeA * f32.half;
-            Vector3S halfSizeB = sizeB * f32.half;
+            var at = a.attachedCollidable.transform;
+            var bt = b.attachedCollidable.transform;
 
-            Matrix3S rotA = Matrix3S.Rotate(rotationA);
-            Matrix3S rotB = Matrix3S.Rotate(rotationB);
+            Vector3S halfSizeA = a.size * f32.half;
+            Vector3S halfSizeB = b.size * f32.half;
 
-            Vector3S relativePosition = positionB - positionA;
+            Matrix3S rotA = at.rotationMatrix;
+            Matrix3S rotB = bt.rotationMatrix;
 
-            List<Vector3S> axes = new List<Vector3S>
-    {
-        rotA.GetColumn(0),
-        rotA.GetColumn(1),
-        rotA.GetColumn(2),
-        rotB.GetColumn(0),
-        rotB.GetColumn(1),
-        rotB.GetColumn(2)
-    };
+            Vector3S relativePosition = bt.position - at.position;
+
+            _axes[0] = rotA.GetColumn(0);
+            _axes[1] = rotA.GetColumn(1);
+            _axes[2] = rotA.GetColumn(2);
+            _axes[3] = rotB.GetColumn(0);
+            _axes[4] = rotB.GetColumn(1);
+            _axes[5] = rotB.GetColumn(2);
+
+            _testAxes.Clear();
+            _testAxes.AddRange(_axes);
 
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    Vector3S cross = Vector3S.Cross(axes[i], axes[3 + j]);
+                    Vector3S cross = Vector3S.Cross(_axes[i], _axes[3 + j]);
                     if (cross.SqrMagnitude > f32.epsilon)
                     {
-                        axes.Add(cross.Normalize());
+                        _testAxes.Add(cross.Normalize());
                     }
                 }
             }
@@ -107,7 +112,7 @@ namespace stupid.Colliders
             f32 minOverlap = f32.maxValue;
             Vector3S minAxis = Vector3S.zero;
 
-            foreach (Vector3S axis in axes)
+            foreach (Vector3S axis in _testAxes)
             {
                 if (!OverlapOnAxis(relativePosition, axis, halfSizeA, halfSizeB, rotA, rotB, out f32 overlap))
                 {
@@ -128,7 +133,7 @@ namespace stupid.Colliders
 
             contact.normal = normal;
             contact.penetrationDepth = minOverlap;
-            contact.point = FindContactPoints(positionA, halfSizeA, rotA, positionB, halfSizeB, rotB, normal);
+            contact.point = FindContactPoints(at.position, halfSizeA, rotA, bt.position, halfSizeB, rotB, a.vertices, b.vertices);
 
             return true;
         }
@@ -150,18 +155,17 @@ namespace stupid.Colliders
                 halfSize.z * MathS.Abs(Vector3S.Dot(rotation.GetColumn(2), axis));
         }
 
-        private static Vector3S FindContactPoints(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S normal)
-        {
-            Vector3S[] verticesA = GetBoxVertices(positionA, halfSizeA, rotationA);
-            Vector3S[] verticesB = GetBoxVertices(positionB, halfSizeB, rotationB);
 
-            List<Vector3S> contactPoints = new List<Vector3S>();
+        static List<Vector3S> _contactPoints = new List<Vector3S>();
+        private static Vector3S FindContactPoints(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S[] verticesA, Vector3S[] verticesB)
+        {
+            _contactPoints.Clear();
 
             foreach (var vertexA in verticesA)
             {
                 if (IsPointInsideOBB(vertexA, positionB, halfSizeB, rotationB))
                 {
-                    contactPoints.Add(vertexA);
+                    _contactPoints.Add(vertexA);
                 }
             }
 
@@ -169,42 +173,22 @@ namespace stupid.Colliders
             {
                 if (IsPointInsideOBB(vertexB, positionA, halfSizeA, rotationA))
                 {
-                    contactPoints.Add(vertexB);
+                    _contactPoints.Add(vertexB);
                 }
             }
 
-            if (contactPoints.Count == 0)
+            if (_contactPoints.Count == 0)
             {
                 return Vector3S.zero;
             }
 
             Vector3S averageContactPoint = Vector3S.zero;
-            foreach (var point in contactPoints)
+            foreach (var point in _contactPoints)
             {
                 averageContactPoint += point;
             }
 
-            return averageContactPoint / (f32)contactPoints.Count;
-        }
-
-        private static Vector3S[] GetBoxVertices(Vector3S position, Vector3S halfSize, Matrix3S rotation)
-        {
-            Vector3S[] vertices = new Vector3S[8];
-
-            Vector3S right = rotation.GetColumn(0) * halfSize.x;
-            Vector3S up = rotation.GetColumn(1) * halfSize.y;
-            Vector3S forward = rotation.GetColumn(2) * halfSize.z;
-
-            vertices[0] = position + right + up + forward;
-            vertices[1] = position + right + up - forward;
-            vertices[2] = position + right - up + forward;
-            vertices[3] = position + right - up - forward;
-            vertices[4] = position - right + up + forward;
-            vertices[5] = position - right + up - forward;
-            vertices[6] = position - right - up + forward;
-            vertices[7] = position - right - up - forward;
-
-            return vertices;
+            return averageContactPoint / (f32)_contactPoints.Count;
         }
 
         private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S rotation)

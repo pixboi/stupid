@@ -95,7 +95,7 @@ namespace stupid
             }
 
             // Update rotation
-            if (angularVelocity.SqrMagnitude > f32.one)
+            if (angularVelocity.SqrMagnitude > f32.epsilon)
             {
                 Vector3S angDelta = angularVelocity * deltaTime * f32.half;
                 //var nrmAng = angDelta.NormalizeWithMagnitude(out var mag);

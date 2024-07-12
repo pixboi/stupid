@@ -6,10 +6,38 @@ namespace stupid.Colliders
     {
         public Vector3S size { get; private set; }
         public Vector3S halfSize { get; private set; }
+        public Vector3S[] vertices { get; private set; }
+
+
         public BoxColliderS(Vector3S size)
         {
             this.size = size;
             this.halfSize = size * f32.half;
+            this.vertices = new Vector3S[8];
+        }
+
+        public override bool NeedsRotationUpdate => true;
+        public override void OnRotationUpdate()
+        {
+            UpdateVertices();
+        }
+
+        public void UpdateVertices()
+        {
+            var rotation = this.attachedCollidable.transform.rotationMatrix;
+            var position = this.attachedCollidable.transform.position;
+            Vector3S right = rotation.GetColumn(0) * halfSize.x;
+            Vector3S up = rotation.GetColumn(1) * halfSize.y;
+            Vector3S forward = rotation.GetColumn(2) * halfSize.z;
+
+            vertices[0] = position + right + up + forward;
+            vertices[1] = position + right + up - forward;
+            vertices[2] = position + right - up + forward;
+            vertices[3] = position + right - up - forward;
+            vertices[4] = position - right + up + forward;
+            vertices[5] = position - right + up - forward;
+            vertices[6] = position - right - up + forward;
+            vertices[7] = position - right - up - forward;
         }
 
         public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
@@ -37,12 +65,7 @@ namespace stupid.Colliders
             if (other.collider is BoxColliderS otherBox)
             {
                 return CollisionMath.BoxVsBox(
-                    this.attachedCollidable.transform.position,
-                    this.attachedCollidable.transform.rotation,
-                    this.size,
-                    other.transform.position,
-                    other.transform.rotation,
-                    otherBox.size,
+                    this, otherBox,
                     out contact);
             }
 

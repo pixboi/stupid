@@ -10,11 +10,19 @@ namespace stupid.Colliders
         BoundsS GetAABB();
         bool Intersects(Collidable other, out ContactS contact); // Add this method
         Matrix3S CalculateInertiaTensor(f32 mass);
+        bool NeedsRotationUpdate { get; }
+
+        void OnRotationUpdate();
     }
 
     public abstract class BaseShape : IShape
     {
-        protected Collidable attachedCollidable;
+        public Collidable attachedCollidable { get; private set; }
+
+        public virtual bool NeedsRotationUpdate => false;
+
+        public virtual void OnRotationUpdate() { return; }
+
         public virtual Collidable GetCollidable() => attachedCollidable;
         public void Attach(Collidable c)
         {
@@ -28,6 +36,8 @@ namespace stupid.Colliders
         public virtual BoundsS GetAABB() => _bounds;
         public abstract bool Intersects(Collidable other, out ContactS contact);
         public abstract Matrix3S CalculateInertiaTensor(f32 mass);
+
+
 
     }
 }

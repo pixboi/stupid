@@ -85,6 +85,12 @@ namespace stupid
                 if (c.isDynamic)
                     c.CalculateBounds();
 
+                if (c.collider.NeedsRotationUpdate)
+                {
+                    c.transform.UpdateRotationMatrix();
+                    c.collider.OnRotationUpdate();
+                }
+
                 if (c is RigidbodyS rb)
                 {
                     if (rb.angularVelocity.SqrMagnitude > f32.zero)
