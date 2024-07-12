@@ -7,9 +7,7 @@ namespace stupid.Colliders
         public Vector3S size { get; private set; }
         public Vector3S halfSize { get; private set; }
         public Vector3S[] vertices { get; private set; }
-
         public Vector3S[] axes { get; private set; }
-
         public f32[] projections { get; private set; }
 
         public BoxColliderS(Vector3S size)

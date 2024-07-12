@@ -6,7 +6,7 @@ namespace stupid
 {
     public interface IBroadphase
     {
-        HashSet<BodyPair> ComputePairs(List<Collidable> rigidbodies);
+        HashSet<BodyPair> ComputePairs(DumbList<Collidable> rigidbodies);
     }
 
     public class SortAndSweepBroadphase : IBroadphase
@@ -30,7 +30,7 @@ namespace stupid
             activeList = new Collidable[initialCapacity];
         }
 
-        private void Rebuild(List<Collidable> rigidbodies)
+        private void Rebuild(DumbList<Collidable> rigidbodies)
         {
             int endpointCapacity = rigidbodies.Count * 2;
             if (endpointsX.Length < endpointCapacity)
@@ -57,7 +57,7 @@ namespace stupid
             overlapCount = new int[rbCount * rbCount];
         }
 
-        public HashSet<BodyPair> ComputePairs(List<Collidable> rigidbodies)
+        public HashSet<BodyPair> ComputePairs(DumbList<Collidable> rigidbodies)
         {
             if (rbCount != rigidbodies.Count)
             {
@@ -89,6 +89,9 @@ namespace stupid
 
                     var bodyA = rigidbodies[aIndex];
                     var bodyB = rigidbodies[bIndex];
+
+                    //Skip static + static
+                    if (!bodyA.isDynamic && !bodyB.isDynamic) continue;
 
                     if (bodyA.GetBounds().Intersects(bodyB.GetBounds()))
                     {

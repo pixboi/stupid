@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using stupid.Colliders;
 using stupid.Maths;
-using stupid.Collections;
 using System;
 
 namespace stupid
@@ -11,7 +10,7 @@ namespace stupid
     {
         public WorldSettings Settings { get; private set; }
         public SortAndSweepBroadphase Broadphase { get; set; }
-        public List<Collidable> Collidables { get; private set; }
+        public DumbList<Collidable> Collidables { get; private set; }
         public uint SimulationFrame { get; private set; }
 
         private int counter;
@@ -21,7 +20,7 @@ namespace stupid
         {
             this.Settings = worldSettings;
 
-            Collidables = new List<Collidable>(startSize);
+            Collidables = new DumbList<Collidable>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
 
             positionBuffer = new Vector3S[startSize * 2];
@@ -69,11 +68,11 @@ namespace stupid
 
 
         public static f32 DeltaTime;
+
         public void Simulate(f32 deltaTime)
         {
             DeltaTime = deltaTime;
 
-            //Integrate
             foreach (var c in Collidables)
             {
                 if (c is RigidbodyS rb) rb.Integrate(deltaTime, Settings);
@@ -318,7 +317,6 @@ namespace stupid
             angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
-
 
     }
 }

@@ -10,5 +10,4 @@
     <Exec Command="xcopy &quot;$(TargetDir)$(TargetName).dll&quot; &quot;C:\Users\topit\stupid\Assets\Plugins&quot; /Y&#xD;&#xA;" />
   </Target>
 
-
 </Project>

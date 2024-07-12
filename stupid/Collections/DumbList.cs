@@ -1,65 +1,135 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
-namespace stupid.Collections
+public class DumbList<T> : IEnumerable<T>
 {
-    public class DumbList<T> where T : struct
+    private T[] _items;
+    private int _size;
+
+    public DumbList(int capacity = 4)
     {
-        private T[] items;
-        private int count;
-        private const int DefaultCapacity = 16;
+        _items = new T[capacity];
+        _size = 0;
+    }
 
-        public DumbList(int capacity = DefaultCapacity)
+    public int Count => _size;
+
+    public T this[int index]
+    {
+        get
         {
-            items = new T[capacity];
-            count = 0;
+            if (index < 0 || index >= _size) throw new ArgumentOutOfRangeException();
+            return _items[index];
+        }
+        set
+        {
+            if (index < 0 || index >= _size) throw new ArgumentOutOfRangeException();
+            _items[index] = value;
+        }
+    }
+
+    public void Add(T item)
+    {
+        if (_size == _items.Length)
+        {
+            Resize(_items.Length * 2);
+        }
+        _items[_size++] = item;
+    }
+
+    public void Clear()
+    {
+        Array.Clear(_items, 0, _size);
+        _size = 0;
+    }
+
+    public void RemoveAt(int index)
+    {
+        if (index < 0 || index >= _size) throw new ArgumentOutOfRangeException();
+        _size--;
+        if (index < _size)
+        {
+            Array.Copy(_items, index + 1, _items, index, _size - index);
+        }
+        _items[_size] = default;
+    }
+
+    public void Remove(T item)
+    {
+        int index = Array.IndexOf(_items, item, 0, _size);
+        if (index >= 0)
+        {
+            RemoveAt(index);
+        }
+    }
+
+    private void Resize(int newSize)
+    {
+        var newItems = new T[newSize];
+        Array.Copy(_items, newItems, _size);
+        _items = newItems;
+    }
+
+    public T[] ToArray()
+    {
+        var result = new T[_size];
+        Array.Copy(_items, result, _size);
+        return result;
+    }
+
+    public struct Enumerator : IEnumerator<T>
+    {
+        private readonly DumbList<T> _list;
+        private int _index;
+        private T _current;
+
+        public Enumerator(DumbList<T> list)
+        {
+            _list = list;
+            _index = 0;
+            _current = default;
         }
 
-        public void Add(T item)
+        public T Current => _current;
+
+        object IEnumerator.Current => Current;
+
+        public bool MoveNext()
         {
-            if (count < items.Length)
+            if (_index < _list._size)
             {
-                items[count++] = item;
+                _current = _list._items[_index];
+                _index++;
+                return true;
             }
-            else
-            {
-                throw new InvalidOperationException("Bucket is full");
-            }
+            return false;
         }
 
-        public void Clear()
+        public void Reset()
         {
-            count = 0;
+            _index = 0;
+            _current = default;
         }
 
-        public bool Remove(T item)
+        public void Dispose()
         {
-            int index = Array.IndexOf(items, item, 0, count);
-            if (index < 0)
-            {
-                return false;
-            }
-
-            for (int i = index; i < count - 1; i++)
-            {
-                items[i] = items[i + 1];
-            }
-            count--;
-            items[count] = default(T); // Clear the last item
-            return true;
+            // No resources to release
         }
+    }
 
-        public int Count => count;
+    public Enumerator GetEnumerator()
+    {
+        return new Enumerator(this);
+    }
 
-        public T this[int index]
-        {
-            get
-            {
-                if (index < 0 || index >= count)
-                {
-                    throw new IndexOutOfRangeException();
-                }
-                return items[index];
-            }
-        }
+    IEnumerator<T> IEnumerable<T>.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }
