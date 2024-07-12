@@ -28,12 +28,11 @@ namespace stupid.Colliders
 
             // Set contact information
             contact.point = positionB + direction * radB; // Contact point on the surface of B
-            contact.normal = direction; // Normal points from A to B
+            contact.normal = direction; // Normal points from B => A
             contact.penetrationDepth = combinedRadius - distance;
 
             return true;
         }
-
 
 
         public static bool BoxVsSphere(BoxColliderS box, SphereColliderS sphere, out ContactS contact)

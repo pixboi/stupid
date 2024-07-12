@@ -253,12 +253,6 @@ namespace stupid
             // Calculate relative velocity at the contact point
             Vector3S relativeVelocityAtContact = va - vb;
 
-            // Calculate the velocity along the normal
-            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
-
-            // Do not resolve if velocities are separating
-            if (velocityAlongNormal > f32.zero) return;
-
             // Calculate inverse masses
             f32 invMassA = a.mass > f32.zero ? f32.one / a.mass : f32.zero;
             f32 invMassB = b.mass > f32.zero ? f32.one / b.mass : f32.zero;
@@ -275,16 +269,22 @@ namespace stupid
             positionBuffer[a.index] += invMassA * correction;
             positionBuffer[b.index] -= invMassB * correction;
 
+            // Calculate the velocity along the normal
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
+
+            // Do not resolve if velocities are separating
+            if (velocityAlongNormal > f32.zero) return;
+
             // Restitution (coefficient of restitution)
-            f32 bounce = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
+            f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
                 ? (a.material.bounciness + b.material.bounciness) * f32.half
                 : f32.zero;
 
             // Calculate the normal impulse scalar
-            f32 j = -(f32.one + bounce) * velocityAlongNormal / effectiveMassSum;
+            f32 impulseScalar = -(f32.one + restitution) * velocityAlongNormal / effectiveMassSum;
 
             // Apply linear impulse
-            Vector3S impulse = j * normal;
+            Vector3S impulse = impulseScalar * normal;
             velocityBuffer[a.index] += invMassA * impulse;
             velocityBuffer[b.index] -= invMassB * impulse;
             angularBuffer[a.index] += a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
@@ -295,31 +295,32 @@ namespace stupid
             Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
 
             // Calculate the magnitude of the friction impulse
-            f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / effectiveMassSum;
+            f32 frictionDenominatorA = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent);
+            f32 frictionDenominatorB = invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
+            f32 frictionDenominator = frictionDenominatorA + frictionDenominatorB;
 
-            // Use the average of the static and dynamic friction coefficients
-            f32 staticFriction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
-            f32 dynamicFriction = (a.material.dynamicFriction + b.material.dynamicFriction) * f32.half;
+            f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
 
-            // Calculate the friction impulse
-            Vector3S frictionImpulse;
-            if (MathS.Abs(jt) < j * staticFriction)
+            // Use the maximum of the static and dynamic friction coefficients
+            f32 effectiveFriction = MathS.Max((a.material.staticFriction + b.material.staticFriction) * f32.half,
+                                              (a.material.dynamicFriction + b.material.dynamicFriction) * f32.half);
+
+            // Limit the friction impulse to prevent excessive angular velocities
+            Vector3S frictionImpulse = frictionImpulseScalar * tangent;
+            if (frictionImpulse.Magnitude() > impulseScalar * effectiveFriction)
             {
-                frictionImpulse = jt * tangent;
-            }
-            else
-            {
-                frictionImpulse = -j * dynamicFriction * tangent;
+                frictionImpulse = frictionImpulse.Normalize() * (impulseScalar * effectiveFriction);
             }
 
             // Apply friction impulse
             velocityBuffer[a.index] += invMassA * frictionImpulse;
             velocityBuffer[b.index] -= invMassB * frictionImpulse;
+
+
+            //If we comment this out, the sim is allright
             angularBuffer[a.index] += a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
-
-
 
 
     }
