@@ -30,7 +30,7 @@ namespace stupid
                 DefaultSolverIterations = f32.one,
                 DefaultSolverVelocityIterations = f32.one,
                 WorldBounds = new BoundsS(new Vector3S(0, 0, 0), new Vector3S(32, 32, 32)),
-                DefaultMaxAngularSpeed = (f32)7,
+                DefaultMaxAngularSpeed = (f32)16,
             };
         }
     }

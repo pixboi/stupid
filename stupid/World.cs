@@ -186,9 +186,6 @@ namespace stupid
             // Calculate the relative velocity at the contact point
             Vector3S relativeVelocityAtContact = body.velocity + Vector3S.Cross(body.angularVelocity, rb);
 
-            // Calculate the velocity along the normal
-            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
-
             // Calculate inverse mass
             f32 invMass = body.mass > f32.zero ? f32.one / body.mass : f32.zero;
 
@@ -200,6 +197,9 @@ namespace stupid
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / effectiveMass) * POSITION_PERCENT * normal;
             positionBuffer[body.index] += invMass * correction;
+
+            // Calculate the velocity along the normal
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
 
             // Do not resolve if velocities are separating
             if (velocityAlongNormal > f32.zero) return;
@@ -238,8 +238,6 @@ namespace stupid
             angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
 
-
-
         private void ResolveCollision(RigidbodyS a, RigidbodyS b, ContactS contact)
         {
             // Ensure the normal always points from a to b
@@ -256,9 +254,6 @@ namespace stupid
             // Calculate relative velocity at the contact point
             Vector3S relativeVelocityAtContact = (b.velocity + Vector3S.Cross(b.angularVelocity, rb)) - (a.velocity + Vector3S.Cross(a.angularVelocity, ra));
 
-            // Calculate the velocity along the normal
-            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
-
             // Calculate inverse masses
             f32 invMassA = a.mass > f32.zero ? f32.one / a.mass : f32.zero;
             f32 invMassB = b.mass > f32.zero ? f32.one / b.mass : f32.zero;
@@ -274,6 +269,9 @@ namespace stupid
             Vector3S correction = (penetrationDepth / effectiveMassSum) * POSITION_PERCENT * normal;
             positionBuffer[a.index] -= invMassA * correction;
             positionBuffer[b.index] += invMassB * correction;
+
+            // Calculate the velocity along the normal
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
 
             // Do not resolve if velocities are separating
             if (velocityAlongNormal > f32.zero) return;
@@ -298,19 +296,21 @@ namespace stupid
             Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
 
             // Calculate the magnitude of the friction impulse
-            f32 frictionDenominatorA = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent);
-            f32 frictionDenominatorB = invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
-            f32 frictionDenominator = frictionDenominatorA + frictionDenominatorB;
-            f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
+            f32 jt = -Vector3S.Dot(relativeTangentialVelocity, tangent) / effectiveMassSum;
 
-            // Use the maximum of the static and dynamic friction coefficients
-            f32 effectiveFriction = MathS.Max(MathS.Max(a.material.staticFriction, a.material.dynamicFriction), MathS.Max(b.material.staticFriction, b.material.dynamicFriction));
+            // Use the average of the static and dynamic friction coefficients
+            f32 staticFriction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
+            f32 dynamicFriction = (a.material.dynamicFriction + b.material.dynamicFriction) * f32.half;
 
-            // Limit the friction impulse to prevent excessive angular velocities
-            Vector3S frictionImpulse = jt * tangent;
-            if (frictionImpulse.Magnitude() > j * effectiveFriction)
+            // Calculate the friction impulse
+            Vector3S frictionImpulse;
+            if (MathS.Abs(jt) < j * staticFriction)
             {
-                frictionImpulse = frictionImpulse.Normalize() * (j * effectiveFriction);
+                frictionImpulse = jt * tangent;
+            }
+            else
+            {
+                frictionImpulse = -j * dynamicFriction * tangent;
             }
 
             // Apply friction impulse

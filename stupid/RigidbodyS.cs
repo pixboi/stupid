@@ -19,8 +19,6 @@ namespace stupid
         public Vector3S velocity;
         public Vector3S angularVelocity;
 
-        public f32 maxAngularVelocitySqr = (f32)49;
-
         //Runtime
         public Vector3S forceBucket { get; private set; }
         public Vector3S torqueBucket { get; private set; }
