@@ -34,6 +34,21 @@ namespace stupid.Maths
             m22 = row3.z;
         }
 
+        public Vector3S GetColumn(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return new Vector3S(m00, m10, m20);
+                case 1:
+                    return new Vector3S(m01, m11, m21);
+                case 2:
+                    return new Vector3S(m02, m12, m22);
+                default:
+                    throw new IndexOutOfRangeException("Invalid column index");
+            }
+        }
+
         public static Vector3S operator *(Matrix3S m, Vector3S v)
         {
             return new Vector3S(

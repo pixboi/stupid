@@ -82,15 +82,14 @@ namespace stupid.Colliders
 
             Vector3S relativePosition = positionB - positionA;
 
-            // Generate the list of axes to test (the 6 face normals and the 9 cross products)
             List<Vector3S> axes = new List<Vector3S>
     {
-        new Vector3S(rotA.m00, rotA.m01, rotA.m02),
-        new Vector3S(rotA.m10, rotA.m11, rotA.m12),
-        new Vector3S(rotA.m20, rotA.m21, rotA.m22),
-        new Vector3S(rotB.m00, rotB.m01, rotB.m02),
-        new Vector3S(rotB.m10, rotB.m11, rotB.m12),
-        new Vector3S(rotB.m20, rotB.m21, rotB.m22)
+        rotA.GetColumn(0),
+        rotA.GetColumn(1),
+        rotA.GetColumn(2),
+        rotB.GetColumn(0),
+        rotB.GetColumn(1),
+        rotB.GetColumn(2)
     };
 
             for (int i = 0; i < 3; i++)
@@ -110,75 +109,110 @@ namespace stupid.Colliders
 
             foreach (Vector3S axis in axes)
             {
-                if (!OverlapOnAxis(relativePosition, axis, halfSizeA, halfSizeB, rotA, rotB, out f32 penetration))
+                if (!OverlapOnAxis(relativePosition, axis, halfSizeA, halfSizeB, rotA, rotB, out f32 overlap))
                 {
                     return false; // No overlap on this axis, no collision
                 }
-                if (penetration < minOverlap)
+                if (overlap < minOverlap)
                 {
-                    minOverlap = penetration;
+                    minOverlap = overlap;
                     minAxis = axis;
                 }
             }
 
-            // Ensure normal points from A to B
             Vector3S normal = minAxis;
             if (Vector3S.Dot(minAxis, relativePosition) < f32.zero)
             {
                 normal = -minAxis;
             }
 
-            normal = normal.Normalize();
-
             contact.normal = normal;
             contact.penetrationDepth = minOverlap;
-            contact.point = CalculateContactPoint(positionA, halfSizeA, rotA, positionB, halfSizeB, rotB, normal);
+            contact.point = FindContactPoints(positionA, halfSizeA, rotA, positionB, halfSizeB, rotB, normal);
 
             return true;
         }
 
-        private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, Vector3S halfSizeA, Vector3S halfSizeB, Matrix3S rotA, Matrix3S rotB, out f32 penetration)
+        private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, Vector3S halfSizeA, Vector3S halfSizeB, Matrix3S rotA, Matrix3S rotB, out f32 overlap)
         {
-            f32 projectionA = ProjectBox(halfSizeA, axis, rotA);
-            f32 projectionB = ProjectBox(halfSizeB, axis, rotB);
-            f32 distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
-            f32 overlap = projectionA + projectionB - distance;
-
-            penetration = overlap;
+            var projectionA = ProjectBox(halfSizeA, axis, rotA);
+            var projectionB = ProjectBox(halfSizeB, axis, rotB);
+            var distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
+            overlap = projectionA + projectionB - distance;
             return overlap > f32.zero;
         }
 
         private static f32 ProjectBox(Vector3S halfSize, Vector3S axis, Matrix3S rotation)
         {
-            Vector3S absAxis = new Vector3S(
-                MathS.Abs(Vector3S.Dot(new Vector3S(rotation.m00, rotation.m01, rotation.m02), axis)),
-                MathS.Abs(Vector3S.Dot(new Vector3S(rotation.m10, rotation.m11, rotation.m12), axis)),
-                MathS.Abs(Vector3S.Dot(new Vector3S(rotation.m20, rotation.m21, rotation.m22), axis))
-            );
-
-            return absAxis.x * halfSize.x + absAxis.y * halfSize.y + absAxis.z * halfSize.z;
+            return
+                halfSize.x * MathS.Abs(Vector3S.Dot(rotation.GetColumn(0), axis)) +
+                halfSize.y * MathS.Abs(Vector3S.Dot(rotation.GetColumn(1), axis)) +
+                halfSize.z * MathS.Abs(Vector3S.Dot(rotation.GetColumn(2), axis));
         }
 
-        private static Vector3S CalculateContactPoint(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S normal)
+        private static Vector3S FindContactPoints(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S normal)
         {
-            Vector3S pointA = FindClosestPointOnBox(positionA, halfSizeA, rotationA, positionB, normal);
-            Vector3S pointB = FindClosestPointOnBox(positionB, halfSizeB, rotationB, positionA, -normal);
+            Vector3S[] verticesA = GetBoxVertices(positionA, halfSizeA, rotationA);
+            Vector3S[] verticesB = GetBoxVertices(positionB, halfSizeB, rotationB);
 
-            return (pointA + pointB) * f32.half;
+            List<Vector3S> contactPoints = new List<Vector3S>();
+
+            foreach (var vertexA in verticesA)
+            {
+                if (IsPointInsideOBB(vertexA, positionB, halfSizeB, rotationB))
+                {
+                    contactPoints.Add(vertexA);
+                }
+            }
+
+            foreach (var vertexB in verticesB)
+            {
+                if (IsPointInsideOBB(vertexB, positionA, halfSizeA, rotationA))
+                {
+                    contactPoints.Add(vertexB);
+                }
+            }
+
+            if (contactPoints.Count == 0)
+            {
+                return Vector3S.zero;
+            }
+
+            Vector3S averageContactPoint = Vector3S.zero;
+            foreach (var point in contactPoints)
+            {
+                averageContactPoint += point;
+            }
+
+            return averageContactPoint / (f32)contactPoints.Count;
         }
 
-        private static Vector3S FindClosestPointOnBox(Vector3S boxPosition, Vector3S boxHalfSize, Matrix3S boxRotation, Vector3S point, Vector3S direction)
+        private static Vector3S[] GetBoxVertices(Vector3S position, Vector3S halfSize, Matrix3S rotation)
         {
-            Vector3S localPoint = boxRotation.Transpose() * (point - boxPosition);
+            Vector3S[] vertices = new Vector3S[8];
 
-            Vector3S closestPoint = new Vector3S(
-                MathS.Clamp(localPoint.x, -boxHalfSize.x, boxHalfSize.x),
-                MathS.Clamp(localPoint.y, -boxHalfSize.y, boxHalfSize.y),
-                MathS.Clamp(localPoint.z, -boxHalfSize.z, boxHalfSize.z)
-            );
+            Vector3S right = rotation.GetColumn(0) * halfSize.x;
+            Vector3S up = rotation.GetColumn(1) * halfSize.y;
+            Vector3S forward = rotation.GetColumn(2) * halfSize.z;
 
-            return boxPosition + (boxRotation * closestPoint);
+            vertices[0] = position + right + up + forward;
+            vertices[1] = position + right + up - forward;
+            vertices[2] = position + right - up + forward;
+            vertices[3] = position + right - up - forward;
+            vertices[4] = position - right + up + forward;
+            vertices[5] = position - right + up - forward;
+            vertices[6] = position - right - up + forward;
+            vertices[7] = position - right - up - forward;
+
+            return vertices;
         }
+
+        private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S rotation)
+        {
+            Vector3S localPoint = rotation.Transpose() * (point - position);
+            return MathS.Abs(localPoint.x) <= halfSize.x && MathS.Abs(localPoint.y) <= halfSize.y && MathS.Abs(localPoint.z) <= halfSize.z;
+        }
+
 
     }
 }
