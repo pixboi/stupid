@@ -83,12 +83,14 @@ namespace stupid
             foreach (var c in Collidables)
             {
                 if (c.isDynamic)
-                    c.CalculateBounds();
-
-                if (c.collider.NeedsRotationUpdate)
                 {
-                    c.transform.UpdateRotationMatrix();
-                    c.collider.OnRotationUpdate();
+                    if (c.collider.NeedsRotationUpdate)
+                    {
+                        c.transform.UpdateRotationMatrix();
+                        c.collider.OnRotationUpdate();
+                    }
+
+                    c.CalculateBounds();
                 }
 
                 if (c is RigidbodyS rb)

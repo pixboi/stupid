@@ -11,7 +11,6 @@ namespace stupid.Colliders
         bool Intersects(Collidable other, out ContactS contact); // Add this method
         Matrix3S CalculateInertiaTensor(f32 mass);
         bool NeedsRotationUpdate { get; }
-
         void OnRotationUpdate();
     }
 
@@ -28,6 +27,8 @@ namespace stupid.Colliders
         {
             attachedCollidable = c;
             CalculateAABB(c.transform.position, c.transform.rotation);
+
+            OnRotationUpdate();
         }
 
         public abstract BoundsS CalculateAABB(Vector3S position, QuaternionS rotation);
