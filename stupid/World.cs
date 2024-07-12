@@ -254,6 +254,12 @@ namespace stupid
             // Calculate relative velocity at the contact point
             Vector3S relativeVelocityAtContact = (b.velocity + Vector3S.Cross(b.angularVelocity, rb)) - (a.velocity + Vector3S.Cross(a.angularVelocity, ra));
 
+            // Calculate the velocity along the normal
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
+
+            // Do not resolve if velocities are separating
+            if (velocityAlongNormal > f32.zero) return;
+
             // Calculate inverse masses
             f32 invMassA = a.mass > f32.zero ? f32.one / a.mass : f32.zero;
             f32 invMassB = b.mass > f32.zero ? f32.one / b.mass : f32.zero;
@@ -269,12 +275,6 @@ namespace stupid
             Vector3S correction = (penetrationDepth / effectiveMassSum) * POSITION_PERCENT * normal;
             positionBuffer[a.index] -= invMassA * correction;
             positionBuffer[b.index] += invMassB * correction;
-
-            // Calculate the velocity along the normal
-            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
-
-            // Do not resolve if velocities are separating
-            if (velocityAlongNormal > f32.zero) return;
 
             // Restitution (coefficient of restitution)
             f32 bounce = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
@@ -319,7 +319,6 @@ namespace stupid
             angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
-
 
 
     }
