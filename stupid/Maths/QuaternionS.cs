@@ -1,17 +1,19 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public struct QuaternionS
+    public struct QuaternionS : IEquatable<QuaternionS>
     {
-        public f32 x;
-        public f32 y;
-        public f32 z;
-        public f32 w;
+        public readonly f32 x;
+        public readonly f32 y;
+        public readonly f32 z;
+        public readonly f32 w;
 
         public static readonly QuaternionS identity = new QuaternionS(f32.zero, f32.zero, f32.zero, f32.one);
         public static readonly QuaternionS zero = new QuaternionS(f32.zero, f32.zero, f32.zero, f32.zero);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QuaternionS(f32 x, f32 y, f32 z, f32 w)
         {
             this.x = x;
@@ -20,6 +22,7 @@ namespace stupid.Maths
             this.w = w;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QuaternionS(float x, float y, float z, float w)
         {
             this.x = f32.FromFloat(x);
@@ -28,6 +31,7 @@ namespace stupid.Maths
             this.w = f32.FromFloat(w);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS FromAxisAngle(Vector3S axis, f32 angle)
         {
             f32 halfAngle = angle * f32.half;
@@ -40,6 +44,7 @@ namespace stupid.Maths
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS FromEulerAngles(Vector3S eulerAngles)
         {
             f32 c1 = MathS.Cos(eulerAngles.y * f32.half);
@@ -57,6 +62,7 @@ namespace stupid.Maths
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS operator *(QuaternionS a, QuaternionS b)
         {
             return new QuaternionS(
@@ -67,6 +73,7 @@ namespace stupid.Maths
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(QuaternionS q, Vector3S v)
         {
             Vector3S u = new Vector3S(q.x, q.y, q.z);
@@ -77,6 +84,7 @@ namespace stupid.Maths
                  + f32.two * s * Vector3S.Cross(u, v);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS operator /(QuaternionS q, f32 scalar)
         {
             return new QuaternionS(q.x / scalar, q.y / scalar, q.z / scalar, q.w / scalar);
@@ -84,12 +92,14 @@ namespace stupid.Maths
 
         public f32 SqrMagnitude => (x * x) + (y * y) + (z * z) + (w * w);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
         {
             f32 magnitudeSquared = SqrMagnitude;
             return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS Inverse(QuaternionS q)
         {
             f32 magSq = q.SqrMagnitude;
@@ -102,8 +112,10 @@ namespace stupid.Maths
             return QuaternionS.identity;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QuaternionS Inverse() => Inverse(this);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QuaternionS Normalize()
         {
             f32 magnitude = Magnitude();
@@ -117,17 +129,19 @@ namespace stupid.Maths
             return identity;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QuaternionS Conjugate()
         {
             return new QuaternionS(-x, -y, -z, w);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString()
         {
             return $"Quaternion({x}, {y}, {z}, {w})";
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             return obj is QuaternionS quaternion &&
                    x.Equals(quaternion.x) &&
@@ -141,8 +155,16 @@ namespace stupid.Maths
             return HashCode.Combine(x, y, z, w);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(QuaternionS other)
+        {
+            return x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z) && w.Equals(other.w);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(QuaternionS left, QuaternionS right) => left.Equals(right);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(QuaternionS left, QuaternionS right) => !(left == right);
     }
 }

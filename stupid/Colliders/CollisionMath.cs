@@ -72,6 +72,8 @@ namespace stupid.Colliders
 
         static Vector3S[] _axes = new Vector3S[6];
         static List<Vector3S> _testAxes = new List<Vector3S>();
+        static List<Vector3S> _contactPoints = new List<Vector3S>();
+
         public static bool BoxVsBox(BoxColliderS a, BoxColliderS b, out ContactS contact)
         {
             contact = new ContactS();
@@ -140,9 +142,9 @@ namespace stupid.Colliders
 
         private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, Vector3S halfSizeA, Vector3S halfSizeB, Matrix3S rotA, Matrix3S rotB, out f32 overlap)
         {
-            var projectionA = ProjectBox(halfSizeA, axis, rotA);
-            var projectionB = ProjectBox(halfSizeB, axis, rotB);
-            var distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
+            f32 projectionA = ProjectBox(halfSizeA, axis, rotA);
+            f32 projectionB = ProjectBox(halfSizeB, axis, rotB);
+            f32 distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
             overlap = projectionA + projectionB - distance;
             return overlap > f32.zero;
         }
@@ -155,8 +157,6 @@ namespace stupid.Colliders
                 halfSize.z * MathS.Abs(Vector3S.Dot(rotation.GetColumn(2), axis));
         }
 
-
-        static List<Vector3S> _contactPoints = new List<Vector3S>();
         private static Vector3S FindContactPoints(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S[] verticesA, Vector3S[] verticesB)
         {
             _contactPoints.Clear();
@@ -196,6 +196,7 @@ namespace stupid.Colliders
             Vector3S localPoint = rotation.Transpose() * (point - position);
             return MathS.Abs(localPoint.x) <= halfSize.x && MathS.Abs(localPoint.y) <= halfSize.y && MathS.Abs(localPoint.z) <= halfSize.z;
         }
+
 
 
     }

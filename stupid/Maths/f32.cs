@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
     public static class f32helpers
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long ToRaw(this f32 value)
         {
             return value._value;
@@ -33,37 +35,44 @@ namespace stupid.Maths
             _value = value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 FromRaw(long rawValue)
         {
             return new f32(rawValue);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 FromFloat(float value)
         {
             return new f32((long)(value * One));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float ToFloat()
         {
             return (float)_value / One;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator +(f32 a, f32 b)
         {
             return new f32(a._value + b._value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(f32 a, f32 b)
         {
             return new f32(a._value - b._value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator *(f32 a, f32 b)
         {
             long result = (a._value * b._value) >> FractionalBits;
             return new f32(result);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator /(f32 a, f32 b)
         {
             if (b._value == 0)
@@ -75,31 +84,37 @@ namespace stupid.Maths
             return new f32(result);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(f32 value)
         {
             return new f32(-value._value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static explicit operator float(f32 fp)
         {
             return fp.ToFloat();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static explicit operator f32(float value)
         {
             return FromFloat(value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString()
         {
             return ToFloat().ToString();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(f32 other)
         {
             return _value == other._value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CompareTo(f32 other)
         {
             return _value.CompareTo(other._value);
@@ -115,31 +130,37 @@ namespace stupid.Maths
             return _value.GetHashCode();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(f32 left, f32 right)
         {
             return left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(f32 left, f32 right)
         {
             return !left.Equals(right);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <(f32 left, f32 right)
         {
             return left.CompareTo(right) < 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >(f32 left, f32 right)
         {
             return left.CompareTo(right) > 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <=(f32 left, f32 right)
         {
             return left.CompareTo(right) <= 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >=(f32 left, f32 right)
         {
             return left.CompareTo(right) >= 0;

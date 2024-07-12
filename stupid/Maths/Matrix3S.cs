@@ -4,9 +4,9 @@ namespace stupid.Maths
 {
     public struct Matrix3S
     {
-        public f32 m00, m01, m02;
-        public f32 m10, m11, m12;
-        public f32 m20, m21, m22;
+        public readonly f32 m00, m01, m02;
+        public readonly f32 m10, m11, m12;
+        public readonly f32 m20, m21, m22;
 
         public Matrix3S(f32 m00, f32 m01, f32 m02, f32 m10, f32 m11, f32 m12, f32 m20, f32 m21, f32 m22)
         {
