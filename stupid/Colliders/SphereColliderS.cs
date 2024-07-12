@@ -33,7 +33,7 @@ namespace stupid.Colliders
 
             if (other.collider is BoxColliderS otherBox)
             {
-                return CollisionMath.BoxVsSphere(other.transform.position, other.transform.rotation, otherBox.size, this.attachedCollidable.transform.position, this.radius, out contact);
+                return CollisionMath.BoxVsSphere(otherBox, this, out contact);
             }
 
             return false;

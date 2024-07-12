@@ -33,13 +33,18 @@ namespace stupid.Colliders
             return true;
         }
 
-        public static bool BoxVsSphere(Vector3S boxPosition, QuaternionS boxRotation, Vector3S boxSize, Vector3S spherePosition, f32 sphereRadius, out ContactS contact)
+        public static bool BoxVsSphere(BoxColliderS box, SphereColliderS sphere, out ContactS contact)
         {
             contact = new ContactS();
 
+            var boxTrans = box.attachedCollidable.transform;
+            var sphereTrans = sphere.attachedCollidable.transform;
+
             // Transform the sphere center into the box's local space
-            Vector3S localSpherePosition = QuaternionS.Inverse(boxRotation) * (spherePosition - boxPosition);
-            Vector3S halfSize = boxSize * f32.half;
+            Matrix3S boxRotationMatrix = boxTrans.rotationMatrix;
+            Matrix3S inverseBoxRotation = boxRotationMatrix.Transpose(); // Efficient inverse for rotation matrix
+            Vector3S localSpherePosition = inverseBoxRotation * (sphereTrans.position - boxTrans.position);
+            Vector3S halfSize = box.halfSize;
 
             // Clamp the sphere's local position to the box's extents to find the closest point
             Vector3S closestPoint = new Vector3S(
@@ -53,7 +58,7 @@ namespace stupid.Colliders
             f32 distanceSquared = distanceVector.SqrMagnitude;
 
             // If the distance is greater than the sphere's radius, there's no intersection
-            if (distanceSquared > sphereRadius * sphereRadius)
+            if (distanceSquared > sphere.radius * sphere.radius)
             {
                 return false;
             }
@@ -63,12 +68,13 @@ namespace stupid.Colliders
             Vector3S normal = distance > f32.epsilon ? distanceVector / distance : Vector3S.zero;
 
             // Transform the closest point and normal back to world space
-            contact.point = boxPosition + (boxRotation * closestPoint);
-            contact.normal = boxRotation * normal;
-            contact.penetrationDepth = sphereRadius - distance;
+            contact.point = boxTrans.position + (boxRotationMatrix * closestPoint);
+            contact.normal = boxRotationMatrix * normal;
+            contact.penetrationDepth = sphere.radius - distance;
 
             return true;
         }
+
 
         static Vector3S[] _axes = new Vector3S[15];
         static List<Vector3S> _contactPoints = new List<Vector3S>();
