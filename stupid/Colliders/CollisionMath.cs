@@ -8,6 +8,8 @@ namespace stupid.Colliders
     {
         public static bool SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, out ContactS contact)
         {
+            contact = new ContactS();
+
             // Calculate the squared distance between the two positions
             var squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
 
@@ -18,20 +20,21 @@ namespace stupid.Colliders
             // If the squared distance is greater than the squared combined radius, there is no intersection
             if (squaredDistance > squaredCombinedRadius)
             {
-                contact = new ContactS();
                 return false;
             }
 
             // Calculate direction and distance between the spheres
-            var direction = (positionB - positionA).NormalizeWithMagnitude(out var distance);
+            var direction = (positionA - positionB).NormalizeWithMagnitude(out var distance);
 
             // Set contact information
-            contact.point = positionA + direction * radA;
-            contact.normal = direction;
+            contact.point = positionB + direction * radB; // Contact point on the surface of B
+            contact.normal = direction; // Normal points from A to B
             contact.penetrationDepth = combinedRadius - distance;
 
             return true;
         }
+
+
 
         public static bool BoxVsSphere(BoxColliderS box, SphereColliderS sphere, out ContactS contact)
         {
@@ -131,7 +134,7 @@ namespace stupid.Colliders
             var aRot = a.attachedCollidable.transform.rotationMatrix;
             var bRot = b.attachedCollidable.transform.rotationMatrix;
 
-            contact.normal = normal;
+            contact.normal = -normal;
             contact.penetrationDepth = minOverlap;
             contact.point = FindContactPoints(a.attachedCollidable.transform.position, a.size * f32.half, aRot, b.attachedCollidable.transform.position, b.size * f32.half, bRot, a.vertices, b.vertices);
 
