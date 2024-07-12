@@ -4,9 +4,36 @@ using stupid.Maths;
 
 namespace stupid.Colliders
 {
-    public static class BoxHelpers
+    public static class CollisionMath
     {
-        public static bool IntersectBoxSphere(Vector3S boxPosition, QuaternionS boxRotation, Vector3S boxSize, Vector3S spherePosition, f32 sphereRadius, out ContactS contact)
+        public static bool SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, out ContactS contact)
+        {
+            // Calculate the squared distance between the two positions
+            var squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
+
+            // Calculate the combined radius of both spheres
+            var combinedRadius = radA + radB;
+            var squaredCombinedRadius = combinedRadius * combinedRadius;
+
+            // If the squared distance is greater than the squared combined radius, there is no intersection
+            if (squaredDistance > squaredCombinedRadius)
+            {
+                contact = new ContactS();
+                return false;
+            }
+
+            // Calculate direction and distance between the spheres
+            var direction = (positionB - positionA).NormalizeWithMagnitude(out var distance);
+
+            // Set contact information
+            contact.point = positionA + direction * radA;
+            contact.normal = direction;
+            contact.penetrationDepth = combinedRadius - distance;
+
+            return true;
+        }
+
+        public static bool BoxVsSphere(Vector3S boxPosition, QuaternionS boxRotation, Vector3S boxSize, Vector3S spherePosition, f32 sphereRadius, out ContactS contact)
         {
             contact = new ContactS();
 
@@ -43,7 +70,7 @@ namespace stupid.Colliders
             return true;
         }
 
-        public static bool IntersectBox(Vector3S positionA, QuaternionS rotationA, Vector3S sizeA, Vector3S positionB, QuaternionS rotationB, Vector3S sizeB, out ContactS contact)
+        public static bool BoxVsBox(Vector3S positionA, QuaternionS rotationA, Vector3S sizeA, Vector3S positionB, QuaternionS rotationB, Vector3S sizeB, out ContactS contact)
         {
             contact = new ContactS();
 
@@ -54,17 +81,17 @@ namespace stupid.Colliders
             Matrix3S rotB = Matrix3S.Rotate(rotationB);
 
             Vector3S relativePosition = positionB - positionA;
-            //Vector3S t = rotA.Transpose() * relativePosition;
 
+            // Generate the list of axes to test (the 6 face normals and the 9 cross products)
             List<Vector3S> axes = new List<Vector3S>
-            {
-                new Vector3S(rotA.m00, rotA.m01, rotA.m02),
-                new Vector3S(rotA.m10, rotA.m11, rotA.m12),
-                new Vector3S(rotA.m20, rotA.m21, rotA.m22),
-                new Vector3S(rotB.m00, rotB.m01, rotB.m02),
-                new Vector3S(rotB.m10, rotB.m11, rotB.m12),
-                new Vector3S(rotB.m20, rotB.m21, rotB.m22)
-            };
+    {
+        new Vector3S(rotA.m00, rotA.m01, rotA.m02),
+        new Vector3S(rotA.m10, rotA.m11, rotA.m12),
+        new Vector3S(rotA.m20, rotA.m21, rotA.m22),
+        new Vector3S(rotB.m00, rotB.m01, rotB.m02),
+        new Vector3S(rotB.m10, rotB.m11, rotB.m12),
+        new Vector3S(rotB.m20, rotB.m21, rotB.m22)
+    };
 
             for (int i = 0; i < 3; i++)
             {
@@ -85,7 +112,7 @@ namespace stupid.Colliders
             {
                 if (!OverlapOnAxis(relativePosition, axis, halfSizeA, halfSizeB, rotA, rotB, out f32 penetration))
                 {
-                    return false;
+                    return false; // No overlap on this axis, no collision
                 }
                 if (penetration < minOverlap)
                 {
@@ -94,9 +121,18 @@ namespace stupid.Colliders
                 }
             }
 
-            contact.normal = minAxis;
+            // Ensure normal points from A to B
+            Vector3S normal = minAxis;
+            if (Vector3S.Dot(minAxis, relativePosition) < f32.zero)
+            {
+                normal = -minAxis;
+            }
+
+            normal = normal.Normalize();
+
+            contact.normal = normal;
             contact.penetrationDepth = minOverlap;
-            contact.point = CalculateContactPoint(positionA, halfSizeA, rotA, positionB, halfSizeB, rotB, minAxis);
+            contact.point = CalculateContactPoint(positionA, halfSizeA, rotA, positionB, halfSizeB, rotB, normal);
 
             return true;
         }
@@ -143,5 +179,6 @@ namespace stupid.Colliders
 
             return boxPosition + (boxRotation * closestPoint);
         }
+
     }
 }

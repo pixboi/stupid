@@ -29,6 +29,6 @@ namespace stupid
         }
 
         public BoundsS GetBounds() => this.collider.GetAABB();
-        public BoundsS CalculateBounds() => this.collider.CalculateAABB(transform.position);
+        public BoundsS CalculateBounds() => this.collider.CalculateAABB(transform.position, transform.rotation);
     }
 }

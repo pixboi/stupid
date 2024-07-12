@@ -12,10 +12,10 @@ namespace stupid.Colliders
             this.halfSize = size * f32.half;
         }
 
-        public override BoundsS CalculateAABB(Vector3S position)
+        public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
         {
             // Get the rotation matrix from the quaternion
-            var rotationMatrix = Matrix3S.Rotate(attachedCollidable.transform.rotation);
+            var rotationMatrix = Matrix3S.Rotate(rotation);
 
             // Calculate the extents of the rotated box along each axis
             Vector3S rotatedHalfSize = new Vector3S(
@@ -36,7 +36,7 @@ namespace stupid.Colliders
 
             if (other.collider is BoxColliderS otherBox)
             {
-                return BoxHelpers.IntersectBox(
+                return CollisionMath.BoxVsBox(
                     this.attachedCollidable.transform.position,
                     this.attachedCollidable.transform.rotation,
                     this.size,
@@ -48,7 +48,7 @@ namespace stupid.Colliders
 
             if (other.collider is SphereColliderS otherSphere)
             {
-                return BoxHelpers.IntersectBoxSphere(
+                return CollisionMath.BoxVsSphere(
                     this.attachedCollidable.transform.position,
                     this.attachedCollidable.transform.rotation,
                     this.size,

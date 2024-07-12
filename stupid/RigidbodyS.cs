@@ -72,12 +72,6 @@ namespace stupid
                 velocity += forceBucket / mass * deltaTime;
             }
 
-            // Apply linear drag
-            if (drag != f32.zero)
-            {
-                velocity *= MathS.Max((f32)1.0f - drag * deltaTime, (f32)0.0f);
-            }
-
             // Update position
             transform.position += velocity * deltaTime;
 
@@ -87,23 +81,27 @@ namespace stupid
                 angularVelocity += tensor.inertiaWorld * torqueBucket / mass * deltaTime;
             }
 
-            // Apply angular drag
-            angularVelocity *= MathS.Max((f32)1.0f - angularDrag * deltaTime, (f32)0.0f);
+            // Apply drags
+            if (drag != f32.zero)
+                velocity *= MathS.Clamp(f32.one - drag * deltaTime, f32.zero, f32.one);
+
+            if (angularDrag != f32.zero)
+                angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
 
             // Clamp the angular velocity
-            if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
+            if (angularVelocity.SqrMagnitude > settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed)
             {
                 angularVelocity = angularVelocity.ClampMagnitude(f32.zero, settings.DefaultMaxAngularSpeed);
             }
 
             // Update rotation
-            if (angularVelocity.SqrMagnitude > f32.epsilon)
+            if (angularVelocity.SqrMagnitude > f32.one)
             {
-                Vector3S angDelta = angularVelocity * deltaTime;
-                var nrmAng = angDelta.NormalizeWithMagnitude(out var mag);
-
-                QuaternionS deltaRot = QuaternionS.FromAxisAngle(nrmAng, mag);
-                transform.rotation = (deltaRot * transform.rotation).Normalize();
+                Vector3S angDelta = angularVelocity * deltaTime * f32.half;
+                //var nrmAng = angDelta.NormalizeWithMagnitude(out var mag);
+                var dq = new QuaternionS(angDelta.x, angDelta.y, angDelta.z, f32.one);
+                //QuaternionS deltaRot = QuaternionS.FromAxisAngle(nrmAng, mag);
+                transform.rotation = (dq * transform.rotation).Normalize();
             }
 
             // Clear accumulated forces and torques

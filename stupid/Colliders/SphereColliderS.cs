@@ -10,7 +10,7 @@ namespace stupid.Colliders
             this.radius = radius;
         }
 
-        public override BoundsS CalculateAABB(Vector3S position)
+        public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
         {
             var size = new Vector3S(radius, radius, radius);
             _bounds = new BoundsS(position - size, position + size);
@@ -23,7 +23,7 @@ namespace stupid.Colliders
 
             if (other.collider is SphereColliderS otherSphere)
             {
-                return IntersectSphere(
+                return CollisionMath.SphereVSphere(
                     this.attachedCollidable.transform.position,
                     otherSphere.attachedCollidable.transform.position,
                     this.radius,
@@ -33,7 +33,7 @@ namespace stupid.Colliders
 
             if (other.collider is BoxColliderS otherBox)
             {
-                return BoxHelpers.IntersectBoxSphere(other.transform.position, other.transform.rotation, otherBox.size, this.attachedCollidable.transform.position, this.radius, out contact);
+                return CollisionMath.BoxVsSphere(other.transform.position, other.transform.rotation, otherBox.size, this.attachedCollidable.transform.position, this.radius, out contact);
             }
 
             return false;
@@ -50,35 +50,6 @@ namespace stupid.Colliders
                 new Vector3S(f32.zero, inertia, f32.zero),
                 new Vector3S(f32.zero, f32.zero, inertia)
             );
-        }
-
-
-        public static bool IntersectSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, out ContactS contact)
-        {
-            contact = new ContactS();
-
-            // Calculate the squared distance between the two positions
-            var squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
-
-            // Calculate the combined radius of both spheres
-            var combinedRadius = radA + radB;
-            var squaredCombinedRadius = combinedRadius * combinedRadius;
-
-            // If the squared distance is greater than the squared combined radius, there is no intersection
-            if (squaredDistance > squaredCombinedRadius)
-            {
-                return false;
-            }
-
-            // Calculate direction and distance between the spheres
-            var direction = (positionB - positionA).NormalizeWithMagnitude(out var distance);
-
-            // Set contact information
-            contact.point = positionA + direction * radA;
-            contact.normal = direction;
-            contact.penetrationDepth = combinedRadius - distance;
-
-            return true;
         }
     }
 }
