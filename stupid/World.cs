@@ -189,30 +189,31 @@ namespace stupid
             // Calculate the velocity along the normal
             f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
 
+            // Calculate inverse mass
+            f32 invMass = body.mass > f32.zero ? f32.one / body.mass : f32.zero;
+
+            // Compute the effective mass along the normal direction
+            f32 effectiveMass = invMass + Vector3S.Dot(Vector3S.Cross(body.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
+
+            // Positional correction to prevent sinking
+            f32 slop = Settings.DefaultContactOffset;
+            f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
+            Vector3S correction = (penetrationDepth / effectiveMass) * POSITION_PERCENT * normal;
+            positionBuffer[body.index] += invMass * correction;
+
             // Do not resolve if velocities are separating
             if (velocityAlongNormal > f32.zero) return;
 
             // Restitution (coefficient of restitution)
             f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold ? body.material.bounciness : f32.zero;
 
-            // Calculate inverse mass
-            f32 invMass = body.mass > f32.zero ? f32.one / body.mass : f32.zero;
-
-            // Compute the effective mass along the normal direction
-            f32 invEffectiveMass = invMass + Vector3S.Dot(Vector3S.Cross(body.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
-
             // Calculate the normal impulse scalar
-            f32 impulseScalar = -(f32.one + restitution) * velocityAlongNormal / invEffectiveMass;
+            f32 impulseScalar = -(f32.one + restitution) * velocityAlongNormal / effectiveMass;
 
             // Apply linear impulse
             Vector3S impulse = impulseScalar * normal;
             velocityBuffer[body.index] += invMass * impulse;
             angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
-
-            // Positional correction to prevent sinking
-            f32 penetrationDepth = MathS.Max(contact.penetrationDepth - Settings.DefaultContactOffset, f32.zero);
-            Vector3S correction = (penetrationDepth / invEffectiveMass) * POSITION_PERCENT * normal;
-            positionBuffer[body.index] += invMass * correction;
 
             // Calculate relative tangential velocity
             Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
@@ -238,6 +239,7 @@ namespace stupid
         }
 
 
+
         private void ResolveCollision(RigidbodyS a, RigidbodyS b, ContactS contact)
         {
             // Ensure the normal always points from a to b
@@ -252,18 +254,10 @@ namespace stupid
             Vector3S rb = contact.point - b.transform.position;
 
             // Calculate relative velocity at the contact point
-            Vector3S relativeVelocityAtContact = b.velocity - a.velocity
-                                                 + Vector3S.Cross(a.angularVelocity, ra)
-                                                 - Vector3S.Cross(b.angularVelocity, rb);
+            Vector3S relativeVelocityAtContact = (b.velocity + Vector3S.Cross(b.angularVelocity, rb)) - (a.velocity + Vector3S.Cross(a.angularVelocity, ra));
 
             // Calculate the velocity along the normal
             f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
-
-            // Do not resolve if velocities are separating
-            if (velocityAlongNormal > f32.zero) return;
-
-            // Restitution (coefficient of restitution)
-            f32 bounce = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold ? (a.material.bounciness + b.material.bounciness) * f32.half : f32.zero;
 
             // Calculate inverse masses
             f32 invMassA = a.mass > f32.zero ? f32.one / a.mass : f32.zero;
@@ -274,6 +268,21 @@ namespace stupid
             f32 effectiveMassB = invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
             f32 effectiveMassSum = effectiveMassA + effectiveMassB;
 
+            // Positional correction to prevent sinking
+            f32 slop = Settings.DefaultContactOffset;
+            f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
+            Vector3S correction = (penetrationDepth / effectiveMassSum) * POSITION_PERCENT * normal;
+            positionBuffer[a.index] -= invMassA * correction;
+            positionBuffer[b.index] += invMassB * correction;
+
+            // Do not resolve if velocities are separating
+            if (velocityAlongNormal > f32.zero) return;
+
+            // Restitution (coefficient of restitution)
+            f32 bounce = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
+                ? (a.material.bounciness + b.material.bounciness) * f32.half
+                : f32.zero;
+
             // Calculate the normal impulse scalar
             f32 j = -(f32.one + bounce) * velocityAlongNormal / effectiveMassSum;
 
@@ -283,13 +292,6 @@ namespace stupid
             velocityBuffer[b.index] += invMassB * impulse;
             angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
-
-            // Positional correction to prevent sinking
-            f32 slop = Settings.DefaultContactOffset;
-            f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-            Vector3S correction = (penetrationDepth / effectiveMassSum) * POSITION_PERCENT * normal;
-            positionBuffer[a.index] -= invMassA * correction;
-            positionBuffer[b.index] += invMassB * correction;
 
             // Calculate relative tangential velocity
             Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
@@ -317,6 +319,8 @@ namespace stupid
             angularBuffer[a.index] -= a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] += b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
+
+
 
     }
 }
