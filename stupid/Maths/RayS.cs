@@ -3,10 +3,10 @@ using System;
 
 namespace stupid.Maths
 {
-    public struct RayS
+    public readonly struct RayS
     {
-        public Vector3S Origin;
-        public Vector3S Direction;
+        public readonly Vector3S Origin;
+        public readonly Vector3S Direction;
 
         public RayS(Vector3S origin, Vector3S direction)
         {

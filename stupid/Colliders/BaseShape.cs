@@ -17,9 +17,7 @@ namespace stupid.Colliders
     public abstract class BaseShape : IShape
     {
         public Collidable attachedCollidable { get; private set; }
-
         public virtual bool NeedsRotationUpdate => false;
-
         public virtual void OnRotationUpdate() { return; }
 
         public virtual Collidable GetCollidable() => attachedCollidable;
@@ -37,8 +35,6 @@ namespace stupid.Colliders
         public virtual BoundsS GetAABB() => _bounds;
         public abstract bool Intersects(Collidable other, out ContactS contact);
         public abstract Matrix3S CalculateInertiaTensor(f32 mass);
-
-
 
     }
 }

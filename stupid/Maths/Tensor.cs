@@ -17,7 +17,7 @@
             CalculateInverseInertiaTensor(initialRotation);
         }
 
-        public Matrix3S inertiaWorld { get; private set; }
+        public  Matrix3S inertiaWorld { get; private set; }
 
         public void CalculateInverseInertiaTensor(QuaternionS rotation)
         {

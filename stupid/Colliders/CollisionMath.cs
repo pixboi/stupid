@@ -26,10 +26,13 @@ namespace stupid.Colliders
             // Calculate direction and distance between the spheres
             var direction = (positionA - positionB).NormalizeWithMagnitude(out var distance);
 
+
+
             // Set contact information
-            contact.point = positionB + direction * radB; // Contact point on the surface of B
-            contact.normal = direction; // Normal points from B => A
-            contact.penetrationDepth = combinedRadius - distance;
+            var point = positionB + direction * radB; // Contact point on the surface of B
+            var normal = direction; // Normal points from B => A
+            var penetrationDepth = combinedRadius - distance;
+            contact = new ContactS(point, normal, penetrationDepth);
 
             return true;
         }
@@ -70,9 +73,11 @@ namespace stupid.Colliders
             Vector3S normal = distance > f32.epsilon ? distanceVector / distance : Vector3S.zero;
 
             // Transform the closest point and normal back to world space
-            contact.point = boxTrans.position + (boxRotationMatrix * closestPoint);
-            contact.normal = boxRotationMatrix * normal;
-            contact.penetrationDepth = sphere.radius - distance;
+            var point = boxTrans.position + (boxRotationMatrix * closestPoint);
+            var normal1 = boxRotationMatrix * normal;
+            var penetrationDepth = sphere.radius - distance;
+
+            contact = new ContactS(point, normal1, penetrationDepth);
 
             return true;
         }
@@ -133,10 +138,12 @@ namespace stupid.Colliders
             var aRot = a.attachedCollidable.transform.rotationMatrix;
             var bRot = b.attachedCollidable.transform.rotationMatrix;
 
-            contact.normal = -normal;
-            contact.penetrationDepth = minOverlap;
-            contact.point = FindContactPoints(a.attachedCollidable.transform.position, a.size * f32.half, aRot, b.attachedCollidable.transform.position, b.size * f32.half, bRot, a.vertices, b.vertices);
+            
+            var point = FindContactPoints(a.attachedCollidable.transform.position, a.size * f32.half, aRot, b.attachedCollidable.transform.position, b.size * f32.half, bRot, a.vertices, b.vertices);
+            var normal1 = -normal;
+            var penetrationDepth = minOverlap;
 
+            contact = new ContactS(point, normal1, penetrationDepth);
             return true;
         }
 

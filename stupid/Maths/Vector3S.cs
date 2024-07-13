@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public struct Vector3S : IEquatable<Vector3S>
+    public readonly struct Vector3S : IEquatable<Vector3S>
     {
         public readonly f32 x, y, z;
 

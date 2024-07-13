@@ -3,12 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public struct QuaternionS : IEquatable<QuaternionS>
+    public readonly struct QuaternionS : IEquatable<QuaternionS>
     {
-        public readonly f32 x;
-        public readonly f32 y;
-        public readonly f32 z;
-        public readonly f32 w;
+        public readonly f32 x, y, z, w;
 
         public static readonly QuaternionS identity = new QuaternionS(f32.zero, f32.zero, f32.zero, f32.one);
         public static readonly QuaternionS zero = new QuaternionS(f32.zero, f32.zero, f32.zero, f32.zero);

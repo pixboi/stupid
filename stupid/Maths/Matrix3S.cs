@@ -2,7 +2,7 @@
 
 namespace stupid.Maths
 {
-    public struct Matrix3S
+    public readonly struct Matrix3S
     {
         public readonly f32 m00, m01, m02;
         public readonly f32 m10, m11, m12;

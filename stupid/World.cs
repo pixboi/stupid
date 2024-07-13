@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using stupid.Colliders;
 using stupid.Maths;
 using System;
+using System.Diagnostics.Contracts;
 
 namespace stupid
 {
-    public class World
+    public partial class World
     {
         public WorldSettings Settings { get; private set; }
         public SortAndSweepBroadphase Broadphase { get; set; }
@@ -38,37 +39,7 @@ namespace stupid
             return c;
         }
 
-        public Collidable AddCollidable(IShape collider, bool isDynamic = false, Vector3S position = default, QuaternionS rotation = default, Vector3S localScale = default)
-        {
-            var c = new Collidable(counter++, collider, isDynamic, new TransformS(position, rotation, localScale));
-            Collidables.Add(c);
-            return c;
-
-        }
-
-        public RigidbodyS AddRigidbody(RigidbodyS rb)
-        {
-            rb.Register(counter++);
-            Collidables.Add(rb);
-            return rb;
-        }
-
-        public RigidbodyS AddRigidbody(IShape collider, Vector3S position = default, Vector3S velocity = default, Vector3S angularVelocity = default, f32 mass = default)
-        {
-            var rb = new RigidbodyS(counter++, collider, true, new TransformS(position, QuaternionS.identity, Vector3S.one),
-                velocity,
-                angularVelocity,
-                mass,
-                true,
-                false
-                );
-            Collidables.Add(rb);
-            return rb;
-        }
-
-
         public static f32 DeltaTime;
-
         public void Simulate(f32 deltaTime)
         {
             DeltaTime = deltaTime;
@@ -108,8 +79,12 @@ namespace stupid
         }
 
         public event Action<ContactManifoldS> OnContact;
+
+        public List<FrictionPack> frictionPacks = new List<FrictionPack>(1000);
         private void NarrowPhase(HashSet<BodyPair> pairs)
         {
+            frictionPacks.Clear();
+
             foreach (var pair in pairs)
             {
                 var a = Collidables[pair.aIndex];
@@ -120,7 +95,9 @@ namespace stupid
                 {
                     if (a.collider.Intersects(b, out var contact))
                     {
-                        OnContact?.Invoke(new ContactManifoldS { a = a, b = b, contact = contact });
+                        var cm = new ContactManifoldS(a, b, contact);
+
+                        OnContact?.Invoke(cm);
                         ResolveCollision(ab, bb, contact);
                     }
                     continue;
@@ -131,7 +108,8 @@ namespace stupid
                 {
                     if (a.collider.Intersects(b, out var contact))
                     {
-                        OnContact?.Invoke(new ContactManifoldS { a = a, b = b, contact = contact });
+                        var cm = new ContactManifoldS(a, b, contact);
+                        OnContact?.Invoke(cm);
                         ResolveCollisionWithStatic((RigidbodyS)a, contact);
                     }
                     continue;
@@ -140,9 +118,11 @@ namespace stupid
                 // Static vs Dynamic
                 if (!a.isDynamic && b.isDynamic)
                 {
+
                     if (b.collider.Intersects(a, out var contact))
                     {
-                        OnContact?.Invoke(new ContactManifoldS { a = a, b = b, contact = contact });
+                        var cm = new ContactManifoldS(a, b, contact);
+                        OnContact?.Invoke(cm);
                         ResolveCollisionWithStatic((RigidbodyS)b, contact);
                     }
                     continue;
@@ -205,7 +185,7 @@ namespace stupid
             if (velocityAlongNormal > f32.zero) return;
 
             // Restitution (coefficient of restitution)
-            f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold ? body.material.bounciness : f32.zero;
+            f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold ? body.material.restitution : f32.zero;
 
             // Calculate the normal impulse scalar
             f32 impulseScalar = -(f32.one + restitution) * velocityAlongNormal / effectiveMass;
@@ -223,7 +203,7 @@ namespace stupid
             f32 frictionDenominator = invMass + Vector3S.Dot(Vector3S.Cross(body.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
             f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
 
-            // Use the maximum of the static and dynamic friction coefficients
+            //Just use static
             f32 effectiveFriction = (body.material.staticFriction);
 
             // Limit the friction impulse to prevent excessive angular velocities
@@ -253,21 +233,17 @@ namespace stupid
             // Calculate relative velocity at the contact point
             Vector3S relativeVelocityAtContact = va - vb;
 
-            // Calculate inverse masses
-            f32 invMassA = a.mass > f32.zero ? f32.one / a.mass : f32.zero;
-            f32 invMassB = b.mass > f32.zero ? f32.one / b.mass : f32.zero;
-
             // Compute the effective mass along the normal direction
-            f32 effectiveMassA = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal);
-            f32 effectiveMassB = invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
+            f32 effectiveMassA = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal);
+            f32 effectiveMassB = b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
             f32 effectiveMassSum = effectiveMassA + effectiveMassB;
 
             // Positional correction to prevent sinking
             f32 slop = Settings.DefaultContactOffset;
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / effectiveMassSum) * POSITION_PERCENT * normal;
-            positionBuffer[a.index] += invMassA * correction;
-            positionBuffer[b.index] -= invMassB * correction;
+            positionBuffer[a.index] += a.inverseMass * correction;
+            positionBuffer[b.index] -= b.inverseMass * correction;
 
             // Calculate the velocity along the normal
             f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
@@ -277,7 +253,7 @@ namespace stupid
 
             // Restitution (coefficient of restitution)
             f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
-                ? (a.material.bounciness + b.material.bounciness) * f32.half
+                ? (a.material.restitution + b.material.restitution) * f32.half
                 : f32.zero;
 
             // Calculate the normal impulse scalar
@@ -285,23 +261,26 @@ namespace stupid
 
             // Apply linear impulse
             Vector3S impulse = impulseScalar * normal;
-            velocityBuffer[a.index] += invMassA * impulse;
-            velocityBuffer[b.index] -= invMassB * impulse;
+            velocityBuffer[a.index] += a.inverseMass * impulse;
+            velocityBuffer[b.index] -= b.inverseMass * impulse;
             angularBuffer[a.index] += a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
             angularBuffer[b.index] -= b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+
+            //var frictionPack = new FrictionPack(a, b, contact, impulseScalar, velocityAlongNormal, relativeVelocityAtContact, ra, rb);
+            //frictionPacks.Add(frictionPack);
 
             // Calculate relative tangential velocity
             Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
             Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
 
             // Calculate the magnitude of the friction impulse
-            f32 frictionDenominatorA = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent);
-            f32 frictionDenominatorB = invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
+            f32 frictionDenominatorA = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent);
+            f32 frictionDenominatorB = b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
             f32 frictionDenominator = frictionDenominatorA + frictionDenominatorB;
 
             f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
 
-            // Use the maximum of the static and dynamic friction coefficients
+            //Just use static friction AVerage
             f32 effectiveFriction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
 
             // Limit the friction impulse to prevent excessive angular velocities
@@ -312,15 +291,44 @@ namespace stupid
             }
 
             // Apply friction impulse
-            velocityBuffer[a.index] += invMassA * frictionImpulse;
-            velocityBuffer[b.index] -= invMassB * frictionImpulse;
-
-
-            //If we comment this out, the sim is allright
+            velocityBuffer[a.index] += a.inverseMass * frictionImpulse;
+            velocityBuffer[b.index] -= b.inverseMass * frictionImpulse;
             angularBuffer[a.index] += a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             angularBuffer[b.index] -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+
         }
 
+        private void SolveFriction(FrictionPack pack)
+        {
+            var a = pack.a;
+            var b = pack.b;
+            var normal = pack.contact.normal;
+            // Calculate relative tangential velocity
+            Vector3S relativeTangentialVelocity = pack.relativeVelocityAtContact - (pack.velocityAlongNormal * normal);
+            Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
 
+            // Calculate the magnitude of the friction impulse
+            f32 frictionDenominatorA = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(pack.ra, tangent), pack.ra), tangent);
+            f32 frictionDenominatorB = b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(pack.rb, tangent), pack.rb), tangent);
+            f32 frictionDenominator = frictionDenominatorA + frictionDenominatorB;
+
+            f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
+
+            //Just use static friction AVerage
+            f32 effectiveFriction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
+
+            // Limit the friction impulse to prevent excessive angular velocities
+            Vector3S frictionImpulse = frictionImpulseScalar * tangent;
+            if (frictionImpulse.Magnitude() > pack.impulseScalar * effectiveFriction)
+            {
+                frictionImpulse = frictionImpulse.Normalize() * (pack.impulseScalar * effectiveFriction);
+            }
+
+            // Apply friction impulse
+            velocityBuffer[a.index] += a.inverseMass * frictionImpulse;
+            velocityBuffer[b.index] -= b.inverseMass * frictionImpulse;
+            angularBuffer[a.index] += a.tensor.inertiaWorld * Vector3S.Cross(pack.ra, frictionImpulse);
+            angularBuffer[b.index] -= b.tensor.inertiaWorld * Vector3S.Cross(pack.rb, frictionImpulse);
+        }
     }
 }

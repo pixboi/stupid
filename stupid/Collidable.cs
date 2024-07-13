@@ -3,7 +3,6 @@ using stupid.Maths;
 
 namespace stupid
 {
-
     public class Collidable
     {
         public int index { get; private set; }
