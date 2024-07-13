@@ -77,21 +77,19 @@ namespace stupid.Colliders
             return _bounds;
         }
 
-        public override bool Intersects(Collidable other, out ContactS contact)
+        public override int Intersects(Collidable other, ref ContactS[] contact)
         {
-            contact = new ContactS();
-
             if (other.collider is BoxColliderS otherBox)
             {
-                return CollisionMath.BoxVsBox(this, otherBox, out contact);
+                return CollisionMath.BoxVsBox(this, otherBox, ref contact);
             }
 
             if (other.collider is SphereColliderS otherSphere)
             {
-                return CollisionMath.BoxVsSphere(this, otherSphere, out contact);
+                return CollisionMath.BoxVsSphere(this, otherSphere, ref contact);
             }
 
-            return false;
+            return 0;
         }
 
         static readonly f32 boxInertia = (f32)1 / (f32)12;

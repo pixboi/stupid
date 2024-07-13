@@ -17,10 +17,8 @@ namespace stupid.Colliders
             return _bounds;
         }
 
-        public override bool Intersects(Collidable other, out ContactS contact)
+        public override int Intersects(Collidable other, ref ContactS[] contact)
         {
-            contact = new ContactS();
-
             if (other.collider is SphereColliderS otherSphere)
             {
                 return CollisionMath.SphereVSphere(
@@ -28,15 +26,15 @@ namespace stupid.Colliders
                     otherSphere.attachedCollidable.transform.position,
                     this.radius,
                     otherSphere.radius,
-                    out contact);
+                    ref contact);
             }
 
             if (other.collider is BoxColliderS otherBox)
             {
-                return CollisionMath.BoxVsSphere(otherBox, this, out contact);
+                return CollisionMath.BoxVsSphere(otherBox, this, ref contact);
             }
 
-            return false;
+            return 0;
         }
 
         static readonly f32 sphereInertia = ((f32)2f / (f32)5f);

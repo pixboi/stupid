@@ -7,13 +7,15 @@ namespace stupid
     {
         public readonly Collidable a;
         public readonly Collidable b;
-        public readonly ContactS contact;
+        public readonly ContactS[] contacts;
+        public readonly int count;
 
-        public ContactManifoldS(Collidable a, Collidable b, ContactS contact)
+        public ContactManifoldS(Collidable a, Collidable b, ContactS[] contact, int count)
         {
             this.a = a;
             this.b = b;
-            this.contact = contact;
+            this.contacts = contact;
+            this.count = count;
         }
     }
 

@@ -6,10 +6,8 @@ namespace stupid.Colliders
 {
     public static class CollisionMath
     {
-        public static bool SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, out ContactS contact)
+        public static int SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, ref ContactS[] contact)
         {
-            contact = new ContactS();
-
             // Calculate the squared distance between the two positions
             var squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
 
@@ -20,28 +18,25 @@ namespace stupid.Colliders
             // If the squared distance is greater than the squared combined radius, there is no intersection
             if (squaredDistance > squaredCombinedRadius)
             {
-                return false;
+                return -1;
             }
 
             // Calculate direction and distance between the spheres
             var direction = (positionA - positionB).NormalizeWithMagnitude(out var distance);
 
-
-
             // Set contact information
             var point = positionB + direction * radB; // Contact point on the surface of B
             var normal = direction; // Normal points from B => A
             var penetrationDepth = combinedRadius - distance;
-            contact = new ContactS(point, normal, penetrationDepth);
+            var c = new ContactS(point, normal, penetrationDepth);
 
-            return true;
+            contact[0] = c;
+            return 1;
         }
 
 
-        public static bool BoxVsSphere(BoxColliderS box, SphereColliderS sphere, out ContactS contact)
+        public static int BoxVsSphere(BoxColliderS box, SphereColliderS sphere, ref ContactS[] contact)
         {
-            contact = new ContactS();
-
             var boxTrans = box.attachedCollidable.transform;
             var sphereTrans = sphere.attachedCollidable.transform;
 
@@ -65,7 +60,7 @@ namespace stupid.Colliders
             // If the distance is greater than the sphere's radius, there's no intersection
             if (distanceSquared > sphere.radius * sphere.radius)
             {
-                return false;
+                return -1;
             }
 
             // Calculate the actual distance and normalize the distance vector
@@ -77,19 +72,16 @@ namespace stupid.Colliders
             var normal1 = boxRotationMatrix * normal;
             var penetrationDepth = sphere.radius - distance;
 
-            contact = new ContactS(point, normal1, penetrationDepth);
-
-            return true;
+            contact[0] = new ContactS(point, normal1, penetrationDepth);
+            return 1;
         }
 
 
         static Vector3S[] _axes = new Vector3S[15];
         static List<Vector3S> _contactPoints = new List<Vector3S>();
 
-        public static bool BoxVsBox(BoxColliderS a, BoxColliderS b, out ContactS contact)
+        public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS[] contact)
         {
-            contact = new ContactS();
-
             Vector3S relativePosition = b.attachedCollidable.transform.position - a.attachedCollidable.transform.position;
 
             _axes[0] = a.axes[0];
@@ -120,7 +112,7 @@ namespace stupid.Colliders
                 Vector3S axis = _axes[i];
                 if (!OverlapOnAxis(relativePosition, axis, a, b, out f32 overlap))
                 {
-                    return false; // No overlap on this axis, no collision
+                    return -1; // No overlap on this axis, no collision
                 }
                 if (overlap < minOverlap)
                 {
@@ -138,13 +130,13 @@ namespace stupid.Colliders
             var aRot = a.attachedCollidable.transform.rotationMatrix;
             var bRot = b.attachedCollidable.transform.rotationMatrix;
 
-            
+
             var point = FindContactPoints(a.attachedCollidable.transform.position, a.size * f32.half, aRot, b.attachedCollidable.transform.position, b.size * f32.half, bRot, a.vertices, b.vertices);
             var normal1 = -normal;
             var penetrationDepth = minOverlap;
 
-            contact = new ContactS(point, normal1, penetrationDepth);
-            return true;
+            contact[0] = new ContactS(point, normal1, penetrationDepth);
+            return 1;
         }
 
         private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, out f32 overlap)
