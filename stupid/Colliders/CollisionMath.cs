@@ -130,7 +130,6 @@ namespace stupid.Colliders
             var aRot = a.attachedCollidable.transform.rotationMatrix;
             var bRot = b.attachedCollidable.transform.rotationMatrix;
 
-
             var point = FindContactPoints(a.attachedCollidable.transform.position, a.size * f32.half, aRot, b.attachedCollidable.transform.position, b.size * f32.half, bRot, a.vertices, b.vertices);
             var normal1 = -normal;
             var penetrationDepth = minOverlap;
