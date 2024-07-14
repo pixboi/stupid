@@ -96,12 +96,10 @@ namespace stupid
             }
 
             // Update rotation
-            if (angularVelocity.SqrMagnitude > f32.epsilon)
+            if (angularVelocity.SqrMagnitude > f32.zero)
             {
                 Vector3S angDelta = angularVelocity * deltaTime * f32.half;
-                //var nrmAng = angDelta.NormalizeWithMagnitude(out var mag);
                 var dq = new QuaternionS(angDelta.x, angDelta.y, angDelta.z, f32.one);
-                //QuaternionS deltaRot = QuaternionS.FromAxisAngle(nrmAng, mag);
                 transform.rotation = (dq * transform.rotation).Normalize();
             }
 

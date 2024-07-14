@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using stupid.Colliders;
 using stupid.Maths;
 using System;
-using System.Diagnostics.Contracts;
 using System.Linq;
 
 namespace stupid
 {
-    public partial class World
+    public  class World
     {
         public WorldSettings Settings { get; private set; }
         public SortAndSweepBroadphase Broadphase { get; set; }
@@ -359,6 +358,8 @@ namespace stupid
                 b.velocity -= b.inverseMass * impulse;
                 a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
                 b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+
+
 
                 // Calculate relative tangential velocity
                 Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
