@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace stupid
 {
-    public  class World
+    public class World
     {
         public WorldSettings Settings { get; private set; }
         public SortAndSweepBroadphase Broadphase { get; set; }
@@ -80,30 +80,10 @@ namespace stupid
 
         public event Action<ContactManifoldS> OnContact;
         public ContactS[] _contactCache = new ContactS[8];
-        public HashSet<int> _correctedObjects = new HashSet<int>();
-
         private void NarrowPhase(HashSet<BodyPair> pairs)
         {
             // Convert HashSet to List for sorting
             var pairList = pairs.ToList();
-            _correctedObjects.Clear();
-            // Sort pairs by Y-axis position of the lower object in each pair
-
-            /*
-            pairList.Sort((pair1, pair2) =>
-            {
-                var a1 = Collidables[pair1.aIndex];
-                var b1 = Collidables[pair1.bIndex];
-                var a2 = Collidables[pair2.aIndex];
-                var b2 = Collidables[pair2.bIndex];
-
-                f32 y1 = MathS.Min(a1.transform.position.y, b1.transform.position.y);
-                f32 y2 = MathS.Min(a2.transform.position.y, b2.transform.position.y);
-
-                return y1.CompareTo(y2);
-            });
-            */
-
 
             // Separate pairs into static and dynamic
             var staticPairs = new List<BodyPair>();
