@@ -81,13 +81,15 @@ namespace stupid
 
         public event Action<ContactManifoldS> OnContact;
         public ContactS[] _contactCache = new ContactS[8];
+        public HashSet<int> _correctedObjects = new HashSet<int>();
 
         private void NarrowPhase(HashSet<BodyPair> pairs)
         {
             // Convert HashSet to List for sorting
             var pairList = pairs.ToList();
-
+            _correctedObjects.Clear();
             // Sort pairs by Y-axis position of the lower object in each pair
+
             /*
             pairList.Sort((pair1, pair2) =>
             {
@@ -102,6 +104,7 @@ namespace stupid
                 return y1.CompareTo(y2);
             });
             */
+
 
             // Separate pairs into static and dynamic
             var staticPairs = new List<BodyPair>();
@@ -119,29 +122,6 @@ namespace stupid
                 else if (a.isDynamic && b.isDynamic)
                 {
                     dynamicPairs.Add(pair);
-                }
-            }
-
-            
-
-            // Process dynamic pairs next
-            foreach (var pair in dynamicPairs)
-            {
-                var a = Collidables[pair.aIndex];
-                var b = Collidables[pair.bIndex];
-
-                // Dynamic vs Dynamic
-                if (a is RigidbodyS ab && b is RigidbodyS bb)
-                {
-                    var count = a.collider.Intersects(b, ref _contactCache);
-
-                    if (count > 0)
-                    {
-                        var cm = new ContactManifoldS(a, b, _contactCache, count);
-                        OnContact?.Invoke(cm);
-                        ResolveCollision(cm);
-                    }
-                    continue;
                 }
             }
 
@@ -179,6 +159,29 @@ namespace stupid
                     continue;
                 }
             }
+
+            // Process dynamic pairs next
+            foreach (var pair in dynamicPairs)
+            {
+                var a = Collidables[pair.aIndex];
+                var b = Collidables[pair.bIndex];
+
+                // Dynamic vs Dynamic
+                if (a is RigidbodyS ab && b is RigidbodyS bb)
+                {
+                    var count = a.collider.Intersects(b, ref _contactCache);
+
+                    if (count > 0)
+                    {
+                        var cm = new ContactManifoldS(a, b, _contactCache, count);
+                        OnContact?.Invoke(cm);
+                        ResolveCollision(cm);
+                    }
+                    continue;
+                }
+            }
+
+
         }
 
 
@@ -227,12 +230,14 @@ namespace stupid
                 // Compute the effective mass along the normal direction
                 f32 effectiveMass = invMass + Vector3S.Dot(Vector3S.Cross(body.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
 
+
                 // Positional correction to prevent sinking
                 f32 slop = Settings.DefaultContactOffset;
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
                 Vector3S correction = (penetrationDepth / effectiveMass) * POSITION_PERCENT * normal;
                 //positionBuffer[body.index] += invMass * correction;
                 body.transform.position += invMass * correction;
+
 
                 // Calculate the velocity along the normal
                 f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
@@ -318,8 +323,12 @@ namespace stupid
                 f32 slop = Settings.DefaultContactOffset;
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
                 Vector3S correction = (penetrationDepth / effectiveMassSum) * POSITION_PERCENT * normal;
+
                 a.transform.position += a.inverseMass * correction;
                 b.transform.position -= b.inverseMass * correction;
+
+
+                // b.transform.position -= b.inverseMass * correction;
                 //positionBuffer[a.index] += a.inverseMass * correction;
                 //positionBuffer[b.index] -= b.inverseMass * correction;
 
