@@ -80,32 +80,31 @@ namespace stupid
 
         public event Action<ContactManifoldS> OnContact;
         public ContactS[] _contactCache = new ContactS[8];
+        public List<BodyPair> _staticPairs = new List<BodyPair>();
+        public List<BodyPair> _dynamicPairs = new List<BodyPair>();
         private void NarrowPhase(HashSet<BodyPair> pairs)
         {
-            // Convert HashSet to List for sorting
-            var pairList = pairs.ToList();
-
             // Separate pairs into static and dynamic
-            var staticPairs = new List<BodyPair>();
-            var dynamicPairs = new List<BodyPair>();
+            _staticPairs.Clear();
+            _dynamicPairs.Clear();
 
-            foreach (var pair in pairList)
+            foreach (var pair in pairs)
             {
                 var a = Collidables[pair.aIndex];
                 var b = Collidables[pair.bIndex];
 
                 if ((a.isDynamic && !b.isDynamic) || (!a.isDynamic && b.isDynamic))
                 {
-                    staticPairs.Add(pair);
+                    _staticPairs.Add(pair);
                 }
                 else if (a.isDynamic && b.isDynamic)
                 {
-                    dynamicPairs.Add(pair);
+                    _dynamicPairs.Add(pair);
                 }
             }
 
             // Process static pairs first
-            foreach (var pair in staticPairs)
+            foreach (var pair in _staticPairs)
             {
                 var a = Collidables[pair.aIndex];
                 var b = Collidables[pair.bIndex];
@@ -140,7 +139,7 @@ namespace stupid
             }
 
             // Process dynamic pairs next
-            foreach (var pair in dynamicPairs)
+            foreach (var pair in _dynamicPairs)
             {
                 var a = Collidables[pair.aIndex];
                 var b = Collidables[pair.bIndex];
