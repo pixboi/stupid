@@ -67,14 +67,24 @@ namespace stupid.Colliders
             f32 distance = MathS.Sqrt(distanceSquared);
             Vector3S normal = distance > f32.epsilon ? distanceVector / distance : Vector3S.zero;
 
-            // Transform the closest point and normal back to world space
+            // Transform the closest point back to world space
             var point = boxTrans.position + (boxRotationMatrix * closestPoint);
-            var normal1 = boxRotationMatrix * normal;
+
+            // If the box is dynamic and the sphere is static, flip the normal
+            if (box.attachedCollidable.isDynamic && !sphere.attachedCollidable.isDynamic)
+            {
+                normal = -normal;
+            }
+
+            // Transform the normal back to world space
+            var worldNormal = boxRotationMatrix * normal;
             var penetrationDepth = sphere.radius - distance;
 
-            contact[0] = new ContactS(point, normal1, penetrationDepth);
+            contact[0] = new ContactS(point, worldNormal, penetrationDepth);
             return 1;
         }
+
+
 
 
         static Vector3S[] _axes = new Vector3S[15];
@@ -82,7 +92,7 @@ namespace stupid.Colliders
 
         public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS[] contact)
         {
-            Vector3S relativePosition = b.attachedCollidable.transform.position - a.attachedCollidable.transform.position;
+            Vector3S relativePosition = (b.attachedCollidable.transform.position - a.attachedCollidable.transform.position);
 
             _axes[0] = a.axes[0];
             _axes[1] = a.axes[1];
@@ -114,6 +124,7 @@ namespace stupid.Colliders
                 {
                     return -1; // No overlap on this axis, no collision
                 }
+
                 if (overlap < minOverlap)
                 {
                     minOverlap = overlap;
@@ -122,20 +133,29 @@ namespace stupid.Colliders
             }
 
             Vector3S normal = minAxis;
-            if (Vector3S.Dot(minAxis, relativePosition) < f32.zero)
+            normal.Normalize();
+
+            // Flip the normal if it's pointing in the wrong direction
+            //This comes from the axis calcs
+            if (Vector3S.Dot(normal, relativePosition) > f32.zero)
             {
-                normal = -minAxis;
+                normal = -normal;
             }
 
-            var aRot = a.attachedCollidable.transform.rotationMatrix;
             var bRot = b.attachedCollidable.transform.rotationMatrix;
 
-            var point = FindContactPoints(a.attachedCollidable.transform.position, a.size * f32.half, aRot, b.attachedCollidable.transform.position, b.size * f32.half, bRot, a.vertices, b.vertices);
-            var normal1 = -normal;
-            var penetrationDepth = minOverlap;
+            Vector3S contactPoint = FindContactPoint(a.attachedCollidable.transform.position, a.halfSize, a.attachedCollidable.transform.rotationMatrix, a.vertices,
+                b.attachedCollidable.transform.position, b.halfSize, bRot, b.vertices);
 
-            contact[0] = new ContactS(point, normal1, penetrationDepth);
-            return 1;
+            f32 penetrationDepth = minOverlap;
+
+            if (_contactPoints.Count > 0)
+            {
+                contact[0] = new ContactS(contactPoint, normal, penetrationDepth);
+                return 1;
+            }
+
+            return 0;
         }
 
         private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, out f32 overlap)
@@ -149,15 +169,6 @@ namespace stupid.Colliders
 
         private static f32 ProjectBox(Vector3S axis, BoxColliderS box)
         {
-            for (int i = 0; i < 3; i++)
-            {
-                if (axis == box.axes[i])
-                {
-                    return box.projections[i];
-                }
-            }
-
-            // Handle case where axis is not a primary axis (cross product axis)
             Vector3S halfSize = box.size * f32.half;
             var rotMat = box.attachedCollidable.transform.rotationMatrix;
             return
@@ -166,7 +177,8 @@ namespace stupid.Colliders
                 halfSize.z * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(2), axis));
         }
 
-        private static Vector3S FindContactPoints(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S[] verticesA, Vector3S[] verticesB)
+        private static Vector3S FindContactPoint(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S[] verticesA,
+            Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S[] verticesB)
         {
             _contactPoints.Clear();
 
@@ -191,13 +203,10 @@ namespace stupid.Colliders
                 return Vector3S.zero;
             }
 
-            Vector3S averageContactPoint = Vector3S.zero;
-            foreach (var point in _contactPoints)
-            {
-                averageContactPoint += point;
-            }
+            var avg = Vector3S.zero;
+            foreach (var c in _contactPoints) avg += c;
 
-            return averageContactPoint / (f32)_contactPoints.Count;
+            return avg / (f32)_contactPoints.Count;
         }
 
         private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S rotation)
@@ -205,6 +214,5 @@ namespace stupid.Colliders
             Vector3S localPoint = rotation.Transpose() * (point - position);
             return MathS.Abs(localPoint.x) <= halfSize.x && MathS.Abs(localPoint.y) <= halfSize.y && MathS.Abs(localPoint.z) <= halfSize.z;
         }
-
     }
 }
