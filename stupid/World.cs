@@ -181,7 +181,8 @@ namespace stupid
                 f32 slop = Settings.DefaultContactOffset;
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
                 Vector3S correction = (penetrationDepth / effectiveMass) * POSITION_PERCENT * normal;
-                positionBuffer[body.index] += invMass * correction;
+                //positionBuffer[body.index] += invMass * correction;
+                body.transform.position += invMass * correction;
 
                 // Calculate the velocity along the normal
                 f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
@@ -197,8 +198,12 @@ namespace stupid
 
                 // Apply linear impulse
                 Vector3S impulse = impulseScalar * normal;
+                /*
                 velocityBuffer[body.index] += invMass * impulse;
                 angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+                */
+                body.velocity += invMass * impulse;
+                body.angularVelocity += body.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
                 // Calculate relative tangential velocity
                 Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
@@ -219,8 +224,13 @@ namespace stupid
                 }
 
                 // Apply friction impulse
+                /*
                 velocityBuffer[body.index] += invMass * frictionImpulse;
                 angularBuffer[body.index] += body.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+                */
+
+                body.velocity += invMass * frictionImpulse;
+                body.angularVelocity += body.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
             }
 
         }
@@ -230,14 +240,8 @@ namespace stupid
             var a = (RigidbodyS)manifold.a;
             var b = (RigidbodyS)manifold.b;
 
-            // Local caches for position and velocity changes
-            Vector3S positionChangeA = Vector3S.zero;
-            Vector3S positionChangeB = Vector3S.zero;
-            Vector3S velocityChangeA = Vector3S.zero;
-            Vector3S velocityChangeB = Vector3S.zero;
-            Vector3S angularChangeA = Vector3S.zero;
-            Vector3S angularChangeB = Vector3S.zero;
-
+            //The velocities probably need to be updated between contact runs?
+            //Keep like a local cache for changes? Or average out the impulses? probably..
             for (int i = 0; i < manifold.count; i++)
             {
                 var contact = manifold.contacts[i];
@@ -264,14 +268,16 @@ namespace stupid
                 f32 slop = Settings.DefaultContactOffset;
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
                 Vector3S correction = (penetrationDepth / effectiveMassSum) * POSITION_PERCENT * normal;
-                positionChangeA += a.inverseMass * correction;
-                positionChangeB -= b.inverseMass * correction;
+                a.transform.position += a.inverseMass * correction;
+                b.transform.position -= b.inverseMass * correction;
+                //positionBuffer[a.index] += a.inverseMass * correction;
+                //positionBuffer[b.index] -= b.inverseMass * correction;
 
                 // Calculate the velocity along the normal
                 f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
 
                 // Do not resolve if velocities are separating
-                if (velocityAlongNormal > f32.zero) continue;
+                if (velocityAlongNormal > f32.zero) return;
 
                 // Restitution (coefficient of restitution)
                 f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
@@ -283,10 +289,17 @@ namespace stupid
 
                 // Apply linear impulse
                 Vector3S impulse = impulseScalar * normal;
-                velocityChangeA += a.inverseMass * impulse;
-                velocityChangeB -= b.inverseMass * impulse;
-                angularChangeA += a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
-                angularChangeB -= b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+                /*
+                velocityBuffer[a.index] += a.inverseMass * impulse;
+                velocityBuffer[b.index] -= b.inverseMass * impulse;
+                angularBuffer[a.index] += a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+                angularBuffer[b.index] -= b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+                */
+
+                a.velocity += a.inverseMass * impulse;
+                b.velocity -= b.inverseMass * impulse;
+                a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+                b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
                 // Calculate relative tangential velocity
                 Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
@@ -299,7 +312,7 @@ namespace stupid
 
                 f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
 
-                // Use static friction average
+                //Just use static friction AVerage
                 f32 effectiveFriction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
 
                 // Limit the friction impulse to prevent excessive angular velocities
@@ -310,21 +323,19 @@ namespace stupid
                 }
 
                 // Apply friction impulse
-                velocityChangeA += a.inverseMass * frictionImpulse;
-                velocityChangeB -= b.inverseMass * frictionImpulse;
-                angularChangeA += a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
-                angularChangeB -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+                /*
+                velocityBuffer[a.index] += a.inverseMass * frictionImpulse;
+                velocityBuffer[b.index] -= b.inverseMass * frictionImpulse;
+                angularBuffer[a.index] += a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
+                angularBuffer[b.index] -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+                */
+                a.velocity += a.inverseMass * frictionImpulse;
+                b.velocity -= b.inverseMass * frictionImpulse;
+                a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
+                b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
             }
 
-            // Apply accumulated changes to the position and velocity buffers
-            positionBuffer[a.index] += positionChangeA;
-            positionBuffer[b.index] += positionChangeB;
-            velocityBuffer[a.index] += velocityChangeA;
-            velocityBuffer[b.index] += velocityChangeB;
-            angularBuffer[a.index] += angularChangeA;
-            angularBuffer[b.index] += angularChangeB;
         }
-
 
 
     }

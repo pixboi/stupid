@@ -12,8 +12,8 @@ namespace stupid
         public f32 DefaultMaxDepenetrationVelocity;
         public f32 SleepTreshold;
         public f32 DefaultContactOffset;
-        public f32 DefaultSolverIterations;
-        public f32 DefaultSolverVelocityIterations;
+        public int DefaultSolverIterations;
+        public int DefaultSolverVelocityIterations;
         public BoundsS WorldBounds;
         public f32 DefaultMaxAngularSpeed;
 
@@ -27,8 +27,8 @@ namespace stupid
                 DefaultMaxDepenetrationVelocity = (f32)10,
                 SleepTreshold = (f32)0.005,
                 DefaultContactOffset = (f32)0.01,
-                DefaultSolverIterations = f32.one,
-                DefaultSolverVelocityIterations = f32.one,
+                DefaultSolverIterations = 6,
+                DefaultSolverVelocityIterations = 1,
                 WorldBounds = new BoundsS(new Vector3S(0, 0, 0), new Vector3S(32, 32, 32)),
                 DefaultMaxAngularSpeed = (f32)16,
             };
