@@ -4,6 +4,7 @@ using stupid.Colliders;
 using stupid.Maths;
 using System;
 using System.Diagnostics.Contracts;
+using System.Linq;
 
 namespace stupid
 {
@@ -79,11 +80,52 @@ namespace stupid
         }
 
         public event Action<ContactManifoldS> OnContact;
-
         public ContactS[] _contactCache = new ContactS[8];
+
         private void NarrowPhase(HashSet<BodyPair> pairs)
         {
-            foreach (var pair in pairs)
+            // Convert HashSet to List for sorting
+            var pairList = pairs.ToList();
+
+            // Sort pairs by Y-axis position of the lower object in each pair
+            /*
+            pairList.Sort((pair1, pair2) =>
+            {
+                var a1 = Collidables[pair1.aIndex];
+                var b1 = Collidables[pair1.bIndex];
+                var a2 = Collidables[pair2.aIndex];
+                var b2 = Collidables[pair2.bIndex];
+
+                f32 y1 = MathS.Min(a1.transform.position.y, b1.transform.position.y);
+                f32 y2 = MathS.Min(a2.transform.position.y, b2.transform.position.y);
+
+                return y1.CompareTo(y2);
+            });
+            */
+
+            // Separate pairs into static and dynamic
+            var staticPairs = new List<BodyPair>();
+            var dynamicPairs = new List<BodyPair>();
+
+            foreach (var pair in pairList)
+            {
+                var a = Collidables[pair.aIndex];
+                var b = Collidables[pair.bIndex];
+
+                if ((a.isDynamic && !b.isDynamic) || (!a.isDynamic && b.isDynamic))
+                {
+                    staticPairs.Add(pair);
+                }
+                else if (a.isDynamic && b.isDynamic)
+                {
+                    dynamicPairs.Add(pair);
+                }
+            }
+
+            
+
+            // Process dynamic pairs next
+            foreach (var pair in dynamicPairs)
             {
                 var a = Collidables[pair.aIndex];
                 var b = Collidables[pair.bIndex];
@@ -101,6 +143,13 @@ namespace stupid
                     }
                     continue;
                 }
+            }
+
+            // Process static pairs first
+            foreach (var pair in staticPairs)
+            {
+                var a = Collidables[pair.aIndex];
+                var b = Collidables[pair.bIndex];
 
                 // Dynamic vs Static
                 if (a.isDynamic && !b.isDynamic)
@@ -131,6 +180,7 @@ namespace stupid
                 }
             }
         }
+
 
         public void ApplyBuffers()
         {
