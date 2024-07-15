@@ -156,8 +156,7 @@ namespace stupid
             }
         }
 
-        private static readonly f32 POS_STATIC = (f32)0.25;
-        private static readonly f32 POS_DYNAMIC = (f32)0.25;
+        private f32 CORRECTION => (f32)1 / (f32)Settings.DefaultSolverIterations;
 
         private void ResolveCollisionStatic(ContactManifoldS manifold)
         {
@@ -189,7 +188,7 @@ namespace stupid
 
                 // Positional correction to prevent sinking
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-                Vector3S correction = (penetrationDepth / effectiveMass) * normal * POS_STATIC;
+                Vector3S correction = (penetrationDepth / effectiveMass) * normal * CORRECTION;
                 body.transform.position += invMass * correction;
 
                 // Calculate the velocity along the normal
@@ -278,7 +277,7 @@ namespace stupid
 
                 // Positional correction to prevent sinking
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-                Vector3S correction = (penetrationDepth / effectiveMassSum) * normal * POS_DYNAMIC;
+                Vector3S correction = (penetrationDepth / effectiveMassSum) * normal * CORRECTION;
                 Vector3S ca = a.inverseMass * correction;
                 Vector3S cb = b.inverseMass * correction;
                 a.transform.position += ca;
