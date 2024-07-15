@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using stupid.Maths;
 
@@ -194,10 +195,10 @@ namespace stupid
         }
     }
 
-    public struct BodyPair
+    public readonly struct BodyPair : IEquatable<BodyPair>
     {
-        public int aIndex;
-        public int bIndex;
+        public readonly int aIndex;
+        public readonly int bIndex;
 
         public BodyPair(int aIndex, int bIndex)
         {
@@ -206,22 +207,20 @@ namespace stupid
             this.bIndex = condition ? bIndex : aIndex;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            return obj is BodyPair pair &&
-                   aIndex == pair.aIndex &&
-                   bIndex == pair.bIndex;
+            return obj is BodyPair pair && Equals(pair);
+        }
+
+        public bool Equals(BodyPair other)
+        {
+            return aIndex == other.aIndex &&
+                   bIndex == other.bIndex;
         }
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                int hash = 17;
-                hash = hash * 31 + aIndex;
-                hash = hash * 31 + bIndex;
-                return hash;
-            }
+            return HashCode.Combine(aIndex, bIndex);
         }
     }
 

@@ -1,13 +1,13 @@
 ﻿using stupid.Colliders;
 using stupid.Maths;
+using System;
 
 namespace stupid
 {
-    public class Collidable
+    public class Collidable : IEquatable<Collidable?>
     {
         public int index { get; private set; }
         public void Register(int index) => this.index = index;
-        public override int GetHashCode() => index;
 
         public bool isDynamic = false;
         public IShape collider { get; private set; }
@@ -29,5 +29,21 @@ namespace stupid
 
         public BoundsS GetBounds() => this.collider.GetAABB();
         public BoundsS CalculateBounds() => this.collider.CalculateAABB(transform.position, transform.rotation);
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as Collidable);
+        }
+
+        public bool Equals(Collidable? other)
+        {
+            return !(other is null) &&
+                   index == other.index;
+        }
+
+        public override int GetHashCode()
+        {
+            return index;
+        }
     }
 }
