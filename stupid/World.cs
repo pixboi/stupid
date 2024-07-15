@@ -156,7 +156,7 @@ namespace stupid
             }
         }
 
-        private f32 CORRECTION => (f32)1 / (f32)Settings.DefaultSolverIterations;
+        private f32 BAUM => (f32)1 / (f32)Settings.DefaultSolverIterations;
 
         private void ResolveCollisionStatic(ContactManifoldS manifold)
         {
@@ -188,7 +188,7 @@ namespace stupid
 
                 // Positional correction to prevent sinking
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-                Vector3S correction = (penetrationDepth / effectiveMass) * normal * CORRECTION;
+                Vector3S correction = (penetrationDepth / effectiveMass) * normal * BAUM;
                 body.transform.position += invMass * correction;
 
                 // Calculate the velocity along the normal
@@ -252,6 +252,7 @@ namespace stupid
 
             // Constants
             f32 slop = Settings.DefaultContactOffset;
+            f32 baumgarteFactor = BAUM;
 
             for (int i = 0; i < manifold.count; i++)
             {
@@ -277,7 +278,7 @@ namespace stupid
 
                 // Positional correction to prevent sinking
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-                Vector3S correction = (penetrationDepth / effectiveMassSum) * normal * CORRECTION;
+                Vector3S correction = (penetrationDepth / effectiveMassSum) * normal * baumgarteFactor;
                 Vector3S ca = a.inverseMass * correction;
                 Vector3S cb = b.inverseMass * correction;
                 a.transform.position += ca;
@@ -294,6 +295,13 @@ namespace stupid
                     ? (a.material.restitution + b.material.restitution) * f32.half
                     : f32.zero;
 
+                // Warm start: apply cached impulses from the previous step
+                Vector3S cachedImpulse = contact.cachedImpulse;
+                a.velocity += a.inverseMass * cachedImpulse;
+                b.velocity -= b.inverseMass * cachedImpulse;
+                a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, cachedImpulse);
+                b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, cachedImpulse);
+
                 // Calculate the normal impulse scalar
                 f32 incrementalImpulse = -(f32.one + restitution) * velocityAlongNormal / effectiveMassSum;
                 f32 newAccumulatedImpulse = MathS.Max(contact.cachedNormalImpulse + incrementalImpulse, f32.zero);
@@ -304,7 +312,6 @@ namespace stupid
                 Vector3S impulse = appliedImpulse * normal;
                 a.velocity += a.inverseMass * impulse;
                 b.velocity -= b.inverseMass * impulse;
-
                 a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
                 b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
 
@@ -331,7 +338,6 @@ namespace stupid
 
                 a.velocity += a.inverseMass * frictionImpulse;
                 b.velocity -= b.inverseMass * frictionImpulse;
-
                 a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
                 b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
 
@@ -344,5 +350,6 @@ namespace stupid
                 manifold.contacts[i] = contact;
             }
         }
+
     }
 }
