@@ -4,9 +4,9 @@ namespace stupid
 {
     public struct ContactS
     {
-        public readonly Vector3S point;
-        public readonly Vector3S normal;
-        public readonly f32 penetrationDepth;
+        public Vector3S point;
+        public Vector3S normal;
+        public f32 penetrationDepth;
 
         // Cached impulses for warm starting
         public Vector3S cachedImpulse;
