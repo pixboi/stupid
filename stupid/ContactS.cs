@@ -1,19 +1,17 @@
-﻿
-using stupid.Maths;
+﻿using stupid.Maths;
 
 namespace stupid
 {
-
-    public readonly struct ContactS
+    public struct ContactS
     {
         public readonly Vector3S point;
         public readonly Vector3S normal;
         public readonly f32 penetrationDepth;
 
         // Cached impulses for warm starting
-        public readonly Vector3S cachedImpulse;
-        public readonly f32 cachedNormalImpulse;
-        public readonly f32 cachedFrictionImpulse;
+        public Vector3S cachedImpulse;
+        public f32 cachedNormalImpulse;
+        public f32 cachedFrictionImpulse;
 
         public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
@@ -35,5 +33,4 @@ namespace stupid
             this.cachedFrictionImpulse = old.cachedFrictionImpulse;
         }
     }
-
 }

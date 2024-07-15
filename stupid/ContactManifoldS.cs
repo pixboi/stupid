@@ -14,7 +14,8 @@ namespace stupid
         {
             this.a = a;
             this.b = b;
-            this.contacts = contacts;
+            this.contacts = new ContactS[count]; // Ensure new array is created
+            Array.Copy(contacts, this.contacts, count); // Copy contacts to the new array
             this.count = count;
         }
 
@@ -22,38 +23,18 @@ namespace stupid
         {
             this.a = fresh.a;
             this.b = fresh.b;
-            this.contacts = fresh.contacts;
             this.count = fresh.count;
+            this.contacts = new ContactS[fresh.count]; // Ensure new array is created
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < fresh.count; i++)
             {
                 if (i < old.count)
                 {
-                    this.contacts[i] = new ContactS(contacts[i], old.contacts[i]);
+                    this.contacts[i] = new ContactS(fresh.contacts[i], old.contacts[i]);
                 }
                 else
                 {
-                    this.contacts[i] = contacts[i];
-                }
-            }
-        }
-
-        public ContactManifoldS(Collidable a, Collidable b, ContactS[] contacts, int count, ContactManifoldS old)
-        {
-            this.a = a;
-            this.b = b;
-            this.contacts = contacts;
-            this.count = count;
-
-            for (int i = 0; i < count; i++)
-            {
-                if (i < old.count)
-                {
-                    this.contacts[i] = new ContactS(contacts[i], old.contacts[i]);
-                }
-                else
-                {
-                    this.contacts[i] = contacts[i];
+                    this.contacts[i] = fresh.contacts[i];
                 }
             }
         }
