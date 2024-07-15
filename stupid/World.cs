@@ -157,7 +157,6 @@ namespace stupid
         }
 
         private f32 BAUM => (f32)1 / (f32)Settings.DefaultSolverIterations;
-
         private void ResolveCollisionStatic(ContactManifoldS manifold)
         {
             // Assume always that 'a' is the dynamic body
@@ -166,6 +165,7 @@ namespace stupid
 
             // Constants
             f32 slop = Settings.DefaultContactOffset;
+            f32 baumgarteFactor = BAUM;
 
             for (int i = 0; i < manifold.count; i++)
             {
@@ -188,7 +188,7 @@ namespace stupid
 
                 // Positional correction to prevent sinking
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-                Vector3S correction = (penetrationDepth / effectiveMass) * normal * BAUM;
+                Vector3S correction = (penetrationDepth / effectiveMass) * normal * baumgarteFactor;
                 body.transform.position += invMass * correction;
 
                 // Calculate the velocity along the normal
@@ -199,7 +199,7 @@ namespace stupid
 
                 // Restitution (coefficient of restitution)
                 f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
-                    ? (body.material.restitution + stat.material.restitution) * f32.half
+                    ? MathS.Min(body.material.restitution, stat.material.restitution)
                     : f32.zero;
 
                 // Calculate the normal impulse scalar
@@ -292,7 +292,7 @@ namespace stupid
 
                 // Restitution (coefficient of restitution)
                 f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
-                    ? (a.material.restitution + b.material.restitution) * f32.half
+                    ? MathS.Min(a.material.restitution, b.material.restitution)
                     : f32.zero;
 
                 // Warm start: apply cached impulses from the previous step
