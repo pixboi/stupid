@@ -13,7 +13,6 @@ namespace stupid
         public uint SimulationFrame { get; private set; }
 
         private int counter;
-        public readonly Vector3S[] positionBuffer, velocityBuffer, angularBuffer;
 
         public World(WorldSettings worldSettings, int startSize = 1000)
         {
@@ -21,10 +20,6 @@ namespace stupid
 
             Collidables = new DumbList<Collidable>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
-
-            positionBuffer = new Vector3S[startSize * 2];
-            velocityBuffer = new Vector3S[startSize * 2];
-            angularBuffer = new Vector3S[startSize * 2];
 
             counter = 0;
             SimulationFrame = 0;
@@ -43,7 +38,7 @@ namespace stupid
             DeltaTime = deltaTime;
             foreach (var c in Collidables) if (c is RigidbodyS rb) rb.Integrate(deltaTime, Settings);
 
-            //Recalc things
+            // Recalculate positions and bounds
             foreach (var c in Collidables)
             {
                 if (c.isDynamic)
@@ -161,26 +156,6 @@ namespace stupid
             }
         }
 
-        public void ApplyBuffers()
-        {
-            foreach (var c in Collidables)
-            {
-                if (c.isDynamic)
-                {
-                    c.transform.position += positionBuffer[c.index];
-                    positionBuffer[c.index] = Vector3S.zero;
-                }
-
-                if (c is RigidbodyS rb)
-                {
-                    rb.velocity += velocityBuffer[c.index];
-                    rb.angularVelocity += angularBuffer[c.index];
-                    velocityBuffer[c.index] = Vector3S.zero;
-                    angularBuffer[c.index] = Vector3S.zero;
-                }
-            }
-        }
-
         private static readonly f32 POS_STATIC = (f32)0.25;
         private static readonly f32 POS_DYNAMIC = (f32)0.25;
 
@@ -279,7 +254,6 @@ namespace stupid
             // Constants
             f32 slop = Settings.DefaultContactOffset;
 
-
             for (int i = 0; i < manifold.count; i++)
             {
                 var contact = manifold.contacts[i];
@@ -371,6 +345,5 @@ namespace stupid
                 manifold.contacts[i] = contact;
             }
         }
-
     }
 }
