@@ -6,88 +6,68 @@ namespace stupid.Colliders
 {
     public static class CollisionMath
     {
+        private static Vector3S[] _axes = new Vector3S[15];
+        private static List<Vector3S> _contactPoints = new List<Vector3S>();
+
         public static int SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, ref ContactS[] contact)
         {
-            // Calculate the squared distance between the two positions
-            var squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
+            f32 squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
+            f32 combinedRadius = radA + radB;
+            f32 squaredCombinedRadius = combinedRadius * combinedRadius;
 
-            // Calculate the combined radius of both spheres
-            var combinedRadius = radA + radB;
-            var squaredCombinedRadius = combinedRadius * combinedRadius;
-
-            // If the squared distance is greater than the squared combined radius, there is no intersection
             if (squaredDistance > squaredCombinedRadius)
             {
-                return -1;
+                return -1; // No intersection
             }
 
-            // Calculate direction and distance between the spheres
-            var direction = (positionA - positionB).NormalizeWithMagnitude(out var distance);
+            Vector3S direction = (positionA - positionB).NormalizeWithMagnitude(out f32 distance);
+            Vector3S point = positionB + direction * radB;
+            Vector3S normal = direction;
+            f32 penetrationDepth = combinedRadius - distance;
 
-            // Set contact information
-            var point = positionB + direction * radB; // Contact point on the surface of B
-            var normal = direction; // Normal points from B => A
-            var penetrationDepth = combinedRadius - distance;
-            var c = new ContactS(point, normal, penetrationDepth);
-
-            contact[0] = c;
+            contact[0] = new ContactS(point, normal, penetrationDepth);
             return 1;
         }
 
-
-
-        // Box is A, sphere is B. contact point on B, contact normal points away from B (e.g., away from sphere surface)
         public static int BoxVsSphere(BoxColliderS box, SphereColliderS sphere, ref ContactS[] contact)
         {
             var boxTrans = box.attachedCollidable.transform;
             var sphereTrans = sphere.attachedCollidable.transform;
 
-            // Transform the sphere center into the box's local space
-            Matrix3S boxRotationMatrix = boxTrans.rotationMatrix;
-            Matrix3S inverseBoxRotation = boxRotationMatrix.Transpose(); // Efficient inverse for rotation matrix
+            Matrix3S inverseBoxRotation = boxTrans.rotationMatrix.Transpose();
             Vector3S localSpherePosition = inverseBoxRotation * (sphereTrans.position - boxTrans.position);
             Vector3S halfSize = box.halfSize;
 
-            // Clamp the sphere's local position to the box's extents to find the closest point
             Vector3S closestPoint = new Vector3S(
                 MathS.Clamp(localSpherePosition.x, -halfSize.x, halfSize.x),
                 MathS.Clamp(localSpherePosition.y, -halfSize.y, halfSize.y),
                 MathS.Clamp(localSpherePosition.z, -halfSize.z, halfSize.z)
             );
 
-            // Calculate the distance between the sphere's center and this closest point
             Vector3S distanceVector = localSpherePosition - closestPoint;
             f32 distanceSquared = distanceVector.SqrMagnitude;
 
-            // If the distance is greater than the sphere's radius, there's no intersection
             if (distanceSquared > sphere.radius * sphere.radius)
             {
-                return 0; // Return 0 for no contact
+                return 0; // No contact
             }
 
-            // Calculate the actual distance and normalize the distance vector
             f32 distance = MathS.Sqrt(distanceSquared);
-            Vector3S normal = distance > f32.epsilon ? distanceVector / distance : Vector3S.one; // Use a default normal if distance is zero
+            Vector3S normal = distance > f32.epsilon ? distanceVector / distance : Vector3S.one;
 
-            // Transform the closest point back to world space
-            var point = boxTrans.position + (boxRotationMatrix * closestPoint);
+            Vector3S point = boxTrans.position + (boxTrans.rotationMatrix * closestPoint);
+            Vector3S worldNormal = boxTrans.rotationMatrix * normal;
+            f32 penetrationDepth = sphere.radius - distance;
 
-            // Transform the normal back to world space
-            var worldNormal = boxRotationMatrix * normal;
-            var penetrationDepth = sphere.radius - distance;
-
-            // Create the contact point on the surface of the sphere, pointing away from the sphere
             contact[0] = new ContactS(point, worldNormal, penetrationDepth);
-            return 1; // Return 1 for one contact point
+            return 1; // One contact point
         }
-
-        static Vector3S[] _axes = new Vector3S[15];
-        static List<Vector3S> _contactPoints = new List<Vector3S>();
 
         public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS[] contact)
         {
-            Vector3S relativePosition = (b.attachedCollidable.transform.position - a.attachedCollidable.transform.position);
+            Vector3S relativePosition = b.attachedCollidable.transform.position - a.attachedCollidable.transform.position;
 
+            // Combine the axes from both boxes
             _axes[0] = a.axes[0];
             _axes[1] = a.axes[1];
             _axes[2] = a.axes[2];
@@ -95,6 +75,7 @@ namespace stupid.Colliders
             _axes[4] = b.axes[1];
             _axes[5] = b.axes[2];
 
+            // Cross product of each axis pair
             int axisCount = 6;
             for (int i = 0; i < 3; i++)
             {
@@ -130,17 +111,12 @@ namespace stupid.Colliders
             normal.Normalize();
 
             // Flip the normal if it's pointing in the wrong direction
-            //This comes from the axis calcs
             if (Vector3S.Dot(normal, relativePosition) > f32.zero)
             {
                 normal = -normal;
             }
 
-            var bRot = b.attachedCollidable.transform.rotationMatrix;
-
-            Vector3S contactPoint = FindContactPoint(a.attachedCollidable.transform.position, a.halfSize, a.attachedCollidable.transform.rotationMatrix, a.vertices,
-                b.attachedCollidable.transform.position, b.halfSize, bRot, b.vertices);
-
+            Vector3S contactPoint = FindContactPoint(a, b);
             f32 penetrationDepth = minOverlap;
 
             if (_contactPoints.Count > 0)
@@ -163,7 +139,7 @@ namespace stupid.Colliders
 
         private static f32 ProjectBox(Vector3S axis, BoxColliderS box)
         {
-            Vector3S halfSize = box.size * f32.half;
+            Vector3S halfSize = box.halfSize;
             var rotMat = box.attachedCollidable.transform.rotationMatrix;
             return
                 halfSize.x * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(0), axis)) +
@@ -171,23 +147,21 @@ namespace stupid.Colliders
                 halfSize.z * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(2), axis));
         }
 
-        private static Vector3S FindContactPoint(Vector3S positionA, Vector3S halfSizeA, Matrix3S rotationA, Vector3S[] verticesA,
-            Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S[] verticesB)
+        private static Vector3S FindContactPoint(BoxColliderS a, BoxColliderS b)
         {
             _contactPoints.Clear();
 
-
-            foreach (var vertexA in verticesA)
+            foreach (var vertexA in a.vertices)
             {
-                if (IsPointInsideOBB(vertexA, positionB, halfSizeB, rotationB))
+                if (IsPointInsideOBB(vertexA, b.attachedCollidable.transform.position, b.halfSize, b.attachedCollidable.transform.rotationMatrix))
                 {
                     _contactPoints.Add(vertexA);
                 }
             }
 
-            foreach (var vertexB in verticesB)
+            foreach (var vertexB in b.vertices)
             {
-                if (IsPointInsideOBB(vertexB, positionA, halfSizeA, rotationA))
+                if (IsPointInsideOBB(vertexB, a.attachedCollidable.transform.position, a.halfSize, a.attachedCollidable.transform.rotationMatrix))
                 {
                     _contactPoints.Add(vertexB);
                 }
@@ -198,8 +172,11 @@ namespace stupid.Colliders
                 return Vector3S.zero;
             }
 
-            var avg = Vector3S.zero;
-            foreach (var c in _contactPoints) avg += c;
+            Vector3S avg = Vector3S.zero;
+            foreach (var point in _contactPoints)
+            {
+                avg += point;
+            }
 
             return avg / (f32)_contactPoints.Count;
         }

@@ -45,18 +45,6 @@ namespace stupid.Colliders
             axes[0] = rotMat.GetColumn(0);
             axes[1] = rotMat.GetColumn(1);
             axes[2] = rotMat.GetColumn(2);
-
-            projections[0] = ProjectBox(halfSize, axes[0], rotMat);
-            projections[1] = ProjectBox(halfSize, axes[1], rotMat);
-            projections[2] = ProjectBox(halfSize, axes[2], rotMat);
-        }
-
-        private static f32 ProjectBox(Vector3S halfSize, Vector3S axis, Matrix3S rotation)
-        {
-            return
-                halfSize.x * MathS.Abs(Vector3S.Dot(rotation.GetColumn(0), axis)) +
-                halfSize.y * MathS.Abs(Vector3S.Dot(rotation.GetColumn(1), axis)) +
-                halfSize.z * MathS.Abs(Vector3S.Dot(rotation.GetColumn(2), axis));
         }
 
         public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
