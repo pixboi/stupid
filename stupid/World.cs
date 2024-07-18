@@ -96,6 +96,7 @@ namespace stupid
                 else
                 {
                     // On STAY: Update the manifold while preserving warm start data
+                    //UNsure, maybe its not supposed to be preserved between physics frames, only within the iteration?
                     freshManifold = new ContactManifoldS(freshManifold, oldManifold);
                     _manifolds[pair] = freshManifold;
                 }
