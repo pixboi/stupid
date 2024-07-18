@@ -2,6 +2,7 @@
 using stupid.Colliders;
 using stupid.Maths;
 using System;
+using System.Linq;
 
 namespace stupid
 {
@@ -137,12 +138,21 @@ namespace stupid
                 UpdateManifold(pair);
             }
 
+            var sorted = _manifolds.Values.ToArray();
+
+            // Sort the manifolds by penetration depth (descending order)
+            Array.Sort(sorted, (m1, m2) =>
+            {
+                f32 depth1 = m1.contacts.Max(contact => contact.penetrationDepth);
+                f32 depth2 = m2.contacts.Max(contact => contact.penetrationDepth);
+                return depth2.CompareTo(depth1);
+            });
+
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
             {
-                foreach (var kvp in _manifolds)
+                foreach (var m in sorted) 
                 {
-                    var m = kvp.Value;
 
                     if (m.a.isDynamic && m.b.isDynamic)
                     {
