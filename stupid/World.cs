@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using stupid.Colliders;
-using stupid.Maths;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using stupid.Maths;
 
 namespace stupid
 {
@@ -17,11 +16,9 @@ namespace stupid
 
         public World(WorldSettings worldSettings, int startSize = 1000)
         {
-            this.Settings = worldSettings;
-
+            Settings = worldSettings;
             Collidables = new DumbList<Collidable>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
-
             counter = 0;
             SimulationFrame = 0;
         }
@@ -37,7 +34,10 @@ namespace stupid
         public void Simulate(f32 deltaTime)
         {
             DeltaTime = deltaTime;
-            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.Integrate(deltaTime, Settings);
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb) rb.Integrate(deltaTime, Settings);
+            }
 
             // Recalculate positions and bounds
             foreach (var c in Collidables)
@@ -49,27 +49,25 @@ namespace stupid
                         c.transform.UpdateRotationMatrix();
                         c.collider.OnRotationUpdate();
                     }
-
                     c.CalculateBounds();
                 }
 
-                if (c is RigidbodyS rb)
+                if (c is RigidbodyS rb && rb.angularVelocity.SqrMagnitude > f32.epsilon)
                 {
-                    if (rb.angularVelocity.SqrMagnitude > f32.epsilon) rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
+                    rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
                 }
             }
 
             var pairs = Broadphase.ComputePairs(Collidables);
             NarrowPhase(pairs);
-
             SimulationFrame++;
         }
 
         public event Action<ContactManifoldS> OnContact;
-        public ContactS[] _contactCache = new ContactS[8];
-        public Dictionary<BodyPair, ContactManifoldS> _manifolds = new Dictionary<BodyPair, ContactManifoldS>();
+        private ContactS[] _contactCache = new ContactS[8];
+        private Dictionary<BodyPair, ContactManifoldS> _manifolds = new Dictionary<BodyPair, ContactManifoldS>();
 
-        void UpdateManifold(BodyPair pair)
+        private void UpdateManifold(BodyPair pair)
         {
             var a = Collidables[pair.aIndex];
             var b = Collidables[pair.bIndex];
@@ -77,9 +75,7 @@ namespace stupid
             // Ensure the dynamic body is 'a' for consistent processing
             if (b.isDynamic && !a.isDynamic)
             {
-                var temp = a;
-                a = b;
-                b = temp;
+                (a, b) = (b, a);
             }
 
             var contactCount = a.collider.Intersects(b, ref _contactCache);
@@ -96,7 +92,6 @@ namespace stupid
                 else
                 {
                     // On STAY: Update the manifold while preserving warm start data
-                    //UNsure, maybe its not supposed to be preserved between physics frames, only within the iteration?
                     freshManifold = new ContactManifoldS(freshManifold, oldManifold);
                     _manifolds[pair] = freshManifold;
                 }
@@ -114,7 +109,7 @@ namespace stupid
             }
         }
 
-        List<BodyPair> _removeCache = new List<BodyPair>();
+        private List<BodyPair> _removeCache = new List<BodyPair>();
         private void NarrowPhase(HashSet<BodyPair> pairs)
         {
             // Collect keys that were not touched by the broadphase
@@ -177,8 +172,8 @@ namespace stupid
                 f32 effectiveMass = invMass + Vector3S.Dot(Vector3S.Cross(body.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
 
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
-                Vector3S correction = (penetrationDepth / effectiveMass) * normal * baumgarteFactor;
-                body.transform.position += invMass * correction;
+                Vector3S correction = invMass * (penetrationDepth / effectiveMass) * normal * baumgarteFactor;
+                body.transform.position += correction;
 
                 f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
                 if (velocityAlongNormal > f32.zero) continue;
@@ -220,7 +215,6 @@ namespace stupid
             }
         }
 
-
         private void ResolveCollision(ContactManifoldS manifold)
         {
             var a = (RigidbodyS)manifold.a;
@@ -247,8 +241,10 @@ namespace stupid
 
                 f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
                 Vector3S correction = (penetrationDepth / effectiveMassSum) * normal * baumgarteFactor;
-                a.transform.position += a.inverseMass * correction;
-                b.transform.position -= b.inverseMass * correction;
+                var ca = a.inverseMass * correction;
+                var cb = b.inverseMass * correction;
+                a.transform.position += ca;
+                b.transform.position -= cb;
 
                 f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
                 if (velocityAlongNormal > f32.zero) continue;
@@ -296,7 +292,5 @@ namespace stupid
                 manifold.contacts[i] = contact;
             }
         }
-
-
     }
 }
