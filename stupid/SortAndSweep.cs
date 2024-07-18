@@ -94,7 +94,13 @@ namespace stupid
                     //Skip static + static
                     if (!bodyA.isDynamic && !bodyB.isDynamic) continue;
 
-                    if (bodyA.GetBounds().Intersects(bodyB.GetBounds()))
+                    f32 fat = f32.epsilon;
+                    var ab = bodyA.GetBounds();
+                    var bb = bodyB.GetBounds();
+
+                    ab.Expand(fat);
+                    bb.Expand(fat);
+                    if (ab.Intersects(bb))
                     {
                         pairs.Add(new BodyPair(aIndex, bIndex));
                     }

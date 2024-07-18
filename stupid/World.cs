@@ -265,12 +265,6 @@ namespace stupid
                 Vector3S ra = contact.point - a.transform.position;
                 Vector3S rb = contact.point - b.transform.position;
 
-                Vector3S va = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-                Vector3S vb = b.velocity + Vector3S.Cross(b.angularVelocity, rb);
-
-                // Calculate relative velocity at the contact point
-                Vector3S relativeVelocityAtContact = va - vb;
-
                 // Compute the effective mass along the normal direction
                 f32 effectiveMassA = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal);
                 f32 effectiveMassB = b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
@@ -283,6 +277,18 @@ namespace stupid
                 Vector3S cb = b.inverseMass * correction;
                 a.transform.position += ca;
                 b.transform.position -= cb;
+
+                contact.point += ca - cb;
+
+                //Recalc
+                ra = contact.point - a.transform.position;
+                rb = contact.point - b.transform.position;
+
+                Vector3S va = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+                Vector3S vb = b.velocity + Vector3S.Cross(b.angularVelocity, rb);
+
+                // Calculate relative velocity at the contact point
+                Vector3S relativeVelocityAtContact = va - vb;
 
                 // Calculate the velocity along the normal
                 f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);

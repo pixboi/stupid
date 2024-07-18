@@ -35,6 +35,8 @@ namespace stupid.Colliders
         }
 
 
+
+        // Box is A, sphere is B. contact point on B, contact normal points away from B (e.g., away from sphere surface)
         public static int BoxVsSphere(BoxColliderS box, SphereColliderS sphere, ref ContactS[] contact)
         {
             var boxTrans = box.attachedCollidable.transform;
@@ -60,32 +62,24 @@ namespace stupid.Colliders
             // If the distance is greater than the sphere's radius, there's no intersection
             if (distanceSquared > sphere.radius * sphere.radius)
             {
-                return -1;
+                return 0; // Return 0 for no contact
             }
 
             // Calculate the actual distance and normalize the distance vector
             f32 distance = MathS.Sqrt(distanceSquared);
-            Vector3S normal = distance > f32.epsilon ? distanceVector / distance : Vector3S.zero;
+            Vector3S normal = distance > f32.epsilon ? distanceVector / distance : Vector3S.one; // Use a default normal if distance is zero
 
             // Transform the closest point back to world space
             var point = boxTrans.position + (boxRotationMatrix * closestPoint);
-
-            // If the box is dynamic and the sphere is static, flip the normal
-            if (box.attachedCollidable.isDynamic && !sphere.attachedCollidable.isDynamic)
-            {
-                normal = -normal;
-            }
 
             // Transform the normal back to world space
             var worldNormal = boxRotationMatrix * normal;
             var penetrationDepth = sphere.radius - distance;
 
+            // Create the contact point on the surface of the sphere, pointing away from the sphere
             contact[0] = new ContactS(point, worldNormal, penetrationDepth);
-            return 1;
+            return 1; // Return 1 for one contact point
         }
-
-
-
 
         static Vector3S[] _axes = new Vector3S[15];
         static List<Vector3S> _contactPoints = new List<Vector3S>();
@@ -181,6 +175,7 @@ namespace stupid.Colliders
             Vector3S positionB, Vector3S halfSizeB, Matrix3S rotationB, Vector3S[] verticesB)
         {
             _contactPoints.Clear();
+
 
             foreach (var vertexA in verticesA)
             {
