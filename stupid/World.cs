@@ -64,7 +64,7 @@ namespace stupid
                     c.CalculateBounds();
                 }
 
-                if (c is RigidbodyS rb && rb.angularVelocity.sqrMagnitude > f32.epsilon)
+                if (c is RigidbodyS rb)
                 {
                     rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
                 }
@@ -145,7 +145,7 @@ namespace stupid
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
 
-            // var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
+            /// var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
             // Apply warm starting: Apply cached impulses before the solver iterations
 
             /*
@@ -156,6 +156,8 @@ namespace stupid
                 _contacts[pair] = contact;
             }
             */
+
+            //var sorted = _contacts.v
 
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
