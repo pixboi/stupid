@@ -4,33 +4,22 @@ namespace stupid
 {
     public struct ContactS
     {
+        public Collidable a, b;
         public Vector3S point;
         public Vector3S normal;
         public f32 penetrationDepth;
 
         // Cached impulses for warm starting
-        public Vector3S cachedImpulse;
         public f32 cachedNormalImpulse;
         public f32 cachedFrictionImpulse;
+        public Vector3S cachedImpulse;
 
-        public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth)
+        public void ResetCachedImpulses()
         {
-            this.point = point;
-            this.normal = normal;
-            this.penetrationDepth = penetrationDepth;
-            this.cachedImpulse = Vector3S.zero;
-            this.cachedNormalImpulse = f32.zero;
-            this.cachedFrictionImpulse = f32.zero;
-        }
-
-        public ContactS(ContactS fresh, ContactS old)
-        {
-            this.point = fresh.point;
-            this.normal = fresh.normal;
-            this.penetrationDepth = fresh.penetrationDepth;
-            this.cachedImpulse = old.cachedImpulse;
-            this.cachedNormalImpulse = old.cachedNormalImpulse;
-            this.cachedFrictionImpulse = old.cachedFrictionImpulse;
+            // Reset the cached impulses to zero
+            cachedNormalImpulse = f32.zero;
+            cachedFrictionImpulse = f32.zero;
+            cachedImpulse = Vector3S.zero;
         }
     }
 }

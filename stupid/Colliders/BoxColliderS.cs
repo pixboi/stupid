@@ -63,7 +63,7 @@ namespace stupid.Colliders
             return _bounds;
         }
 
-        public override int Intersects(Collidable other, ref ContactS[] contact)
+        public override int Intersects(Collidable other, ref ContactS contact)
         {
             if (other.collider is BoxColliderS otherBox)
             {

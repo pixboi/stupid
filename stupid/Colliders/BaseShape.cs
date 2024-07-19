@@ -8,7 +8,7 @@ namespace stupid.Colliders
         Collidable GetCollidable();
         BoundsS CalculateAABB(Vector3S position, QuaternionS rotation);
         BoundsS GetAABB();
-        int Intersects(Collidable other, ref ContactS[] contact); // Add this method
+        int Intersects(Collidable other, ref ContactS contact); // Add this method
         Matrix3S CalculateInertiaTensor(f32 mass);
         bool NeedsRotationUpdate { get; }
         void OnRotationUpdate();
@@ -33,7 +33,7 @@ namespace stupid.Colliders
 
         protected BoundsS _bounds;
         public virtual BoundsS GetAABB() => _bounds;
-        public abstract int Intersects(Collidable other, ref ContactS[] contact);
+        public abstract int Intersects(Collidable other, ref ContactS contact);
         public abstract Matrix3S CalculateInertiaTensor(f32 mass);
 
     }

@@ -9,7 +9,7 @@ namespace stupid.Colliders
         private static Vector3S[] _axes = new Vector3S[15];
         private static List<Vector3S> _contactPoints = new List<Vector3S>();
 
-        public static int SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, ref ContactS[] contact)
+        public static int SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, ref ContactS contact)
         {
             f32 squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
             f32 combinedRadius = radA + radB;
@@ -25,12 +25,14 @@ namespace stupid.Colliders
             Vector3S normal = direction;
             f32 penetrationDepth = combinedRadius - distance;
 
-            contact[0] = new ContactS(point, normal, penetrationDepth);
+            contact.point = point;
+            contact.normal = normal;
+            contact.penetrationDepth = penetrationDepth;
             return 1;
         }
 
         //Contact point on box, normal pointing towards box
-        public static int BoxVsSphere(BoxColliderS box, SphereColliderS sphere, ref ContactS[] contact)
+        public static int BoxVsSphere(BoxColliderS box, SphereColliderS sphere, ref ContactS contact)
         {
             var boxTrans = box.attachedCollidable.transform;
             var sphereTrans = sphere.attachedCollidable.transform;
@@ -70,14 +72,16 @@ namespace stupid.Colliders
             if (penetrationDepth < f32.zero)
                 penetrationDepth = f32.zero; // Ensure non-negative depth
 
-            // Create the contact point on the surface of the box closest to the sphere center
-            contact[0] = new ContactS(worldClosestPoint, -worldNormal, penetrationDepth);
+            contact.point = worldClosestPoint;
+            contact.normal = -worldNormal;
+            contact.penetrationDepth = penetrationDepth;
+
             return 1;
         }
 
 
         //Contact point on sphere, normal points towards sphere
- public static int SphereVsBox(SphereColliderS sphere, BoxColliderS box, ref ContactS[] contact)
+        public static int SphereVsBox(SphereColliderS sphere, BoxColliderS box, ref ContactS contact)
         {
             var boxTrans = box.attachedCollidable.transform;
             var sphereTrans = sphere.attachedCollidable.transform;
@@ -117,13 +121,14 @@ namespace stupid.Colliders
             if (penetrationDepth < f32.zero)
                 penetrationDepth = f32.zero; // Ensure non-negative depth
 
-            // Create the contact point on the surface of the sphere closest to the box
-            contact[0] = new ContactS(worldContactPoint, worldNormal, penetrationDepth);
+            contact.point = worldContactPoint;
+            contact.normal = worldNormal;
+            contact.penetrationDepth = penetrationDepth;
             return 1;
         }
 
 
-        public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS[] contact)
+        public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS contact)
         {
             Vector3S relativePosition = b.attachedCollidable.transform.position - a.attachedCollidable.transform.position;
 
@@ -198,7 +203,9 @@ namespace stupid.Colliders
 
             if (_contactPoints.Count > 0)
             {
-                contact[0] = new ContactS(contactPoint, normal, penetrationDepth);
+                contact.point = contactPoint;
+                contact.normal = normal;
+                contact.penetrationDepth = penetrationDepth;
                 return 1;
             }
 

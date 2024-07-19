@@ -71,9 +71,8 @@ namespace stupid
             }
         }
 
-        public event Action<ContactManifoldS> OnContact;
-        private ContactS[] _contactCache = new ContactS[8];
-        private Dictionary<BodyPair, ContactManifoldS> _manifolds = new Dictionary<BodyPair, ContactManifoldS>();
+        public event Action<ContactS> OnContact;
+        private Dictionary<BodyPair, ContactS> _contacts = new Dictionary<BodyPair, ContactS>();
 
         private void UpdateManifold(BodyPair pair)
         {
@@ -86,31 +85,33 @@ namespace stupid
                 (a, b) = (b, a);
             }
 
-            var contactCount = a.collider.Intersects(b, ref _contactCache);
+            var contact = new ContactS();
+            contact.a = a;
+            contact.b = b;
+
+            var contactCount = a.collider.Intersects(b, ref contact);
 
             if (contactCount > 0)
             {
-                var freshManifold = new ContactManifoldS(a, b, _contactCache, contactCount);
-
-                if (!_manifolds.TryGetValue(pair, out var oldManifold))
+                if (!_contacts.TryGetValue(pair, out var oldManifold))
                 {
                     // On ENTER: Add a new manifold
-                    _manifolds[pair] = freshManifold;
+                    _contacts[pair] = contact;
                 }
                 else
                 {
                     // On STAY: Update the manifold while preserving warm start data
-                    freshManifold = new ContactManifoldS(freshManifold, oldManifold);
-                    _manifolds[pair] = freshManifold;
+                    // freshManifold = new ContactManifoldS(freshManifold, oldManifold);
+                    _contacts[pair] = contact;
                 }
 
                 // Trigger the contact event
-                OnContact?.Invoke(freshManifold);
+                OnContact?.Invoke(contact);
             }
-            else if (_manifolds.ContainsKey(pair))
+            else if (_contacts.ContainsKey(pair))
             {
                 // On EXIT: Remove the manifold
-                _manifolds.Remove(pair);
+                _contacts.Remove(pair);
             }
         }
 
@@ -119,7 +120,7 @@ namespace stupid
         {
             // Collect keys that were not touched by the broadphase
             _removeCache.Clear();
-            foreach (var key in _manifolds.Keys)
+            foreach (var key in _contacts.Keys)
             {
                 if (!pairs.Contains(key))
                 {
@@ -130,7 +131,7 @@ namespace stupid
             // Remove the old keys
             foreach (var key in _removeCache)
             {
-                _manifolds.Remove(key);
+                _contacts.Remove(key);
             }
 
             // Update the manifolds for the current pairs
@@ -139,51 +140,43 @@ namespace stupid
                 UpdateManifold(pair);
             }
 
-            var sortedManifolds = _manifolds.Values.OrderByDescending(x => x.contacts[0].penetrationDepth);
+            var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
 
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
             {
-                foreach (var manifold in sortedManifolds)
+                foreach (var contact in sortedContacts)
                 {
-                    ResolveCollision(manifold, i);
+                    ResolveCollision(contact);
                 }
             }
         }
 
-        private void ResolveCollision(ContactManifoldS manifold, int iteration)
+        private void ResolveCollision(ContactS contact)
         {
-            if (manifold.a.isDynamic && manifold.b.isDynamic)
+            if (contact.a.isDynamic && contact.b.isDynamic)
             {
-                ResolveDynamicCollision(manifold);
+                ResolveDynamicCollision(contact);
             }
             else
             {
-                ResolveStaticCollision(manifold);
+                ResolveStaticCollision(contact);
             }
         }
 
 
-        private void ResolveDynamicCollision(ContactManifoldS manifold)
+        private void ResolveDynamicCollision(ContactS contact)
         {
-            var a = (RigidbodyS)manifold.a;
-            var b = (RigidbodyS)manifold.b;
-
-            for (int i = 0; i < manifold.count; i++)
-            {
-                ResolveContact(a, b, manifold.contacts[i]);
-            }
+            var a = (RigidbodyS)contact.a;
+            var b = (RigidbodyS)contact.b;
+            ResolveContact(a, b, contact);
         }
 
-        private void ResolveStaticCollision(ContactManifoldS manifold)
+        private void ResolveStaticCollision(ContactS contact)
         {
-            var body = (RigidbodyS)manifold.a;
-            var stat = manifold.b;
-
-            for (int i = 0; i < manifold.count; i++)
-            {
-                ResolveContact(body, stat, manifold.contacts[i], isStatic: true);
-            }
+            var body = (RigidbodyS)contact.a;
+            var stat = contact.b;
+            ResolveContact(body, stat, contact, isStatic: true);
         }
 
         private void ResolveContact(RigidbodyS a, Collidable b, ContactS contact, bool isStatic = false)
@@ -254,11 +247,8 @@ namespace stupid
             }
 
             contact.cachedImpulse = normalImpulse + frictionImpulse;
-            contact.cachedNormalImpulse = newAccumulatedImpulse;
             contact.cachedFrictionImpulse = frictionImpulseScalar;
-
         }
-
 
     }
 }
