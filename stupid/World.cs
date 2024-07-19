@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using stupid.Colliders;
 using stupid.Maths;
 
@@ -147,17 +148,17 @@ namespace stupid
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
 
-            /// var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
             // Apply warm starting: Apply cached impulses before the solver iterations
-
-            /*
             foreach (var pair in pairs)
             {
                 var contact = _contacts[pair];
                 ApplyWarmStarting(ref contact);
                 _contacts[pair] = contact;
             }
-            */
+
+
+            /// var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
+            //var sorted = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
 
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
@@ -175,6 +176,7 @@ namespace stupid
         {
             var a = contact.a as RigidbodyS;
             var b = contact.b as RigidbodyS;
+           // return;
 
             if (a != null)
             {
@@ -219,6 +221,7 @@ namespace stupid
 
         private void ResolveContact(RigidbodyS a, Collidable b, ref ContactS contact, bool isStatic = false)
         {
+            f32 slop = Settings.DefaultContactOffset;
             Vector3S normal = contact.normal;
 
             Vector3S ra = contact.point - a.transform.position;
@@ -233,14 +236,13 @@ namespace stupid
             f32 effectiveMass = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal) +
                 (isStatic ? f32.zero : invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal));
 
-            f32 slop = Settings.DefaultContactOffset;
-            f32 positionCorrectFactor = f32.one / (f32)Settings.DefaultSolverIterations;
-
             // Compute the current contact separation for a sub-step
             f32 penetrationDepth = Vector3S.Dot((b.transform.position + contact.pB) - (a.transform.position + contact.pA), normal) + contact.penetrationDepth;
             penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
 
-            Vector3S correction = (penetrationDepth / effectiveMass) * normal * positionCorrectFactor;
+            //if (penetrationDepth == f32.zero) return;
+
+            Vector3S correction = (penetrationDepth / effectiveMass) * normal;
             var aCorrection = invMassA * correction;
             a.transform.position += aCorrection;
             if (!isStatic)
