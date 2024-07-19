@@ -16,14 +16,14 @@ namespace stupid.Colliders
 
     public abstract class BaseShape : IShape
     {
-        public Collidable attachedCollidable { get; private set; }
+        public Collidable collidable { get; private set; }
         public virtual bool NeedsRotationUpdate => false;
         public virtual void OnRotationUpdate() { return; }
 
-        public virtual Collidable GetCollidable() => attachedCollidable;
+        public virtual Collidable GetCollidable() => collidable;
         public void Attach(Collidable c)
         {
-            attachedCollidable = c;
+            collidable = c;
             CalculateAABB(c.transform.position, c.transform.rotation);
 
             OnRotationUpdate();

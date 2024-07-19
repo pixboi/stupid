@@ -211,7 +211,7 @@ namespace stupid
         }
 
 
-        private static readonly f32 BAUM = (f32)0.1;
+        private static readonly f32 BAUM = (f32)0.2;
         private void ResolveContact(RigidbodyS a, Collidable b, ref ContactS contact, bool isStatic = false)
         {
             f32 slop = Settings.DefaultContactOffset;

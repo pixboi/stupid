@@ -22,8 +22,8 @@ namespace stupid.Colliders
             if (other.collider is SphereColliderS otherSphere)
             {
                 return CollisionMath.SphereVSphere(
-                    this.attachedCollidable.transform.position,
-                    otherSphere.attachedCollidable.transform.position,
+                    this.collidable.transform.position,
+                    otherSphere.collidable.transform.position,
                     this.radius,
                     otherSphere.radius,
                     ref contact);

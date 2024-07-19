@@ -8,6 +8,7 @@ namespace stupid.Colliders
         public Vector3S halfSize { get; private set; }
         public Vector3S[] vertices { get; private set; }
         public Vector3S[] axes { get; private set; }
+        public EdgeS[] edges { get; private set; }
 
         public BoxColliderS(Vector3S size)
         {
@@ -15,6 +16,10 @@ namespace stupid.Colliders
             this.halfSize = size * f32.half;
             this.vertices = new Vector3S[8];
             this.axes = new Vector3S[3];
+            this.edges = new EdgeS[12];
+
+            if (this.collidable != null)
+                UpdateBox();
         }
 
         public override bool NeedsRotationUpdate => true;
@@ -25,8 +30,8 @@ namespace stupid.Colliders
 
         public void UpdateBox()
         {
-            var rotMat = this.attachedCollidable.transform.rotationMatrix;
-            var position = this.attachedCollidable.transform.position;
+            var rotMat = this.collidable.transform.rotationMatrix;
+            var position = this.collidable.transform.position;
             Vector3S right = rotMat.GetColumn(0) * halfSize.x;
             Vector3S up = rotMat.GetColumn(1) * halfSize.y;
             Vector3S forward = rotMat.GetColumn(2) * halfSize.z;
@@ -43,6 +48,30 @@ namespace stupid.Colliders
             axes[0] = rotMat.GetColumn(0);
             axes[1] = rotMat.GetColumn(1);
             axes[2] = rotMat.GetColumn(2);
+
+            UpdateEdges();
+        }
+
+        private void UpdateEdges()
+        {
+            edges[0] = new EdgeS(vertices[0], vertices[1]);
+            edges[1] = new EdgeS(vertices[0], vertices[2]);
+            edges[2] = new EdgeS(vertices[0], vertices[4]);
+
+            edges[3] = new EdgeS(vertices[1], vertices[3]);
+            edges[4] = new EdgeS(vertices[1], vertices[5]);
+
+            edges[5] = new EdgeS(vertices[2], vertices[3]);
+            edges[6] = new EdgeS(vertices[2], vertices[6]);
+
+            edges[7] = new EdgeS(vertices[3], vertices[7]);
+
+            edges[8] = new EdgeS(vertices[4], vertices[5]);
+            edges[9] = new EdgeS(vertices[4], vertices[6]);
+
+            edges[10] = new EdgeS(vertices[5], vertices[7]);
+
+            edges[11] = new EdgeS(vertices[6], vertices[7]);
         }
 
         public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
@@ -94,6 +123,19 @@ namespace stupid.Colliders
                 new Vector3S(f32.zero, inertiaY, f32.zero),
                 new Vector3S(f32.zero, f32.zero, inertiaZ)
             );
+        }
+    }
+
+
+    public readonly struct EdgeS
+    {
+        public readonly Vector3S start;
+        public readonly Vector3S end;
+
+        public EdgeS(Vector3S start, Vector3S end)
+        {
+            this.start = start;
+            this.end = end;
         }
     }
 }
