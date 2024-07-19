@@ -133,6 +133,66 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static QuaternionS LookRotation(Vector3S forward, Vector3S up = default)
+        {
+            if (up == default) up = Vector3S.up;
+
+            Vector3S z = forward.Normalize();
+            Vector3S x = Vector3S.Cross(up, z).Normalize();
+            Vector3S y = Vector3S.Cross(z, x);
+
+            f32 m00 = x.x, m01 = y.x, m02 = z.x;
+            f32 m10 = x.y, m11 = y.y, m12 = z.y;
+            f32 m20 = x.z, m21 = y.z, m22 = z.z;
+
+            f32 trace = m00 + m11 + m22;
+            if (trace > f32.zero)
+            {
+                f32 s = MathS.Sqrt(trace + f32.one) * f32.two;
+                f32 invS = f32.one / s;
+                return new QuaternionS(
+                    (m21 - m12) * invS,
+                    (m02 - m20) * invS,
+                    (m10 - m01) * invS,
+                    s * f32.quarter
+                );
+            }
+            else if ((m00 > m11) && (m00 > m22))
+            {
+                f32 s = MathS.Sqrt(f32.one + m00 - m11 - m22) * f32.two;
+                f32 invS = f32.one / s;
+                return new QuaternionS(
+                    s * f32.quarter,
+                    (m01 + m10) * invS,
+                    (m02 + m20) * invS,
+                    (m21 - m12) * invS
+                );
+            }
+            else if (m11 > m22)
+            {
+                f32 s = MathS.Sqrt(f32.one + m11 - m00 - m22) * f32.two;
+                f32 invS = f32.one / s;
+                return new QuaternionS(
+                    (m01 + m10) * invS,
+                    s * f32.quarter,
+                    (m12 + m21) * invS,
+                    (m02 - m20) * invS
+                );
+            }
+            else
+            {
+                f32 s = MathS.Sqrt(f32.one + m22 - m00 - m11) * f32.two;
+                f32 invS = f32.one / s;
+                return new QuaternionS(
+                    (m02 + m20) * invS,
+                    (m12 + m21) * invS,
+                    s * f32.quarter,
+                    (m10 - m01) * invS
+                );
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString()
         {
             return $"Quaternion({x}, {y}, {z}, {w})";

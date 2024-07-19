@@ -31,7 +31,7 @@ namespace stupid.Colliders
 
             if (other.collider is BoxColliderS otherBox)
             {
-                return CollisionMath.BoxVsSphere(otherBox, this, ref contact);
+                return CollisionMath.SphereVsBox(this, otherBox, ref contact);
             }
 
             return 0;

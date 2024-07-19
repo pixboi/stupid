@@ -29,39 +29,54 @@ namespace stupid.Colliders
             return 1;
         }
 
-        public static int BoxVsSphere(BoxColliderS box, SphereColliderS sphere, ref ContactS[] contact)
+        public static int SphereVsBox(SphereColliderS sphere, BoxColliderS box, ref ContactS[] contact)
         {
+            if (box == null || sphere == null || contact == null || contact.Length == 0)
+                return 0;
+
             var boxTrans = box.attachedCollidable.transform;
             var sphereTrans = sphere.attachedCollidable.transform;
 
-            Matrix3S inverseBoxRotation = boxTrans.rotationMatrix.Transpose();
-            Vector3S localSpherePosition = inverseBoxRotation * (sphereTrans.position - boxTrans.position);
-            Vector3S halfSize = box.halfSize;
+            // Transform the sphere center into the box's local space
+            var inverseBoxRotation = boxTrans.rotationMatrix.Transpose();
+            var localSpherePos = inverseBoxRotation * (sphereTrans.position - boxTrans.position);
+            var halfSize = box.halfSize;
 
-            Vector3S closestPoint = new Vector3S(
-                MathS.Clamp(localSpherePosition.x, -halfSize.x, halfSize.x),
-                MathS.Clamp(localSpherePosition.y, -halfSize.y, halfSize.y),
-                MathS.Clamp(localSpherePosition.z, -halfSize.z, halfSize.z)
+            // Find the closest point on the box to the sphere center
+            var closestPoint = new Vector3S(
+                MathS.Clamp(localSpherePos.x, -halfSize.x, halfSize.x),
+                MathS.Clamp(localSpherePos.y, -halfSize.y, halfSize.y),
+                MathS.Clamp(localSpherePos.z, -halfSize.z, halfSize.z)
             );
 
-            Vector3S distanceVector = localSpherePosition - closestPoint;
-            f32 distanceSquared = distanceVector.SqrMagnitude;
+            // Calculate the vector from the closest point to the sphere center
+            var distanceVector = localSpherePos - closestPoint;
+            var distanceSquared = distanceVector.sqrMagnitude;
 
+            // If the distance is greater than the sphere's radius, there's no intersection
             if (distanceSquared > sphere.radius * sphere.radius)
-            {
-                return 0; // No contact
-            }
+                return 0;
 
-            f32 distance = MathS.Sqrt(distanceSquared);
-            Vector3S normal = distance > f32.epsilon ? distanceVector / distance : Vector3S.one;
+            // Calculate the distance and the normal vector pointing from the closest point to the sphere center
+            var distance = MathS.Sqrt(distanceSquared);
+            var normal = distance > f32.epsilon ? distanceVector / distance : new Vector3S(1, 0, 0); // Default normal
 
-            Vector3S point = boxTrans.position + (boxTrans.rotationMatrix * closestPoint);
-            Vector3S worldNormal = boxTrans.rotationMatrix * normal;
-            f32 penetrationDepth = sphere.radius - distance;
+            // Transform the closest point back to world space
+            var worldClosestPoint = boxTrans.position + (boxTrans.rotationMatrix * closestPoint);
 
-            contact[0] = new ContactS(point, worldNormal, penetrationDepth);
-            return 1; // One contact point
+            // Transform the normal back to world space
+            var worldNormal = (boxTrans.rotationMatrix * normal).Normalize();
+
+            // Calculate penetration depth
+            var penetrationDepth = sphere.radius - distance;
+            if (penetrationDepth < f32.zero)
+                penetrationDepth = f32.zero; // Ensure non-negative depth
+
+            // Create the contact point on the surface of the box closest to the sphere center
+            contact[0] = new ContactS(worldClosestPoint, worldNormal, penetrationDepth);
+            return 1;
         }
+
 
         public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS[] contact)
         {
@@ -82,7 +97,7 @@ namespace stupid.Colliders
                 for (int j = 0; j < 3; j++)
                 {
                     Vector3S cross = Vector3S.Cross(_axes[i], _axes[3 + j]);
-                    if (cross.SqrMagnitude > f32.epsilon)
+                    if (cross.sqrMagnitude > f32.epsilon)
                     {
                         _axes[axisCount++] = cross.Normalize();
                     }
@@ -115,6 +130,7 @@ namespace stupid.Colliders
             {
                 normal = -normal;
             }
+
 
             Vector3S contactPoint = FindContactPoint(a, b);
             f32 penetrationDepth = minOverlap;

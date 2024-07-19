@@ -8,7 +8,6 @@ namespace stupid.Colliders
         public Vector3S halfSize { get; private set; }
         public Vector3S[] vertices { get; private set; }
         public Vector3S[] axes { get; private set; }
-        public f32[] projections { get; private set; }
 
         public BoxColliderS(Vector3S size)
         {
@@ -16,7 +15,6 @@ namespace stupid.Colliders
             this.halfSize = size * f32.half;
             this.vertices = new Vector3S[8];
             this.axes = new Vector3S[3];
-            this.projections = new f32[3];
         }
 
         public override bool NeedsRotationUpdate => true;
@@ -74,7 +72,7 @@ namespace stupid.Colliders
 
             if (other.collider is SphereColliderS otherSphere)
             {
-                return CollisionMath.BoxVsSphere(this, otherSphere, ref contact);
+                return CollisionMath.SphereVsBox(otherSphere, this, ref contact);
             }
 
             return 0;

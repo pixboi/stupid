@@ -72,6 +72,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Dot(Vector3S a, Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
 
+        public f32 Dot(Vector3S b) => Dot(this, b);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S Cross(Vector3S a, Vector3S b) => new Vector3S(
             a.y * b.z - a.z * b.y,
@@ -82,17 +84,18 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
         {
-            f32 magnitudeSquared = SqrMagnitude;
+            f32 magnitudeSquared = sqrMagnitude;
             return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
-        public f32 SqrMagnitude => (x * x + y * y + z * z);
+        public f32 sqrMagnitude => (x * x + y * y + z * z);
+        public f32 magnitude => Magnitude();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Distance(Vector3S a, Vector3S b) => (a - b).Magnitude();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 DistanceSquared(Vector3S a, Vector3S b) => (a - b).SqrMagnitude;
+        public static f32 DistanceSquared(Vector3S a, Vector3S b) => (a - b).sqrMagnitude;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Normalize()
@@ -143,7 +146,7 @@ namespace stupid.Maths
 
         public static Vector3S ClampMagnitude(Vector3S v, f32 min, f32 max)
         {
-            f32 sqrMagnitude = v.SqrMagnitude;
+            f32 sqrMagnitude = v.sqrMagnitude;
             if (sqrMagnitude > max * max)
             {
                 f32 scale = max / MathS.Sqrt(sqrMagnitude);

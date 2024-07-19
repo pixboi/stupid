@@ -20,6 +20,7 @@ namespace stupid.Maths
         public static readonly f32 zero = FromRaw(0);
         public static readonly f32 one = FromRaw(One);
         public static readonly f32 two = FromRaw(2L << FractionalBits);
+        public static readonly f32 quarter = FromFloat(0.25f);
         public static readonly f32 half = FromRaw(One >> 1);
         public static readonly f32 negativeOne = FromRaw(-One);
         public static readonly f32 negativeTwo = FromRaw(-(2L << FractionalBits));

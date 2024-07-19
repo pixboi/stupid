@@ -43,8 +43,8 @@ namespace stupid.Trees
                 var leftUnion = BoundsS.Union(root.Left.Bounds, node.Bounds);
                 var rightUnion = BoundsS.Union(root.Right.Bounds, node.Bounds);
 
-                var leftGrowth = leftUnion.size.SqrMagnitude - root.Left.Bounds.size.SqrMagnitude;
-                var rightGrowth = rightUnion.size.SqrMagnitude - root.Right.Bounds.size.SqrMagnitude;
+                var leftGrowth = leftUnion.size.sqrMagnitude - root.Left.Bounds.size.sqrMagnitude;
+                var rightGrowth = rightUnion.size.sqrMagnitude - root.Right.Bounds.size.sqrMagnitude;
 
                 if (leftGrowth < rightGrowth)
                 {

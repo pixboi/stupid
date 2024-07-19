@@ -10,14 +10,17 @@
         {
             this.inertia = inertia;
             this.inertiaInverse = inertia.Inverse();
-            this.inertiaWorld = inertiaInverse;
 
-            if (initialRotation == QuaternionS.zero) initialRotation = QuaternionS.identity;
+            if (initialRotation == default)
+            {
+                initialRotation = QuaternionS.identity;
+            }
 
+            this.inertiaWorld = inertiaInverse; // This will be updated below
             CalculateInverseInertiaTensor(initialRotation);
         }
 
-        public  Matrix3S inertiaWorld { get; private set; }
+        public Matrix3S inertiaWorld { get; private set; }
 
         public void CalculateInverseInertiaTensor(QuaternionS rotation)
         {

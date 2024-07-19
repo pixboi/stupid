@@ -89,13 +89,13 @@ namespace stupid
                 angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
 
             // Clamp the angular velocity
-            if (angularVelocity.SqrMagnitude > settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed)
+            if (angularVelocity.sqrMagnitude > settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed)
             {
                 angularVelocity = angularVelocity.ClampMagnitude(f32.zero, settings.DefaultMaxAngularSpeed);
             }
 
             // Update rotation
-            if (angularVelocity.SqrMagnitude > f32.zero)
+            if (angularVelocity.sqrMagnitude > f32.zero)
             {
                 Vector3S angDelta = angularVelocity * deltaTime * f32.half;
                 var dq = new QuaternionS(angDelta.x, angDelta.y, angDelta.z, f32.one);

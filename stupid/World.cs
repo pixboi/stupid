@@ -64,7 +64,7 @@ namespace stupid
                     c.CalculateBounds();
                 }
 
-                if (c is RigidbodyS rb && rb.angularVelocity.SqrMagnitude > f32.epsilon)
+                if (c is RigidbodyS rb && rb.angularVelocity.sqrMagnitude > f32.epsilon)
                 {
                     rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
                 }
@@ -114,8 +114,7 @@ namespace stupid
             }
         }
 
-        private List<BodyPair> _removeCache = new List<BodyPair>();
-
+        List<BodyPair> _removeCache = new List<BodyPair>();
         private void NarrowPhase(HashSet<BodyPair> pairs)
         {
             // Collect keys that were not touched by the broadphase
@@ -257,6 +256,7 @@ namespace stupid
             contact.cachedImpulse = normalImpulse + frictionImpulse;
             contact.cachedNormalImpulse = newAccumulatedImpulse;
             contact.cachedFrictionImpulse = frictionImpulseScalar;
+
         }
 
 
