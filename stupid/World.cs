@@ -148,15 +148,6 @@ namespace stupid
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
 
-            // Apply warm starting: Apply cached impulses before the solver iterations
-            foreach (var pair in pairs)
-            {
-                var contact = _contacts[pair];
-                //ApplyWarmStarting(ref contact);
-                _contacts[pair] = contact;
-            }
-
-
             /// var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
             //var sorted = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
 
