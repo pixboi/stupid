@@ -215,7 +215,7 @@ namespace stupid
         private void ResolveContact(RigidbodyS a, Collidable b, ref ContactS contact, bool isStatic = false)
         {
             f32 slop = Settings.DefaultContactOffset;
-            f32 normalSlop = (f32)0.1;
+            f32 normalSlop = (f32)1;
 
             var contactPointA = a.transform.position + contact.pA;
             var contactPointB = b.transform.position + contact.pB;
