@@ -77,7 +77,7 @@ namespace stupid.Colliders
 
 
         //Contact point on sphere, normal points towards sphere
-        public static int SphereVsBox(SphereColliderS sphere, BoxColliderS box, ref ContactS[] contact)
+ public static int SphereVsBox(SphereColliderS sphere, BoxColliderS box, ref ContactS[] contact)
         {
             var boxTrans = box.attachedCollidable.transform;
             var sphereTrans = sphere.attachedCollidable.transform;
@@ -127,7 +127,7 @@ namespace stupid.Colliders
         {
             Vector3S relativePosition = b.attachedCollidable.transform.position - a.attachedCollidable.transform.position;
 
-            // Combine the axes from both boxes
+            // Combine the primary axes from both boxes
             _axes[0] = a.axes[0];
             _axes[1] = a.axes[1];
             _axes[2] = a.axes[2];
@@ -135,13 +135,32 @@ namespace stupid.Colliders
             _axes[4] = b.axes[1];
             _axes[5] = b.axes[2];
 
-            // Cross product of each axis pair
+            f32 minOverlap = f32.maxValue;
+            Vector3S minAxis = Vector3S.zero;
             int axisCount = 6;
+
+            // Check for overlaps on primary axes
+            for (int i = 0; i < 6; i++)
+            {
+                Vector3S axis = _axes[i];
+                if (!OverlapOnAxis(relativePosition, axis, a, b, out f32 overlap))
+                {
+                    return 0; // No overlap on this axis, no collision
+                }
+
+                if (overlap < minOverlap)
+                {
+                    minOverlap = overlap;
+                    minAxis = axis;
+                }
+            }
+
+            // Cross product of each axis pair
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    Vector3S cross = Vector3S.Cross(_axes[i], _axes[3 + j]);
+                    Vector3S cross = Vector3S.Cross(a.axes[i], b.axes[j]);
                     if (cross.sqrMagnitude > f32.epsilon)
                     {
                         _axes[axisCount++] = cross.Normalize();
@@ -149,15 +168,13 @@ namespace stupid.Colliders
                 }
             }
 
-            f32 minOverlap = f32.maxValue;
-            Vector3S minAxis = Vector3S.zero;
-
-            for (int i = 0; i < axisCount; i++)
+            // Check for overlaps on cross product axes
+            for (int i = 6; i < axisCount; i++)
             {
                 Vector3S axis = _axes[i];
                 if (!OverlapOnAxis(relativePosition, axis, a, b, out f32 overlap))
                 {
-                    return -1; // No overlap on this axis, no collision
+                    return 0; // No overlap on this axis, no collision
                 }
 
                 if (overlap < minOverlap)
@@ -169,7 +186,6 @@ namespace stupid.Colliders
 
             Vector3S normal = minAxis;
             normal.Normalize();
-
 
             // Flip the normal if it's pointing in the wrong direction
             if (Vector3S.Dot(normal, relativePosition) > f32.zero)
@@ -233,13 +249,22 @@ namespace stupid.Colliders
                 return Vector3S.zero;
             }
 
-            Vector3S avg = Vector3S.zero;
+            Vector3S minPoint = _contactPoints[0];
+            Vector3S maxPoint = _contactPoints[0];
+
             foreach (var point in _contactPoints)
             {
-                avg += point;
+                if (point.x < minPoint.x) minPoint.x = point.x;
+                if (point.y < minPoint.y) minPoint.y = point.y;
+                if (point.z < minPoint.z) minPoint.z = point.z;
+
+                if (point.x > maxPoint.x) maxPoint.x = point.x;
+                if (point.y > maxPoint.y) maxPoint.y = point.y;
+                if (point.z > maxPoint.z) maxPoint.z = point.z;
             }
 
-            return avg / (f32)_contactPoints.Count;
+            Vector3S contactPoint = (minPoint + maxPoint) * f32.half;
+            return contactPoint;
         }
 
         private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S rotation)

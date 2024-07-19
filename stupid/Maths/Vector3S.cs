@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public readonly struct Vector3S : IEquatable<Vector3S>
+    public  struct Vector3S : IEquatable<Vector3S>
     {
-        public readonly f32 x, y, z;
+        public f32 x, y, z;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S(f32 x, f32 y, f32 z)
