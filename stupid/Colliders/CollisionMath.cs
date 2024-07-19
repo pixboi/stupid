@@ -29,11 +29,9 @@ namespace stupid.Colliders
             return 1;
         }
 
-        public static int SphereVsBox(SphereColliderS sphere, BoxColliderS box, ref ContactS[] contact)
+        //Contact point on box, normal pointing towards box
+        public static int BoxVsSphere(BoxColliderS box, SphereColliderS sphere, ref ContactS[] contact)
         {
-            if (box == null || sphere == null || contact == null || contact.Length == 0)
-                return 0;
-
             var boxTrans = box.attachedCollidable.transform;
             var sphereTrans = sphere.attachedCollidable.transform;
 
@@ -73,7 +71,54 @@ namespace stupid.Colliders
                 penetrationDepth = f32.zero; // Ensure non-negative depth
 
             // Create the contact point on the surface of the box closest to the sphere center
-            contact[0] = new ContactS(worldClosestPoint, worldNormal, penetrationDepth);
+            contact[0] = new ContactS(worldClosestPoint, -worldNormal, penetrationDepth);
+            return 1;
+        }
+
+
+        //Contact point on sphere, normal points towards sphere
+        public static int SphereVsBox(SphereColliderS sphere, BoxColliderS box, ref ContactS[] contact)
+        {
+            var boxTrans = box.attachedCollidable.transform;
+            var sphereTrans = sphere.attachedCollidable.transform;
+
+            // Transform the sphere center into the box's local space
+            var inverseBoxRotation = boxTrans.rotationMatrix.Transpose();
+            var localSpherePos = inverseBoxRotation * (sphereTrans.position - boxTrans.position);
+            var halfSize = box.halfSize;
+
+            // Find the closest point on the box to the sphere center
+            var closestPoint = new Vector3S(
+                MathS.Clamp(localSpherePos.x, -halfSize.x, halfSize.x),
+                MathS.Clamp(localSpherePos.y, -halfSize.y, halfSize.y),
+                MathS.Clamp(localSpherePos.z, -halfSize.z, halfSize.z)
+            );
+
+            // Calculate the vector from the closest point to the sphere center
+            var distanceVector = localSpherePos - closestPoint;
+            var distanceSquared = distanceVector.sqrMagnitude;
+
+            // If the distance is greater than the sphere's radius, there's no intersection
+            if (distanceSquared > sphere.radius * sphere.radius)
+                return 0;
+
+            // Calculate the distance and the normal vector pointing from the closest point to the sphere center
+            var distance = MathS.Sqrt(distanceSquared);
+            var normal = distance > f32.epsilon ? distanceVector / distance : new Vector3S(1, 0, 0); // Default normal
+
+            // Transform the normal back to world space
+            var worldNormal = (boxTrans.rotationMatrix * normal).Normalize();
+
+            // Calculate the contact point on the sphere surface
+            var worldContactPoint = sphereTrans.position - worldNormal * sphere.radius;
+
+            // Calculate penetration depth
+            var penetrationDepth = sphere.radius - distance;
+            if (penetrationDepth < f32.zero)
+                penetrationDepth = f32.zero; // Ensure non-negative depth
+
+            // Create the contact point on the surface of the sphere closest to the box
+            contact[0] = new ContactS(worldContactPoint, worldNormal, penetrationDepth);
             return 1;
         }
 
@@ -125,12 +170,12 @@ namespace stupid.Colliders
             Vector3S normal = minAxis;
             normal.Normalize();
 
+
             // Flip the normal if it's pointing in the wrong direction
             if (Vector3S.Dot(normal, relativePosition) > f32.zero)
             {
                 normal = -normal;
             }
-
 
             Vector3S contactPoint = FindContactPoint(a, b);
             f32 penetrationDepth = minOverlap;

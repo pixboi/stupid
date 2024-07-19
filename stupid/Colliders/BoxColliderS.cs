@@ -72,7 +72,7 @@ namespace stupid.Colliders
 
             if (other.collider is SphereColliderS otherSphere)
             {
-                return CollisionMath.SphereVsBox(otherSphere, this, ref contact);
+                return CollisionMath.BoxVsSphere(this, otherSphere, ref contact);
             }
 
             return 0;
