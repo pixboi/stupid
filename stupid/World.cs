@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using stupid.Colliders;
 using stupid.Maths;
 
 namespace stupid
@@ -101,7 +101,10 @@ namespace stupid
                 else
                 {
                     // On STAY: Update the manifold while preserving warm start data
-                    // freshManifold = new ContactManifoldS(freshManifold, oldManifold);
+                    // Copy old manifold's cached impulses to the new manifold
+                    contact.cachedNormalImpulse = oldManifold.cachedNormalImpulse;
+                    contact.cachedFrictionImpulse = oldManifold.cachedFrictionImpulse;
+                    contact.cachedImpulse = oldManifold.cachedImpulse;
                     _contacts[pair] = contact;
                 }
 
@@ -140,48 +143,82 @@ namespace stupid
                 UpdateManifold(pair);
             }
 
-            var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
+            pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
+
+            // var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
+            // Apply warm starting: Apply cached impulses before the solver iterations
+
+            /*
+            foreach (var pair in pairs)
+            {
+                var contact = _contacts[pair];
+                ApplyWarmStarting(ref contact);
+                _contacts[pair] = contact;
+            }
+            */
 
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
             {
-                foreach (var contact in sortedContacts)
+                foreach (var pair in pairs)
                 {
-                    ResolveCollision(contact);
+                    var contact = _contacts[pair];
+                    ResolveCollision(ref contact);
+                    _contacts[pair] = contact;
                 }
             }
         }
 
-        private void ResolveCollision(ContactS contact)
+        private void ApplyWarmStarting(ref ContactS contact)
+        {
+            var a = contact.a as RigidbodyS;
+            var b = contact.b as RigidbodyS;
+
+            if (a != null)
+            {
+                a.velocity += a.inverseMass * contact.cachedImpulse;
+                a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(contact.point - a.transform.position, contact.cachedImpulse);
+            }
+
+            if (b != null)
+            {
+                b.velocity -= b.inverseMass * contact.cachedImpulse;
+                b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(contact.point - b.transform.position, contact.cachedImpulse);
+            }
+
+            contact.ResetCachedImpulses();
+        }
+
+        private void ResolveCollision(ref ContactS contact)
         {
             if (contact.a.isDynamic && contact.b.isDynamic)
             {
-                ResolveDynamicCollision(contact);
+                ResolveDynamicCollision(ref contact);
             }
             else
             {
-                ResolveStaticCollision(contact);
+                ResolveStaticCollision(ref contact);
             }
         }
 
-
-        private void ResolveDynamicCollision(ContactS contact)
+        private void ResolveDynamicCollision(ref ContactS contact)
         {
             var a = (RigidbodyS)contact.a;
             var b = (RigidbodyS)contact.b;
-            ResolveContact(a, b, contact);
+            ResolveContact(a, b, ref contact);
         }
 
-        private void ResolveStaticCollision(ContactS contact)
+        private void ResolveStaticCollision(ref ContactS contact)
         {
             var body = (RigidbodyS)contact.a;
             var stat = contact.b;
-            ResolveContact(body, stat, contact, isStatic: true);
+            ResolveContact(body, stat, ref contact, isStatic: true);
         }
 
-        private void ResolveContact(RigidbodyS a, Collidable b, ContactS contact, bool isStatic = false)
+        private void ResolveContact(RigidbodyS a, Collidable b, ref ContactS contact, bool isStatic = false)
         {
             Vector3S normal = contact.normal;
+
             Vector3S ra = contact.point - a.transform.position;
             RigidbodyS? rbBody = isStatic ? null : b as RigidbodyS;
             Vector3S rb = isStatic ? Vector3S.zero : contact.point - rbBody.transform.position;
@@ -198,7 +235,8 @@ namespace stupid
             f32 baumgarteFactor = f32.one / (f32)Settings.DefaultSolverIterations;
             f32 penetrationDepth = MathS.Max(contact.penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / effectiveMass) * normal * baumgarteFactor;
-            a.transform.position += invMassA * correction;
+            var aCorrection = invMassA * correction;
+            a.transform.position += aCorrection;
             if (!isStatic)
             {
                 rbBody.transform.position -= invMassB * correction;
@@ -248,7 +286,7 @@ namespace stupid
 
             contact.cachedImpulse = normalImpulse + frictionImpulse;
             contact.cachedFrictionImpulse = frictionImpulseScalar;
+            contact.point += aCorrection;
         }
-
     }
 }
