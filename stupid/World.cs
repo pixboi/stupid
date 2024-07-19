@@ -210,14 +210,23 @@ namespace stupid
             ResolveContact(body, stat, ref contact, isStatic: true);
         }
 
+
+        private static readonly f32 BAUM = (f32)0.1;
         private void ResolveContact(RigidbodyS a, Collidable b, ref ContactS contact, bool isStatic = false)
         {
             f32 slop = Settings.DefaultContactOffset;
-            Vector3S normal = contact.normal;
-            f32 baum = (f32)0.2;
+            f32 normalSlop = (f32)0.1;
 
             var contactPointA = a.transform.position + contact.pA;
             var contactPointB = b.transform.position + contact.pB;
+
+            Vector3S normal = contact.normal;
+            if (Vector3S.DistanceSquared(contactPointA, contactPointB) > normalSlop) normal = ((contactPointA) - (contactPointB)).Normalize();
+
+            // Compute the current contact separation for a sub-step
+            f32 penetrationDepth = Vector3S.Dot((b.transform.position + contact.pB) - (a.transform.position + contact.pA), normal) + contact.penetrationDepth;
+            penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
+            if (penetrationDepth == f32.zero) return;
 
             Vector3S ra = contactPointA - a.transform.position;
             RigidbodyS? bb = isStatic ? null : b as RigidbodyS;
@@ -231,9 +240,6 @@ namespace stupid
             f32 effectiveMass = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal) +
                 (isStatic ? f32.zero : invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal));
 
-            // Compute the current contact separation for a sub-step
-            f32 penetrationDepth = Vector3S.Dot((b.transform.position + contact.pB) - (a.transform.position + contact.pA), normal) + contact.penetrationDepth;
-            penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
             Vector3S correction = (penetrationDepth / effectiveMass) * normal;
             a.transform.position += invMassA * correction;
             if (!isStatic)
@@ -248,7 +254,8 @@ namespace stupid
                 ? MathS.Min(a.material.restitution, b.material.restitution)
                 : f32.zero;
 
-            f32 baumFactor = (baum * penetrationDepth / DeltaTime);
+            //Should baum be applied to the angular impulse as well? i dont think so
+            f32 baumFactor = (BAUM * penetrationDepth / DeltaTime);
             f32 incrementalImpulse = -(f32.one + restitution) * velocityAlongNormal / effectiveMass + baumFactor;
             f32 newAccumulatedImpulse = MathS.Max(contact.cachedNormalImpulse + incrementalImpulse, f32.zero);
             f32 appliedImpulse = newAccumulatedImpulse - contact.cachedNormalImpulse;
