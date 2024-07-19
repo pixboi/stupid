@@ -26,7 +26,7 @@ namespace stupid
                 BounceThreshold = f32.two,
                 DefaultMaxDepenetrationVelocity = (f32)10,
                 SleepTreshold = (f32)0.005,
-                DefaultContactOffset = (f32)0.1,
+                DefaultContactOffset = (f32)0.01,
                 DefaultSolverIterations = 10,
                 DefaultSolverVelocityIterations = 1,
                 WorldBounds = new BoundsS(new Vector3S(0, 0, 0), new Vector3S(32, 32, 32)),

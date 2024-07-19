@@ -152,7 +152,7 @@ namespace stupid
             foreach (var pair in pairs)
             {
                 var contact = _contacts[pair];
-                ApplyWarmStarting(ref contact);
+                //ApplyWarmStarting(ref contact);
                 _contacts[pair] = contact;
             }
 
@@ -176,7 +176,7 @@ namespace stupid
         {
             var a = contact.a as RigidbodyS;
             var b = contact.b as RigidbodyS;
-           // return;
+            // return;
 
             if (a != null)
             {
@@ -224,9 +224,12 @@ namespace stupid
             f32 slop = Settings.DefaultContactOffset;
             Vector3S normal = contact.normal;
 
-            Vector3S ra = contact.point - a.transform.position;
+            var contactPointA = a.transform.position + contact.pA;
+            var contactPointB = b.transform.position + contact.pB;
+
+            Vector3S ra = contactPointA - a.transform.position;
             RigidbodyS? bb = isStatic ? null : b as RigidbodyS;
-            Vector3S rb = isStatic ? Vector3S.zero : contact.point - bb.transform.position;
+            Vector3S rb = isStatic ? Vector3S.zero : contactPointB - bb.transform.position;
 
             Vector3S relativeVelocityAtContact = a.velocity + Vector3S.Cross(a.angularVelocity, ra) -
                 (isStatic ? Vector3S.zero : bb.velocity + Vector3S.Cross(bb.angularVelocity, rb));
@@ -239,12 +242,8 @@ namespace stupid
             // Compute the current contact separation for a sub-step
             f32 penetrationDepth = Vector3S.Dot((b.transform.position + contact.pB) - (a.transform.position + contact.pA), normal) + contact.penetrationDepth;
             penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
-
-            //if (penetrationDepth == f32.zero) return;
-
             Vector3S correction = (penetrationDepth / effectiveMass) * normal;
-            var aCorrection = invMassA * correction;
-            a.transform.position += aCorrection;
+            a.transform.position += invMassA * correction;
             if (!isStatic)
             {
                 bb.transform.position -= invMassB * correction;
