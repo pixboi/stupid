@@ -29,6 +29,22 @@ namespace stupid.Colliders
             return true;
         }
 
+        public bool Intersects(BoundsS other, out Vector3S penetrationDepth)
+        {
+            penetrationDepth = Vector3S.zero;
+
+            if (max.x < other.min.x || min.x > other.max.x) return false;
+            if (max.y < other.min.y || min.y > other.max.y) return false;
+            if (max.z < other.min.z || min.z > other.max.z) return false;
+
+            // Calculate the penetration depth on each axis
+            penetrationDepth.x = (max.x < other.max.x) ? max.x - other.min.x : other.max.x - min.x;
+            penetrationDepth.y = (max.y < other.max.y) ? max.y - other.min.y : other.max.y - min.y;
+            penetrationDepth.z = (max.z < other.max.z) ? max.z - other.min.z : other.max.z - min.z;
+
+            return true;
+        }
+
         public void Union(BoundsS other) => this = Union(this, other);
         public static BoundsS Union(BoundsS a, BoundsS b)
         {
