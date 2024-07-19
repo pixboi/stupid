@@ -223,6 +223,7 @@ namespace stupid
         {
             f32 slop = Settings.DefaultContactOffset;
             Vector3S normal = contact.normal;
+            f32 baum = (f32)0.2;
 
             var contactPointA = a.transform.position + contact.pA;
             var contactPointB = b.transform.position + contact.pB;
@@ -256,7 +257,8 @@ namespace stupid
                 ? MathS.Min(a.material.restitution, b.material.restitution)
                 : f32.zero;
 
-            f32 incrementalImpulse = -(f32.one + restitution) * velocityAlongNormal / effectiveMass;
+            f32 baumFactor = (baum * penetrationDepth / DeltaTime);
+            f32 incrementalImpulse = -(f32.one + restitution) * velocityAlongNormal / effectiveMass + baumFactor;
             f32 newAccumulatedImpulse = MathS.Max(contact.cachedNormalImpulse + incrementalImpulse, f32.zero);
             f32 appliedImpulse = newAccumulatedImpulse - contact.cachedNormalImpulse;
             contact.cachedNormalImpulse = newAccumulatedImpulse;
