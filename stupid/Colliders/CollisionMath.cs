@@ -132,65 +132,29 @@ namespace stupid.Colliders
         {
             Vector3S relativePosition = b.attachedCollidable.transform.position - a.attachedCollidable.transform.position;
 
-            // Combine the primary axes from both boxes
-            _axes[0] = a.axes[0];
-            _axes[1] = a.axes[1];
-            _axes[2] = a.axes[2];
-            _axes[3] = b.axes[0];
-            _axes[4] = b.axes[1];
-            _axes[5] = b.axes[2];
-
             f32 minOverlap = f32.maxValue;
             Vector3S minAxis = Vector3S.zero;
-            int axisCount = 6;
 
-            // Check for overlaps on primary axes
-            for (int i = 0; i < 6; i++)
-            {
-                Vector3S axis = _axes[i];
-                if (!OverlapOnAxis(relativePosition, axis, a, b, out f32 overlap))
-                {
-                    return 0; // No overlap on this axis, no collision
-                }
+            // Check for overlaps on the primary axes of both boxes
+            if (!CheckOverlapOnAxis(relativePosition, a.axes[0], a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, a.axes[1], a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, a.axes[2], a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, b.axes[0], a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, b.axes[1], a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, b.axes[2], a, b, ref minOverlap, ref minAxis)) return 0;
 
-                if (overlap < minOverlap)
-                {
-                    minOverlap = overlap;
-                    minAxis = axis;
-                }
-            }
+            // Check for overlaps on the cross product of axes pairs
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[0]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[1]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[2]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[0]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[1]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[2]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[0]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[1]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[2]).Normalize(), a, b, ref minOverlap, ref minAxis)) return 0;
 
-            // Cross product of each axis pair
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    Vector3S cross = Vector3S.Cross(a.axes[i], b.axes[j]);
-                    if (cross.sqrMagnitude > f32.epsilon)
-                    {
-                        _axes[axisCount++] = cross.Normalize();
-                    }
-                }
-            }
-
-            // Check for overlaps on cross product axes
-            for (int i = 6; i < axisCount; i++)
-            {
-                Vector3S axis = _axes[i];
-                if (!OverlapOnAxis(relativePosition, axis, a, b, out f32 overlap))
-                {
-                    return 0; // No overlap on this axis, no collision
-                }
-
-                if (overlap < minOverlap)
-                {
-                    minOverlap = overlap;
-                    minAxis = axis;
-                }
-            }
-
-            Vector3S normal = minAxis;
-            normal.Normalize();
+            Vector3S normal = minAxis.Normalize();
 
             // Flip the normal if it's pointing in the wrong direction
             if (Vector3S.Dot(normal, relativePosition) > f32.zero)
@@ -201,7 +165,7 @@ namespace stupid.Colliders
             Vector3S contactPoint = FindContactPoint(a, b);
             f32 penetrationDepth = minOverlap;
 
-            if (_contactPoints.Count > 0)
+            if (contactPoint != Vector3S.zero)
             {
                 contact.point = contactPoint;
                 contact.normal = normal;
@@ -210,6 +174,24 @@ namespace stupid.Colliders
             }
 
             return 0;
+        }
+
+        private static bool CheckOverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, ref f32 minOverlap, ref Vector3S minAxis)
+        {
+            if (axis.sqrMagnitude <= f32.epsilon) return true; // Skip zero-length axes
+
+            if (!OverlapOnAxis(relativePosition, axis, a, b, out f32 overlap))
+            {
+                return false; // No overlap on this axis, no collision
+            }
+
+            if (overlap < minOverlap)
+            {
+                minOverlap = overlap;
+                minAxis = axis;
+            }
+
+            return true;
         }
 
         private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, out f32 overlap)
@@ -235,43 +217,37 @@ namespace stupid.Colliders
         {
             _contactPoints.Clear();
 
-            foreach (var vertexA in a.vertices)
-            {
-                if (IsPointInsideOBB(vertexA, b.attachedCollidable.transform.position, b.halfSize, b.attachedCollidable.transform.rotationMatrix))
-                {
-                    _contactPoints.Add(vertexA);
-                }
-            }
-
-            foreach (var vertexB in b.vertices)
-            {
-                if (IsPointInsideOBB(vertexB, a.attachedCollidable.transform.position, a.halfSize, a.attachedCollidable.transform.rotationMatrix))
-                {
-                    _contactPoints.Add(vertexB);
-                }
-            }
+            AddContactPointsIfInsideOBB(a.vertices, b, b.attachedCollidable.transform.position, b.halfSize, b.attachedCollidable.transform.rotationMatrix);
+            AddContactPointsIfInsideOBB(b.vertices, a, a.attachedCollidable.transform.position, a.halfSize, a.attachedCollidable.transform.rotationMatrix);
 
             if (_contactPoints.Count == 0)
             {
                 return Vector3S.zero;
             }
 
-            Vector3S minPoint = _contactPoints[0];
-            Vector3S maxPoint = _contactPoints[0];
+            return CalculateAverageContactPoint();
+        }
 
-            foreach (var point in _contactPoints)
+        private static void AddContactPointsIfInsideOBB(Vector3S[] vertices, BoxColliderS box, Vector3S position, Vector3S halfSize, Matrix3S rotation)
+        {
+            for (int i = 0; i < vertices.Length; i++)
             {
-                if (point.x < minPoint.x) minPoint.x = point.x;
-                if (point.y < minPoint.y) minPoint.y = point.y;
-                if (point.z < minPoint.z) minPoint.z = point.z;
+                if (IsPointInsideOBB(vertices[i], position, halfSize, rotation))
+                {
+                    _contactPoints.Add(vertices[i]);
+                }
+            }
+        }
 
-                if (point.x > maxPoint.x) maxPoint.x = point.x;
-                if (point.y > maxPoint.y) maxPoint.y = point.y;
-                if (point.z > maxPoint.z) maxPoint.z = point.z;
+        private static Vector3S CalculateAverageContactPoint()
+        {
+            Vector3S sum = Vector3S.zero;
+            for (int i = 0; i < _contactPoints.Count; i++)
+            {
+                sum += _contactPoints[i];
             }
 
-            Vector3S contactPoint = (minPoint + maxPoint) * f32.half;
-            return contactPoint;
+            return sum / (f32)_contactPoints.Count;
         }
 
         private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S rotation)
