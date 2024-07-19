@@ -5,7 +5,7 @@ namespace stupid.Colliders
     public struct ContactS
     {
         public Collidable a, b;
-        public Vector3S point, pA, Pb;
+        public Vector3S point, pA, pB;
         public Vector3S normal;
         public f32 penetrationDepth;
 
@@ -20,7 +20,7 @@ namespace stupid.Colliders
             this.b = b;
             this.point = point;
             this.pA = point - a.transform.position;
-            this.Pb = point - b.transform.position;
+            this.pB = point - b.transform.position;
             this.normal = normal;
             this.penetrationDepth = penetrationDepth;
 
@@ -33,7 +33,7 @@ namespace stupid.Colliders
         public void CalculateRelativePoints()
         {
             this.pA = point - a.transform.position;
-            this.Pb = point - b.transform.position;
+            this.pB = point - b.transform.position;
         }
 
         public void ResetCachedImpulses()
