@@ -81,6 +81,8 @@ namespace stupid.Maths
             a.x * b.y - a.y * b.x
         );
 
+        public Vector3S Cross(Vector3S b) => Cross(this, b);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
         {

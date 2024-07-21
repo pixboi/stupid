@@ -212,70 +212,76 @@ namespace stupid
 
 
         private static readonly f32 BAUM = (f32)0.2;
-        private void ResolveContact(RigidbodyS a, Collidable b, ref ContactS contact, bool isStatic = false)
+        private void ResolveContact(RigidbodyS a, Collidable bStat, ref ContactS contact, bool isStatic = false)
         {
+            RigidbodyS? b = isStatic ? null : bStat as RigidbodyS;
+
             f32 slop = Settings.DefaultContactOffset;
             f32 normalSlop = (f32)1;
 
             var contactPointA = a.transform.position + contact.pA;
-            var contactPointB = b.transform.position + contact.pB;
+            var contactPointB = bStat.transform.position + contact.pB;
 
             Vector3S normal = contact.normal;
-            if (Vector3S.DistanceSquared(contactPointA, contactPointB) > normalSlop) normal = ((contactPointA) - (contactPointB)).Normalize();
+            //if (Vector3S.DistanceSquared(contactPointA, contactPointB) > normalSlop) normal = ((contactPointA) - (contactPointB)).Normalize();
 
             // Compute the current contact separation for a sub-step
-            f32 penetrationDepth = Vector3S.Dot((b.transform.position + contact.pB) - (a.transform.position + contact.pA), normal) + contact.penetrationDepth;
+            f32 penetrationDepth = Vector3S.Dot((bStat.transform.position + contact.pB) - (a.transform.position + contact.pA), normal) + contact.penetrationDepth;
             penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
-            if (penetrationDepth == f32.zero) return;
+            //if (penetrationDepth == f32.zero) return;
 
             Vector3S ra = contactPointA - a.transform.position;
-            RigidbodyS? bb = isStatic ? null : b as RigidbodyS;
-            Vector3S rb = isStatic ? Vector3S.zero : contactPointB - bb.transform.position;
+            Vector3S rb = isStatic ? Vector3S.zero : contactPointB - b.transform.position;
 
             Vector3S relativeVelocityAtContact = a.velocity + Vector3S.Cross(a.angularVelocity, ra) -
-                (isStatic ? Vector3S.zero : bb.velocity + Vector3S.Cross(bb.angularVelocity, rb));
+                (isStatic ? Vector3S.zero : b.velocity + Vector3S.Cross(b.angularVelocity, rb));
 
             f32 invMassA = a.inverseMass;
-            f32 invMassB = isStatic ? f32.zero : bb.inverseMass;
+            f32 invMassB = isStatic ? f32.zero : b.inverseMass;
             f32 effectiveMass = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal) +
-                (isStatic ? f32.zero : invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal));
+                (isStatic ? f32.zero : invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal));
 
             Vector3S correction = (penetrationDepth / effectiveMass) * normal;
             a.transform.position += invMassA * correction;
-            if (!isStatic)
-            {
-                bb.transform.position -= invMassB * correction;
-            }
+            if (!isStatic) b.transform.position -= invMassB * correction;
 
             f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
             if (velocityAlongNormal > f32.zero) return;
 
             f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
-                ? MathS.Min(a.material.restitution, b.material.restitution)
+                ? MathS.Min(a.material.restitution, bStat.material.restitution)
                 : f32.zero;
 
-            //Should baum be applied to the angular impulse as well? i dont think so
+            // Calculate Baumgarte term separately for linear velocity correction
             f32 baumFactor = (BAUM * penetrationDepth / DeltaTime);
-            f32 incrementalImpulse = -(f32.one + restitution) * velocityAlongNormal / effectiveMass + baumFactor;
+            f32 incrementalImpulse = -(f32.one + restitution) * velocityAlongNormal / effectiveMass;
             f32 newAccumulatedImpulse = MathS.Max(contact.cachedNormalImpulse + incrementalImpulse, f32.zero);
             f32 appliedImpulse = newAccumulatedImpulse - contact.cachedNormalImpulse;
             contact.cachedNormalImpulse = newAccumulatedImpulse;
 
             Vector3S normalImpulse = appliedImpulse * normal;
-            a.velocity += invMassA * normalImpulse;
+
+            // Apply linear velocity impulse including Baumgarte term
+            Vector3S linearImpulseWithBaum = normalImpulse + (baumFactor * normal);
+            a.velocity += invMassA * linearImpulseWithBaum;
+            if (!isStatic)
+            {
+                b.velocity -= invMassB * linearImpulseWithBaum;
+            }
+
+            // Apply angular velocity impulse without Baumgarte term
             a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
             if (!isStatic)
             {
-                bb.velocity -= invMassB * normalImpulse;
-                bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
+                b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
             }
 
             Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
             Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
             f32 frictionDenominator = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent) +
-                (isStatic ? f32.zero : invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent));
+                (isStatic ? f32.zero : invMassB + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent));
             f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
-            f32 effectiveFriction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
+            f32 effectiveFriction = (a.material.staticFriction + bStat.material.staticFriction) * f32.half;
 
             Vector3S frictionImpulse = frictionImpulseScalar * tangent;
             if (frictionImpulse.Magnitude() > appliedImpulse * effectiveFriction)
@@ -287,8 +293,8 @@ namespace stupid
             a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
             if (!isStatic)
             {
-                bb.velocity -= invMassB * frictionImpulse;
-                bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+                b.velocity -= invMassB * frictionImpulse;
+                b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
             }
 
             contact.cachedImpulse = normalImpulse + frictionImpulse;

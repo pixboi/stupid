@@ -9,6 +9,7 @@ namespace stupid.Colliders
         public Vector3S[] vertices { get; private set; }
         public Vector3S[] axes { get; private set; }
         public EdgeS[] edges { get; private set; }
+        public FaceS[] faces { get; private set; }
 
         public BoxColliderS(Vector3S size)
         {
@@ -17,6 +18,7 @@ namespace stupid.Colliders
             this.vertices = new Vector3S[8];
             this.axes = new Vector3S[3];
             this.edges = new EdgeS[12];
+            this.faces = new FaceS[6];
 
             if (this.collidable != null)
                 UpdateBox();
@@ -50,6 +52,7 @@ namespace stupid.Colliders
             axes[2] = rotMat.GetColumn(2);
 
             UpdateEdges();
+            UpdateFaces();
         }
 
         private void UpdateEdges()
@@ -72,6 +75,17 @@ namespace stupid.Colliders
             edges[10] = new EdgeS(vertices[5], vertices[7]);
 
             edges[11] = new EdgeS(vertices[6], vertices[7]);
+        }
+
+        private void UpdateFaces()
+        {
+            // Define the faces using vertices and normals
+            faces[0] = new FaceS(vertices[0], vertices[1], vertices[5], vertices[4], axes[2]);
+            faces[1] = new FaceS(vertices[2], vertices[3], vertices[7], vertices[6], -axes[2]);
+            faces[2] = new FaceS(vertices[0], vertices[2], vertices[6], vertices[4], axes[1]);
+            faces[3] = new FaceS(vertices[1], vertices[3], vertices[7], vertices[5], -axes[1]);
+            faces[4] = new FaceS(vertices[0], vertices[1], vertices[3], vertices[2], axes[0]);
+            faces[5] = new FaceS(vertices[4], vertices[5], vertices[7], vertices[6], -axes[0]);
         }
 
         public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
@@ -126,7 +140,6 @@ namespace stupid.Colliders
         }
     }
 
-
     public readonly struct EdgeS
     {
         public readonly Vector3S start;
@@ -136,6 +149,24 @@ namespace stupid.Colliders
         {
             this.start = start;
             this.end = end;
+        }
+    }
+
+    public readonly struct FaceS
+    {
+        public readonly Vector3S vertex1;
+        public readonly Vector3S vertex2;
+        public readonly Vector3S vertex3;
+        public readonly Vector3S vertex4;
+        public readonly Vector3S normal;
+
+        public FaceS(Vector3S vertex1, Vector3S vertex2, Vector3S vertex3, Vector3S vertex4, Vector3S normal)
+        {
+            this.vertex1 = vertex1;
+            this.vertex2 = vertex2;
+            this.vertex3 = vertex3;
+            this.vertex4 = vertex4;
+            this.normal = normal;
         }
     }
 }

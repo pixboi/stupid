@@ -1,4 +1,5 @@
 ﻿using stupid.Maths;
+using System.Collections.Generic;
 
 namespace stupid.Colliders
 {
@@ -26,7 +27,7 @@ namespace stupid.Colliders
                 normal = -normal;
             }
 
-            Vector3S contactPoint = FindContactPoint(a, b, normal);
+            Vector3S contactPoint = FindContactPoint(a, b);
             f32 penetrationDepth = minOverlap;
 
             if (contactPoint != Vector3S.zero)
@@ -98,7 +99,7 @@ namespace stupid.Colliders
                 halfSize.z * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(2), axis));
         }
 
-        private static Vector3S FindContactPoint(BoxColliderS a, BoxColliderS b, Vector3S normal)
+        private static Vector3S FindContactPoint(BoxColliderS a, BoxColliderS b)
         {
             _contactPoints.Clear();
 
@@ -135,6 +136,5 @@ namespace stupid.Colliders
             Vector3S localPoint = rotation.Transpose() * (point - position);
             return MathS.Abs(localPoint.x) <= halfSize.x && MathS.Abs(localPoint.y) <= halfSize.y && MathS.Abs(localPoint.z) <= halfSize.z;
         }
-
     }
 }
