@@ -156,6 +156,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S ClampMagnitude(f32 min, f32 max) => ClampMagnitude(this, min, max);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S ClampMagnitude(Vector3S v, f32 min, f32 max)
         {
             f32 sqrMagnitude = v.sqrMagnitude;
@@ -172,6 +173,7 @@ namespace stupid.Maths
             return v;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Rotate(QuaternionS rotation)
         {
             var qVector = new QuaternionS(x, y, z, f32.zero);

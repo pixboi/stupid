@@ -17,19 +17,20 @@ namespace stupidtests
             int iterations = 100;
 
             var random = new Random(1);
-            var settings = new WorldSettings();
+            var settings = WorldSettings.Default();
             var dt = (f32)0.02;
             var world = new World(settings, iterations);
 
             var ground = new BoxColliderS(new Vector3S(256, 2, 256));
-            var groundTransform = new TransformS(Vector3S.zero, QuaternionS.identity);
+            var groundTransform = new TransformS(new Vector3S(0, -2, 0), QuaternionS.identity);
             var g = new Collidable(-1, ground, false, groundTransform);
             world.AddCollidable(g);
 
             for (int i = 0; i < iterations; i++)
             {
+                var randomVector = new Vector3S((f32)random.NextSingle(), (f32)random.NextSingle(), (f32)random.NextSingle());
                 var transform = new TransformS();
-                transform.position = Vector3S.one * (f32)random.NextSingle() * (f32)1;
+                transform.position = randomVector;
                 var box = new BoxColliderS(Vector3S.one);
                 var body = new RigidbodyS(-1, box, true, transform);
                 world.AddCollidable(body);

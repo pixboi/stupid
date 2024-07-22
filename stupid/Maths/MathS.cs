@@ -71,6 +71,7 @@ namespace stupid.Maths
             return result;
         }
 
+
         public static f32 Sqrt(f32 value)
         {
             if (value < f32.zero) throw new ArgumentOutOfRangeException(nameof(value), "Cannot compute square root of a negative value.");

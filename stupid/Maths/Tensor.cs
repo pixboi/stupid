@@ -1,4 +1,6 @@
-﻿namespace stupid.Maths
+﻿using System.Runtime.CompilerServices;
+
+namespace stupid.Maths
 {
     public struct Tensor
     {
@@ -22,6 +24,7 @@
 
         public Matrix3S inertiaWorld { get; private set; }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculateInverseInertiaTensor(QuaternionS rotation)
         {
             // Compute the world space inertia tensor using cached and precomputed values
@@ -31,6 +34,7 @@
             inertiaWorld = MultiplyTransposed(rotationMatrix, inertiaInverse);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Matrix3S MultiplyTransposed(Matrix3S rotationMatrix, Matrix3S inertiaTensorLocal)
         {
             // Optimize combined multiplication without explicitly calculating the transpose

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
@@ -8,6 +9,7 @@ namespace stupid.Maths
         public readonly f32 m10, m11, m12;
         public readonly f32 m20, m21, m22;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S(f32 m00, f32 m01, f32 m02, f32 m10, f32 m11, f32 m12, f32 m20, f32 m21, f32 m22)
         {
             this.m00 = m00;
@@ -21,6 +23,7 @@ namespace stupid.Maths
             this.m22 = m22;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S(Vector3S row1, Vector3S row2, Vector3S row3)
         {
             m00 = row1.x;
@@ -34,6 +37,7 @@ namespace stupid.Maths
             m22 = row3.z;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S GetColumn(int index)
         {
             switch (index)
@@ -49,6 +53,7 @@ namespace stupid.Maths
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(Matrix3S m, Vector3S v)
         {
             return new Vector3S(
@@ -58,6 +63,7 @@ namespace stupid.Maths
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S operator *(Matrix3S a, Matrix3S b)
         {
             return new Matrix3S(
@@ -67,6 +73,7 @@ namespace stupid.Maths
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S Transpose()
         {
             return new Matrix3S(
@@ -76,6 +83,7 @@ namespace stupid.Maths
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S Scale(Vector3S v)
         {
             return new Matrix3S(
@@ -85,6 +93,7 @@ namespace stupid.Maths
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S Rotate(QuaternionS q)
         {
             f32 xx = q.x * q.x;
@@ -104,6 +113,7 @@ namespace stupid.Maths
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S Inverse()
         {
             f32 determinant =
