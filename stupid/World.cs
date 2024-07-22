@@ -38,6 +38,7 @@ namespace stupid
             DeltaTime = deltaTime;
             IntegrateBodies(deltaTime);
             RecalculatePositionsAndBounds();
+
             var pairs = Broadphase.ComputePairs(Collidables);
             NarrowPhase(pairs);
             SimulationFrame++;

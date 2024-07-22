@@ -29,6 +29,7 @@ namespace stupid
             endpointsZ = new AxisEndpoint[initialCapacity * 2];
             pairs = new HashSet<BodyPair>(initialCapacity * initialCapacity, new BodyPairComparer());
             activeList = new Collidable[initialCapacity];
+            overlapCount = new int[initialCapacity * initialCapacity];
         }
 
         private void Rebuild(DumbList<Collidable> rigidbodies)
@@ -66,7 +67,7 @@ namespace stupid
             }
 
             pairs.Clear();
-            System.Array.Clear(overlapCount, 0, overlapCount.Length);
+            Array.Clear(overlapCount, 0, overlapCount.Length);
 
             UpdateEndpoints(endpointsX, 0);
             UpdateEndpoints(endpointsY, 1);
