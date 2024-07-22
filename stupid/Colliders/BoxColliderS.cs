@@ -121,7 +121,7 @@ namespace stupid.Colliders
             return 0;
         }
 
-        static readonly f32 boxInertia = (f32)1 / (f32)12;
+        static readonly f32 boxInertia = f32.FromFloat(0.08333333333f);
         public override Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // For a solid box: I = 1/12 * m * (h^2 + d^2) for each axis

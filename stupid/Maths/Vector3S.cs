@@ -72,8 +72,10 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Dot(Vector3S a, Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Dot(Vector3S b) => Dot(this, b);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S ProjectPointOnPlane(Vector3S point, Vector3S planeNormal, Vector3S planePoint)
         {
             Vector3S toPoint = point - planePoint;
@@ -88,6 +90,7 @@ namespace stupid.Maths
             a.x * b.y - a.y * b.x
         );
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Cross(Vector3S b) => Cross(this, b);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

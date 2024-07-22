@@ -1,10 +1,13 @@
 ﻿using stupid.Maths;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS contact)
         {
             Vector3S relativePosition = b.collidable.transform.position - a.collidable.transform.position;
@@ -41,27 +44,30 @@ namespace stupid.Colliders
             return 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool CheckOverlapOnAxes(Vector3S relativePosition, Vector3S[] axes, BoxColliderS a, BoxColliderS b, ref f32 minOverlap, ref Vector3S minAxis)
         {
-            foreach (var axis in axes)
+            for (int i = 0; i < axes.Length; i++)
             {
-                if (!CheckOverlapOnAxis(relativePosition, axis, a, b, ref minOverlap, ref minAxis)) return false;
+                if (!CheckOverlapOnAxis(relativePosition, axes[i], a, b, ref minOverlap, ref minAxis)) return false;
             }
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool CheckOverlapOnCrossAxes(Vector3S relativePosition, Vector3S[] axesA, Vector3S[] axesB, BoxColliderS a, BoxColliderS b, ref f32 minOverlap, ref Vector3S minAxis)
         {
-            foreach (var axisA in axesA)
+            for (int i = 0; i < axesA.Length; i++)
             {
-                foreach (var axisB in axesB)
+                for (int j = 0; j < axesB.Length; j++)
                 {
-                    if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(axisA, axisB), a, b, ref minOverlap, ref minAxis)) return false;
+                    if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(axesA[i], axesB[j]), a, b, ref minOverlap, ref minAxis)) return false;
                 }
             }
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool CheckOverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, ref f32 minOverlap, ref Vector3S minAxis)
         {
             if (axis.sqrMagnitude <= f32.epsilon) return true; // Skip zero-length axes
@@ -80,6 +86,7 @@ namespace stupid.Colliders
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, out f32 overlap)
         {
             f32 projectionA = ProjectBox(axis, a);
@@ -89,6 +96,7 @@ namespace stupid.Colliders
             return overlap > f32.zero;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static f32 ProjectBox(Vector3S axis, BoxColliderS box)
         {
             Vector3S halfSize = box.halfSize;
@@ -99,6 +107,7 @@ namespace stupid.Colliders
                 halfSize.z * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(2), axis));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3S FindContactPoint(BoxColliderS a, BoxColliderS b)
         {
             _contactPoints.Clear();
@@ -120,17 +129,19 @@ namespace stupid.Colliders
             return sum / (f32)_contactPoints.Count;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void AddContactPointsIfInsideOBB(Vector3S[] vertices, Vector3S position, Vector3S halfSize, Matrix3S rotation)
         {
-            foreach (var vertex in vertices)
+            for (int i = 0; i < vertices.Length; i++)
             {
-                if (IsPointInsideOBB(vertex, position, halfSize, rotation))
+                if (IsPointInsideOBB(vertices[i], position, halfSize, rotation))
                 {
-                    _contactPoints.Add(vertex);
+                    _contactPoints.Add(vertices[i]);
                 }
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S rotation)
         {
             Vector3S localPoint = rotation.Transpose() * (point - position);

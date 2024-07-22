@@ -3,15 +3,6 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public static class f32helpers
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long ToRaw(this f32 value)
-        {
-            return value._value;
-        }
-    }
-
     public readonly struct f32 : IEquatable<f32>, IComparable<f32>
     {
         public readonly long _value;
@@ -34,6 +25,12 @@ namespace stupid.Maths
         private f32(long value)
         {
             _value = value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public long ToRaw()
+        {
+            return _value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

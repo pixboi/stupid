@@ -29,7 +29,7 @@ namespace stupidtests
             for (int i = 0; i < iterations; i++)
             {
                 var transform = new TransformS();
-                transform.position = Vector3S.one * (f32)random.NextSingle() * (f32)4;
+                transform.position = Vector3S.one * (f32)random.NextSingle() * (f32)1;
                 var box = new BoxColliderS(Vector3S.one);
                 var body = new RigidbodyS(-1, box, true, transform);
                 world.AddCollidable(body);

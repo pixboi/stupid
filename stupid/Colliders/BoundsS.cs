@@ -1,6 +1,7 @@
 using stupid.Maths;
 using System.Numerics;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
