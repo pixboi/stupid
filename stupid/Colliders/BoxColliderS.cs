@@ -138,35 +138,22 @@ namespace stupid.Colliders
                 new Vector3S(f32.zero, f32.zero, inertiaZ)
             );
         }
-    }
 
-    public readonly struct EdgeS
-    {
-        public readonly Vector3S start;
-        public readonly Vector3S end;
-
-        public EdgeS(Vector3S start, Vector3S end)
+        public Vector3S GetFarthestPointInDirection(Vector3S direction)
         {
-            this.start = start;
-            this.end = end;
-        }
-    }
+            // Transform the direction to local space
+            Vector3S localDirection = collidable.transform.InverseTransformDirection(direction);
 
-    public readonly struct FaceS
-    {
-        public readonly Vector3S vertex1;
-        public readonly Vector3S vertex2;
-        public readonly Vector3S vertex3;
-        public readonly Vector3S vertex4;
-        public readonly Vector3S normal;
+            // Determine the farthest point in local space
+            Vector3S farthestPoint = new Vector3S(
+                localDirection.x >= f32.zero ? halfSize.x : -halfSize.x,
+                localDirection.y >= f32.zero ? halfSize.y : -halfSize.y,
+                localDirection.z >= f32.zero ? halfSize.z : -halfSize.z
+            );
 
-        public FaceS(Vector3S vertex1, Vector3S vertex2, Vector3S vertex3, Vector3S vertex4, Vector3S normal)
-        {
-            this.vertex1 = vertex1;
-            this.vertex2 = vertex2;
-            this.vertex3 = vertex3;
-            this.vertex4 = vertex4;
-            this.normal = normal;
+            // Transform the farthest point back to world space
+            return collidable.transform.ToWorldPoint(farthestPoint);
         }
+
     }
 }

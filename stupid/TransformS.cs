@@ -38,6 +38,30 @@ namespace stupid
             return (rotationMatrix * localPoint) + position;
         }
 
+        // Converts world direction to local direction
+        public Vector3S InverseTransformDirection(Vector3S worldDirection)
+        {
+            return rotationMatrix.Transpose() * worldDirection; // Assuming rotationMatrix is orthogonal
+        }
+
+        // Converts local direction to world direction
+        public Vector3S TransformDirection(Vector3S localDirection)
+        {
+            return rotationMatrix * localDirection;
+        }
+
+        // Converts world vector to local vector
+        public Vector3S InverseTransformVector(Vector3S worldVector)
+        {
+            return rotationMatrix.Transpose() * worldVector; // Assuming rotationMatrix is orthogonal
+        }
+
+        // Converts local vector to world vector
+        public Vector3S TransformVector(Vector3S localVector)
+        {
+            return rotationMatrix * localVector;
+        }
+
         // Translates the transform by a given vector
         public void Translate(Vector3S translation)
         {

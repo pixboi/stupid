@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public  struct Vector3S : IEquatable<Vector3S>
+    public struct Vector3S : IEquatable<Vector3S>
     {
         public f32 x, y, z;
 
@@ -73,6 +73,13 @@ namespace stupid.Maths
         public static f32 Dot(Vector3S a, Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
 
         public f32 Dot(Vector3S b) => Dot(this, b);
+
+        public static Vector3S ProjectPointOnPlane(Vector3S point, Vector3S planeNormal, Vector3S planePoint)
+        {
+            Vector3S toPoint = point - planePoint;
+            f32 distance = Vector3S.Dot(toPoint, planeNormal);
+            return point - planeNormal * distance;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S Cross(Vector3S a, Vector3S b) => new Vector3S(
