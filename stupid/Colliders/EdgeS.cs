@@ -4,13 +4,13 @@ namespace stupid.Colliders
 {
     public readonly struct EdgeS
     {
-        public readonly Vector3S start;
-        public readonly Vector3S end;
+        public readonly int a;
+        public readonly int b;
 
-        public EdgeS(Vector3S start, Vector3S end)
+        public EdgeS(int a, int b)
         {
-            this.start = start;
-            this.end = end;
+            this.a = a;
+            this.b = b;
         }
     }
 }

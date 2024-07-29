@@ -10,8 +10,8 @@ namespace stupid.Colliders
         public Vector3S halfSize { get; private set; }
         public Vector3S[] vertices { get; private set; }
         public Vector3S[] axes { get; private set; }
-        public EdgeS[] edges { get; private set; }
-        public FaceS[] faces { get; private set; }
+        public int[] edges { get; private set; }
+        public int[] triangles { get; private set; }
 
         public BoxColliderS(Vector3S size)
         {
@@ -19,8 +19,8 @@ namespace stupid.Colliders
             this.halfSize = size * f32.half;
             this.vertices = new Vector3S[8];
             this.axes = new Vector3S[3];
-            this.edges = new EdgeS[12];
-            this.faces = new FaceS[6];
+            this.edges = new int[12];
+            this.triangles = new int[6];
 
             if (this.collidable != null)
                 UpdateBox();
@@ -55,37 +55,9 @@ namespace stupid.Colliders
             axes[1] = rotMat.GetColumn(1);
             axes[2] = rotMat.GetColumn(2);
 
-            // Update edges and faces
-            UpdateEdges();
-            UpdateFaces();
+            //Put edges and triangles, edge has 2 stride, triangle 3
         }
 
-        private void UpdateEdges()
-        {
-            edges[0] = new EdgeS(vertices[0], vertices[1]);
-            edges[1] = new EdgeS(vertices[0], vertices[2]);
-            edges[2] = new EdgeS(vertices[0], vertices[4]);
-            edges[3] = new EdgeS(vertices[1], vertices[3]);
-            edges[4] = new EdgeS(vertices[1], vertices[5]);
-            edges[5] = new EdgeS(vertices[2], vertices[3]);
-            edges[6] = new EdgeS(vertices[2], vertices[6]);
-            edges[7] = new EdgeS(vertices[3], vertices[7]);
-            edges[8] = new EdgeS(vertices[4], vertices[5]);
-            edges[9] = new EdgeS(vertices[4], vertices[6]);
-            edges[10] = new EdgeS(vertices[5], vertices[7]);
-            edges[11] = new EdgeS(vertices[6], vertices[7]);
-        }
-
-        private void UpdateFaces()
-        {
-            // Define the faces using vertices and normals
-            faces[0] = new FaceS(vertices[0], vertices[1], vertices[5], vertices[4], axes[2]);
-            faces[1] = new FaceS(vertices[2], vertices[3], vertices[7], vertices[6], -axes[2]);
-            faces[2] = new FaceS(vertices[0], vertices[2], vertices[6], vertices[4], axes[1]);
-            faces[3] = new FaceS(vertices[1], vertices[3], vertices[7], vertices[5], -axes[1]);
-            faces[4] = new FaceS(vertices[0], vertices[1], vertices[3], vertices[2], axes[0]);
-            faces[5] = new FaceS(vertices[4], vertices[5], vertices[7], vertices[6], -axes[0]);
-        }
 
         public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
         {
