@@ -1,14 +1,14 @@
-﻿using System;
+﻿using stupid.Maths;
+using System;
 using System.Collections.Generic;
-using stupid.Maths;
 
 namespace stupid.Colliders
 {
     public static class GJK_Solver
     {
-        private const int MaxIterations = 100; // Maximum number of iterations to prevent infinite loop
+        private const int MaxIterations = 32; // Maximum number of iterations to prevent infinite loop
 
-        public static bool Intersect(BoxColliderS a, BoxColliderS b, out ContactS contact, bool debug = false)
+        public static bool Intersect(BoxColliderS a, BoxColliderS b, out ContactS contact)
         {
             contact = new ContactS();
             Vector3S initialDirection = b.collidable.transform.position - a.collidable.transform.position;
@@ -24,11 +24,6 @@ namespace stupid.Colliders
                 iterations++;
                 support = Support(a, b, direction);
 
-                if (debug)
-                {
-                    Console.WriteLine($"Iteration: {iterations}, Support: {support}, Direction: {direction}");
-                }
-
                 if (Vector3S.Dot(support, direction) <= f32.zero)
                 {
                     return false; // No collision
@@ -38,23 +33,101 @@ namespace stupid.Colliders
 
                 if (HandleSimplex(simplex, ref direction))
                 {
-                    // Perform EPA to find contact point and normal
-                    return EPA(a, b, simplex, out contact);
-                }
-            }
 
-            if (debug)
-            {
-                Console.WriteLine("GJK failed to converge within the iteration limit.");
+                    EPA(simplex, a, b, out contact);
+                    return true; // Collision detected
+                }
             }
 
             return false; // If the loop exits without returning, assume no collision
         }
 
+        public static bool EPA(List<Vector3S> simplex, BoxColliderS a, BoxColliderS b, out ContactS contact)
+        {
+            contact = new ContactS();
+            List<Vector3S> polytope = new List<Vector3S>(simplex);
+            List<(Vector3S, Vector3S, Vector3S)> faces = new List<(Vector3S, Vector3S, Vector3S)>
+    {
+        (polytope[0], polytope[1], polytope[2]),
+        (polytope[0], polytope[2], polytope[3]),
+        (polytope[0], polytope[3], polytope[1]),
+        (polytope[1], polytope[3], polytope[2])
+    };
+
+            Vector3S minNormal = default;
+            f32 minDistance = f32.maxValue;
+            int maxIterations = 64; // Prevent infinite loops
+            int iteration = 0;
+
+            while (minDistance == f32.maxValue && iteration < maxIterations)
+            {
+                iteration++;
+                (Vector3S a, Vector3S b, Vector3S c) closestFace = default;
+                minDistance = f32.maxValue;
+
+                for (int i = 0; i < faces.Count; i++)
+                {
+                    var face = faces[i];
+                    Vector3S normal = Vector3S.Cross(face.Item2 - face.Item1, face.Item3 - face.Item1).Normalize();
+                    f32 distance = Vector3S.Dot(normal, face.Item1);
+
+                    if (distance < f32.zero)
+                    {
+                        distance *= f32.negativeOne;
+                        normal = -normal;
+                    }
+
+                    if (distance < minDistance)
+                    {
+                        minDistance = distance;
+                        minNormal = normal;
+                        closestFace = face;
+                    }
+                }
+
+                Vector3S support = Support(a, b, minNormal);
+                f32 sDistance = Vector3S.Dot(minNormal, support);
+
+                if (MathS.Abs(sDistance - minDistance) > f32.epsilon)
+                {
+                    polytope.Add(support);
+
+                    faces.Remove(closestFace);
+                    faces.Add((closestFace.a, closestFace.b, support));
+                    faces.Add((closestFace.b, closestFace.c, support));
+                    faces.Add((closestFace.c, closestFace.a, support));
+
+                    minDistance = f32.maxValue; // Reset minDistance to continue the loop
+                }
+            }
+
+            if (iteration >= maxIterations)
+            {
+                contact = new ContactS
+                {
+                    point = Vector3S.zero,
+                    normal = Vector3S.zero,
+                    penetrationDepth = f32.zero
+                };
+                return false;
+            }
+
+            contact = new ContactS
+            {
+                point = polytope[0], // This might need to be refined for the actual closest point on the polytope
+                normal = minNormal,
+                penetrationDepth = minDistance + f32.epsilon
+            };
+
+            return true;
+        }
+
+
+
         private static Vector3S Support(BoxColliderS a, BoxColliderS b, Vector3S direction)
         {
-            Vector3S pointA = a.GetFarthestPointInDirection(direction);
-            Vector3S pointB = b.GetFarthestPointInDirection(-direction);
+            Vector3S pointA = a.SupportFunction(direction);
+            Vector3S pointB = b.SupportFunction(-direction);
             return pointA - pointB;
         }
 
@@ -175,92 +248,5 @@ namespace stupid.Colliders
             }
             return false;
         }
-
-        private static bool EPA(BoxColliderS a, BoxColliderS b, List<Vector3S> simplex, out ContactS contact)
-        {
-            contact = new ContactS();
-
-            List<Vector3S> polytope = new List<Vector3S>(simplex);
-            List<(Vector3S, Vector3S, Vector3S)> faces = new List<(Vector3S, Vector3S, Vector3S)>();
-            List<Vector3S> normals = new List<Vector3S>();
-            f32 penetrationDepth = f32.zero;
-
-            int iterations = 0;
-
-            // Initialize the faces of the polytope from the simplex
-            if (simplex.Count == 4)
-            {
-                AddFace(faces, normals, simplex[0], simplex[1], simplex[2]);
-                AddFace(faces, normals, simplex[0], simplex[1], simplex[3]);
-                AddFace(faces, normals, simplex[0], simplex[2], simplex[3]);
-                AddFace(faces, normals, simplex[1], simplex[2], simplex[3]);
-            }
-
-            while (iterations < MaxIterations)
-            {
-                iterations++;
-                f32 minDistance = f32.maxValue;
-                int closestFaceIndex = -1;
-
-                // Find the closest face to the origin
-                for (int i = 0; i < faces.Count; i++)
-                {
-                    f32 distance = Vector3S.Dot(normals[i], faces[i].Item1);
-
-                    if (distance < minDistance)
-                    {
-                        minDistance = distance;
-                        closestFaceIndex = i;
-                    }
-                }
-
-                if (closestFaceIndex == -1)
-                {
-                    break; // Something went wrong
-                }
-
-                // Get the closest face vertices and normal
-                var (faceA, faceB, faceC) = faces[closestFaceIndex];
-                Vector3S normal = normals[closestFaceIndex];
-
-                // Calculate the new support point in the direction of the face normal
-                Vector3S support = Support(a, b, normal);
-
-                // Calculate the penetration depth
-                penetrationDepth = Vector3S.Dot(normal, support);
-
-                if (penetrationDepth - minDistance < f32.epsilon)
-                {
-                    // Project the centroid of the face onto the normal to find the contact point
-                    Vector3S closestPoint = Vector3S.ProjectPointOnPlane((faceA + faceB + faceC) / (f32)3, normal, faceA);
-
-                    // Transform the contact point to world space
-                    closestPoint = a.collidable.transform.ToWorldPoint(closestPoint);
-
-                    contact.point = closestPoint;
-                    contact.normal = normal;
-                    contact.penetrationDepth = penetrationDepth;
-                    return true;
-                }
-
-                // Remove the closest face and add the new faces formed with the new support point
-                faces.RemoveAt(closestFaceIndex);
-                normals.RemoveAt(closestFaceIndex);
-
-                AddFace(faces, normals, faceA, faceB, support);
-                AddFace(faces, normals, faceB, faceC, support);
-                AddFace(faces, normals, faceC, faceA, support);
-            }
-
-            return false;
-        }
-
-        private static void AddFace(List<(Vector3S, Vector3S, Vector3S)> faces, List<Vector3S> normals, Vector3S a, Vector3S b, Vector3S c)
-        {
-            Vector3S normal = Vector3S.Cross(b - a, c - a).Normalize();
-            faces.Add((a, b, c));
-            normals.Add(normal);
-        }
-
     }
 }

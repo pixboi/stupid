@@ -6,8 +6,6 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS contact)
         {
             Vector3S relativePosition = b.collidable.transform.position - a.collidable.transform.position;
@@ -61,7 +59,8 @@ namespace stupid.Colliders
             {
                 for (int j = 0; j < axesB.Length; j++)
                 {
-                    if (!CheckOverlapOnAxis(relativePosition, Vector3S.Cross(axesA[i], axesB[j]), a, b, ref minOverlap, ref minAxis)) return false;
+                    Vector3S cross = Vector3S.Cross(axesA[i], axesB[j]);
+                    if (!CheckOverlapOnAxis(relativePosition, cross, a, b, ref minOverlap, ref minAxis)) return false;
                 }
             }
             return true;
@@ -107,7 +106,6 @@ namespace stupid.Colliders
                 halfSize.z * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(2), axis));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3S FindContactPoint(BoxColliderS a, BoxColliderS b)
         {
             _contactPoints.Clear();
@@ -132,9 +130,10 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void AddContactPointsIfInsideOBB(Vector3S[] vertices, Vector3S position, Vector3S halfSize, Matrix3S rotation)
         {
+            Matrix3S transposedRotation = rotation.Transpose();
             for (int i = 0; i < vertices.Length; i++)
             {
-                if (IsPointInsideOBB(vertices[i], position, halfSize, rotation))
+                if (IsPointInsideOBB(vertices[i], position, halfSize, transposedRotation))
                 {
                     _contactPoints.Add(vertices[i]);
                 }
@@ -142,9 +141,9 @@ namespace stupid.Colliders
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S rotation)
+        private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S transposedRotation)
         {
-            Vector3S localPoint = rotation.Transpose() * (point - position);
+            Vector3S localPoint = transposedRotation * (point - position);
             return MathS.Abs(localPoint.x) <= halfSize.x && MathS.Abs(localPoint.y) <= halfSize.y && MathS.Abs(localPoint.z) <= halfSize.z;
         }
     }

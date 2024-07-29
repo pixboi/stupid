@@ -1,4 +1,6 @@
 ﻿using stupid.Maths;
+using System.Numerics;
+using System;
 
 namespace stupid.Colliders
 {
@@ -38,6 +40,7 @@ namespace stupid.Colliders
             Vector3S up = rotMat.GetColumn(1) * halfSize.y;
             Vector3S forward = rotMat.GetColumn(2) * halfSize.z;
 
+            // Calculate vertices
             vertices[0] = position + right + up + forward;
             vertices[1] = position + right + up - forward;
             vertices[2] = position + right - up + forward;
@@ -47,10 +50,12 @@ namespace stupid.Colliders
             vertices[6] = position - right - up + forward;
             vertices[7] = position - right - up - forward;
 
+            // Calculate axes
             axes[0] = rotMat.GetColumn(0);
             axes[1] = rotMat.GetColumn(1);
             axes[2] = rotMat.GetColumn(2);
 
+            // Update edges and faces
             UpdateEdges();
             UpdateFaces();
         }
@@ -60,20 +65,14 @@ namespace stupid.Colliders
             edges[0] = new EdgeS(vertices[0], vertices[1]);
             edges[1] = new EdgeS(vertices[0], vertices[2]);
             edges[2] = new EdgeS(vertices[0], vertices[4]);
-
             edges[3] = new EdgeS(vertices[1], vertices[3]);
             edges[4] = new EdgeS(vertices[1], vertices[5]);
-
             edges[5] = new EdgeS(vertices[2], vertices[3]);
             edges[6] = new EdgeS(vertices[2], vertices[6]);
-
             edges[7] = new EdgeS(vertices[3], vertices[7]);
-
             edges[8] = new EdgeS(vertices[4], vertices[5]);
             edges[9] = new EdgeS(vertices[4], vertices[6]);
-
             edges[10] = new EdgeS(vertices[5], vertices[7]);
-
             edges[11] = new EdgeS(vertices[6], vertices[7]);
         }
 
@@ -139,21 +138,77 @@ namespace stupid.Colliders
             );
         }
 
-        public Vector3S GetFarthestPointInDirection(Vector3S direction)
+        public Vector3S SupportFunction(Vector3S direction)
         {
             // Transform the direction to local space
             Vector3S localDirection = collidable.transform.InverseTransformDirection(direction);
 
-            // Determine the farthest point in local space
-            Vector3S farthestPoint = new Vector3S(
+            // Calculate the furthest point in the direction of localDirection
+            Vector3S localSupportPoint = new Vector3S(
                 localDirection.x >= f32.zero ? halfSize.x : -halfSize.x,
                 localDirection.y >= f32.zero ? halfSize.y : -halfSize.y,
                 localDirection.z >= f32.zero ? halfSize.z : -halfSize.z
             );
 
-            // Transform the farthest point back to world space
-            return collidable.transform.ToWorldPoint(farthestPoint);
+            // Transform the support point back to world space
+            return collidable.transform.ToWorldPoint(localSupportPoint);
         }
 
+
+        public Vector3S GetIntersectionPoint(Vector3S worldDirection)
+        {
+            // Transform the direction to local space
+            Vector3S localDirection = collidable.transform.InverseTransformDirection(worldDirection);
+
+            // Normalize the direction vector
+            localDirection.Normalize();
+
+            // Origin is the center of the box in local coordinates (0,0,0)
+            Vector3S localOrigin = Vector3S.zero;
+
+            // Initialize t values for each face
+            f32 tMin = f32.minValue;
+            f32 tMax = f32.maxValue;
+
+            // Calculate t values for x-axis
+            if (localDirection.x != f32.zero)
+            {
+                f32 tx1 = (halfSize.x - localOrigin.x) / localDirection.x;
+                f32 tx2 = (-halfSize.x - localOrigin.x) / localDirection.x;
+                tMin = MathS.Max(tMin, MathS.Min(tx1, tx2));
+                tMax = MathS.Min(tMax, MathS.Max(tx1, tx2));
+            }
+
+            // Calculate t values for y-axis
+            if (localDirection.y != f32.zero)
+            {
+                f32 ty1 = (halfSize.y - localOrigin.y) / localDirection.y;
+                f32 ty2 = (-halfSize.y - localOrigin.y) / localDirection.y;
+                tMin = MathS.Max(tMin, MathS.Min(ty1, ty2));
+                tMax = MathS.Min(tMax, MathS.Max(ty1, ty2));
+            }
+
+            // Calculate t values for z-axis
+            if (localDirection.z != f32.zero)
+            {
+                f32 tz1 = (halfSize.z - localOrigin.z) / localDirection.z;
+                f32 tz2 = (-halfSize.z - localOrigin.z) / localDirection.z;
+                tMin = MathS.Max(tMin, MathS.Min(tz1, tz2));
+                tMax = MathS.Min(tMax, MathS.Max(tz1, tz2));
+            }
+
+            // If tMax < tMin, no intersection exists
+            if (tMax < tMin)
+            {
+                return new Vector3S(); // No intersection, return a default value
+            }
+
+            // Calculate the intersection point in local space using tMin (since we want the first intersection point)
+            Vector3S localIntersectionPoint = localOrigin + localDirection * tMax;
+
+            // Transform the point back to world space
+            return collidable.transform.ToWorldPoint(localIntersectionPoint);
+        }
     }
+
 }
