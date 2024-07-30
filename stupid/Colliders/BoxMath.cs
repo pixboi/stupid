@@ -50,12 +50,13 @@ namespace stupid.Colliders
             }
             else if (best < 6)
             {
-                //FillPointFaceBoxBox(b, a, relativePosition, ref contact, best - 3, minPen);
-                //return 1;
+                FillPointFaceBoxBox(b, a, relativePosition, ref contact, best - 3, minPen);
+                return 1;
             }
             else
             {
-                // Handle edge-to-edge contact here if needed
+                //FillEdgeEdgeContact(a, b, ref contact, minAxis, minPen);
+               //return 1;
             }
 
             return 0;
@@ -68,15 +69,39 @@ namespace stupid.Colliders
 
             // Determine which vertex of box 'b' is colliding
             Vector3S vertex = b.halfSize;
-            if (Vector3S.Dot(b.axes[0], normal) < f32.zero) vertex.x = -vertex.x;
-            if (Vector3S.Dot(b.axes[1], normal) < f32.zero) vertex.y = -vertex.y;
-            if (Vector3S.Dot(b.axes[2], normal) < f32.zero) vertex.z = -vertex.z;
+            if (Vector3S.Dot(b.axes[0], normal) > f32.zero) vertex.x = -vertex.x;
+            if (Vector3S.Dot(b.axes[1], normal) > f32.zero) vertex.y = -vertex.y;
+            if (Vector3S.Dot(b.axes[2], normal) > f32.zero) vertex.z = -vertex.z;
 
 
             // Create the contact data
-            contact.normal = normal;
+            contact.normal = normal; // Normal should point away from B
             contact.penetrationDepth = penetration;
             contact.point = b.collidable.transform.ToWorldPoint(vertex);
+        }
+
+        private static void FillEdgeEdgeContact(BoxColliderS a, BoxColliderS b, ref ContactS contact, Vector3S axis, f32 penetration)
+        {
+            Vector3S normal = axis;
+            if (Vector3S.Dot(normal, b.collidable.transform.position - a.collidable.transform.position) > f32.zero)
+            {
+                normal = -normal;
+            }
+
+            Vector3S contactPointA = FindSupportPoint(a, normal);
+            Vector3S contactPointB = FindSupportPoint(b, -normal);
+            contact.normal = normal;
+            contact.penetrationDepth = penetration;
+            contact.point = (contactPointA + contactPointB) * f32.half; // Midpoint of the support points
+        }
+
+        private static Vector3S FindSupportPoint(BoxColliderS box, Vector3S direction)
+        {
+            Vector3S result = box.halfSize;
+            if (Vector3S.Dot(box.axes[0], direction) < f32.zero) result.x = -result.x;
+            if (Vector3S.Dot(box.axes[1], direction) < f32.zero) result.y = -result.y;
+            if (Vector3S.Dot(box.axes[2], direction) < f32.zero) result.z = -result.z;
+            return box.collidable.transform.ToWorldPoint(result);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
