@@ -50,8 +50,8 @@ namespace stupid.Colliders
             }
             else if (best < 6)
             {
-                FillPointFaceBoxBox(b, a, -relativePosition, ref contact, best - 3, minPen);
-                return 1;
+                //FillPointFaceBoxBox(b, a, relativePosition, ref contact, best - 3, minPen);
+                //return 1;
             }
             else
             {
@@ -71,6 +71,7 @@ namespace stupid.Colliders
             if (Vector3S.Dot(b.axes[0], normal) < f32.zero) vertex.x = -vertex.x;
             if (Vector3S.Dot(b.axes[1], normal) < f32.zero) vertex.y = -vertex.y;
             if (Vector3S.Dot(b.axes[2], normal) < f32.zero) vertex.z = -vertex.z;
+
 
             // Create the contact data
             contact.normal = normal;

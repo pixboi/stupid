@@ -10,8 +10,8 @@ namespace stupid.Colliders
         public Vector3S halfSize { get; private set; }
         public Vector3S[] vertices { get; private set; }
         public Vector3S[] axes { get; private set; }
-        public int[] edges { get; private set; }
-        public int[] triangles { get; private set; }
+        //public int[] edges { get; private set; }
+        //public int[] triangles { get; private set; }
 
         public BoxColliderS(Vector3S size)
         {
@@ -19,8 +19,8 @@ namespace stupid.Colliders
             this.halfSize = size * f32.half;
             this.vertices = new Vector3S[8];
             this.axes = new Vector3S[3];
-            this.edges = new int[12];
-            this.triangles = new int[6];
+            //this.edges = new int[12];
+            //this.triangles = new int[6];
 
             if (this.collidable != null)
                 UpdateBox();
@@ -35,12 +35,16 @@ namespace stupid.Colliders
         public void UpdateBox()
         {
             var rotMat = this.collidable.transform.rotationMatrix;
-            var position = this.collidable.transform.position;
-            Vector3S right = rotMat.GetColumn(0) * halfSize.x;
-            Vector3S up = rotMat.GetColumn(1) * halfSize.y;
-            Vector3S forward = rotMat.GetColumn(2) * halfSize.z;
+            /*
+           var position = this.collidable.transform.position;
+
+           Vector3S right = rotMat.GetColumn(0) * halfSize.x;
+           Vector3S up = rotMat.GetColumn(1) * halfSize.y;
+           Vector3S forward = rotMat.GetColumn(2) * halfSize.z;
+           
 
             // Calculate vertices
+            
             vertices[0] = position + right + up + forward;
             vertices[1] = position + right + up - forward;
             vertices[2] = position + right - up + forward;
@@ -49,6 +53,7 @@ namespace stupid.Colliders
             vertices[5] = position - right + up - forward;
             vertices[6] = position - right - up + forward;
             vertices[7] = position - right - up - forward;
+            */
 
             // Calculate axes
             axes[0] = rotMat.GetColumn(0);
