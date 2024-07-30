@@ -57,15 +57,15 @@ namespace stupid
         {
             foreach (var c in Collidables)
             {
-                if (c.isDynamic)
-                {
+               // if (c.isDynamic)
+               // {
                     if (c.collider.NeedsRotationUpdate)
                     {
                         c.transform.UpdateRotationMatrix();
                         c.collider.OnRotationUpdate();
                     }
                     c.CalculateBounds();
-                }
+               // }
 
                 if (c is RigidbodyS rb)
                 {

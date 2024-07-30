@@ -10,141 +10,103 @@ namespace stupid.Colliders
         {
             Vector3S relativePosition = b.collidable.transform.position - a.collidable.transform.position;
 
-            f32 minOverlap = f32.maxValue;
+            f32 minPen = f32.maxValue;
             Vector3S minAxis = Vector3S.zero;
+            int best = -1;
 
             // Check for overlaps on the primary axes of both boxes
-            if (!CheckOverlapOnAxes(relativePosition, a.axes, a, b, ref minOverlap, ref minAxis)) return 0;
-            if (!CheckOverlapOnAxes(relativePosition, b.axes, a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!TryAxis(relativePosition, a.axes[0], a, b, 0, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, a.axes[1], a, b, 1, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, a.axes[2], a, b, 2, ref minPen, ref minAxis, ref best)) return 0;
+
+            if (!TryAxis(relativePosition, b.axes[0], a, b, 3, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, b.axes[1], a, b, 4, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, b.axes[2], a, b, 5, ref minPen, ref minAxis, ref best)) return 0;
+
+            int bestSingleAxis = best;
 
             // Check for overlaps on the cross product of axes pairs
-            if (!CheckOverlapOnCrossAxes(relativePosition, a.axes, b.axes, a, b, ref minOverlap, ref minAxis)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[0]), a, b, 6, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[1]), a, b, 7, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[2]), a, b, 8, ref minPen, ref minAxis, ref best)) return 0;
 
-            Vector3S normal = minAxis.Normalize();
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[0]), a, b, 9, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[1]), a, b, 10, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[2]), a, b, 11, ref minPen, ref minAxis, ref best)) return 0;
 
-            // Flip the normal if it's pointing in the wrong direction
-            if (Vector3S.Dot(normal, relativePosition) > f32.zero)
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[0]), a, b, 12, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[1]), a, b, 13, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[2]), a, b, 14, ref minPen, ref minAxis, ref best)) return 0;
+
+            if (best == -1)
             {
-                normal = -normal;
+                throw new System.Exception("OOBB collision error");
             }
 
-            Vector3S contactPoint = FindContactPoint(a, b);
-            f32 penetrationDepth = minOverlap;
-
-            if (contactPoint != Vector3S.zero)
+            if (best < 3)
             {
-                contact.point = contactPoint;
-                contact.normal = normal;
-                contact.penetrationDepth = penetrationDepth;
+                FillPointFaceBoxBox(a, b, relativePosition, ref contact, best, minPen);
                 return 1;
+            }
+            else if (best < 6)
+            {
+                FillPointFaceBoxBox(b, a, -relativePosition, ref contact, best - 3, minPen);
+                return 1;
+            }
+            else
+            {
+                // Handle edge-to-edge contact here if needed
             }
 
             return 0;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool CheckOverlapOnAxes(Vector3S relativePosition, Vector3S[] axes, BoxColliderS a, BoxColliderS b, ref f32 minOverlap, ref Vector3S minAxis)
+        private static void FillPointFaceBoxBox(BoxColliderS a, BoxColliderS b, Vector3S relativePosition, ref ContactS contact, int best, f32 penetration)
         {
-            for (int i = 0; i < axes.Length; i++)
-            {
-                if (!CheckOverlapOnAxis(relativePosition, axes[i], a, b, ref minOverlap, ref minAxis)) return false;
-            }
-            return true;
+            Vector3S normal = a.axes[best];
+            if (Vector3S.Dot(normal, relativePosition) > f32.zero) normal = -normal;
+
+            // Determine which vertex of box 'b' is colliding
+            Vector3S vertex = b.halfSize;
+            if (Vector3S.Dot(b.axes[0], normal) < f32.zero) vertex.x = -vertex.x;
+            if (Vector3S.Dot(b.axes[1], normal) < f32.zero) vertex.y = -vertex.y;
+            if (Vector3S.Dot(b.axes[2], normal) < f32.zero) vertex.z = -vertex.z;
+
+            // Create the contact data
+            contact.normal = normal;
+            contact.penetrationDepth = penetration;
+            contact.point = b.collidable.transform.ToWorldPoint(vertex);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool CheckOverlapOnCrossAxes(Vector3S relativePosition, Vector3S[] axesA, Vector3S[] axesB, BoxColliderS a, BoxColliderS b, ref f32 minOverlap, ref Vector3S minAxis)
+        private static bool TryAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, int index, ref f32 minOverlap, ref Vector3S minAxis, ref int best)
         {
-            for (int i = 0; i < axesA.Length; i++)
-            {
-                for (int j = 0; j < axesB.Length; j++)
-                {
-                    Vector3S cross = Vector3S.Cross(axesA[i], axesB[j]);
-                    if (!CheckOverlapOnAxis(relativePosition, cross, a, b, ref minOverlap, ref minAxis)) return false;
-                }
-            }
-            return true;
-        }
+            if (axis.sqrMagnitude < f32.epsilon) return true; // Skip zero-length axes
+            axis = axis.Normalize();
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool CheckOverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, ref f32 minOverlap, ref Vector3S minAxis)
-        {
-            if (axis.sqrMagnitude <= f32.epsilon) return true; // Skip zero-length axes
-
-            if (!OverlapOnAxis(relativePosition, axis, a, b, out f32 overlap))
-            {
-                return false; // No overlap on this axis, no collision
-            }
+            f32 pA = ProjectBox(axis, a);
+            f32 pB = ProjectBox(axis, b);
+            f32 distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
+            f32 overlap = pA + pB - distance;
+            if (overlap < f32.zero) return false;
 
             if (overlap < minOverlap)
             {
                 minOverlap = overlap;
                 minAxis = axis;
+                best = index;
             }
 
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool OverlapOnAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, out f32 overlap)
-        {
-            f32 projectionA = ProjectBox(axis, a);
-            f32 projectionB = ProjectBox(axis, b);
-            f32 distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
-            overlap = projectionA + projectionB - distance;
-            return overlap > f32.zero;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static f32 ProjectBox(Vector3S axis, BoxColliderS box)
         {
-            Vector3S halfSize = box.halfSize;
-            var rotMat = box.collidable.transform.rotationMatrix;
             return
-                halfSize.x * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(0), axis)) +
-                halfSize.y * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(1), axis)) +
-                halfSize.z * MathS.Abs(Vector3S.Dot(rotMat.GetColumn(2), axis));
-        }
-
-        private static Vector3S FindContactPoint(BoxColliderS a, BoxColliderS b)
-        {
-            _contactPoints.Clear();
-
-            AddContactPointsIfInsideOBB(a.vertices, b.collidable.transform.position, b.halfSize, b.collidable.transform.rotationMatrix);
-            AddContactPointsIfInsideOBB(b.vertices, a.collidable.transform.position, a.halfSize, a.collidable.transform.rotationMatrix);
-
-            if (_contactPoints.Count == 0)
-            {
-                return Vector3S.zero;
-            }
-
-            Vector3S sum = Vector3S.zero;
-            for (int i = 0; i < _contactPoints.Count; i++)
-            {
-                sum += _contactPoints[i];
-            }
-
-            return sum / (f32)_contactPoints.Count;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void AddContactPointsIfInsideOBB(Vector3S[] vertices, Vector3S position, Vector3S halfSize, Matrix3S rotation)
-        {
-            Matrix3S transposedRotation = rotation.Transpose();
-            for (int i = 0; i < vertices.Length; i++)
-            {
-                if (IsPointInsideOBB(vertices[i], position, halfSize, transposedRotation))
-                {
-                    _contactPoints.Add(vertices[i]);
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsPointInsideOBB(Vector3S point, Vector3S position, Vector3S halfSize, Matrix3S transposedRotation)
-        {
-            Vector3S localPoint = transposedRotation * (point - position);
-            return MathS.Abs(localPoint.x) <= halfSize.x && MathS.Abs(localPoint.y) <= halfSize.y && MathS.Abs(localPoint.z) <= halfSize.z;
+                box.halfSize.x * MathS.Abs(Vector3S.Dot(axis, box.axes[0])) +
+                box.halfSize.y * MathS.Abs(Vector3S.Dot(axis, box.axes[1])) +
+                box.halfSize.z * MathS.Abs(Vector3S.Dot(axis, box.axes[2]));
         }
     }
 }
