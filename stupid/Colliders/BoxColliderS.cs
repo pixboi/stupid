@@ -35,16 +35,12 @@ namespace stupid.Colliders
         public void UpdateBox()
         {
             var rotMat = this.collidable.transform.rotationMatrix;
-            /*
-           var position = this.collidable.transform.position;
-
-           Vector3S right = rotMat.GetColumn(0) * halfSize.x;
-           Vector3S up = rotMat.GetColumn(1) * halfSize.y;
-           Vector3S forward = rotMat.GetColumn(2) * halfSize.z;
-           
+            var position = this.collidable.transform.position;
+            Vector3S right = rotMat.GetColumn(0) * halfSize.x;
+            Vector3S up = rotMat.GetColumn(1) * halfSize.y;
+            Vector3S forward = rotMat.GetColumn(2) * halfSize.z;
 
             // Calculate vertices
-            
             vertices[0] = position + right + up + forward;
             vertices[1] = position + right + up - forward;
             vertices[2] = position + right - up + forward;
@@ -53,7 +49,6 @@ namespace stupid.Colliders
             vertices[5] = position - right + up - forward;
             vertices[6] = position - right - up + forward;
             vertices[7] = position - right - up - forward;
-            */
 
             // Calculate axes
             axes[0] = rotMat.GetColumn(0);
@@ -61,6 +56,17 @@ namespace stupid.Colliders
             axes[2] = rotMat.GetColumn(2);
 
             //Put edges and triangles, edge has 2 stride, triangle 3
+        }
+
+        public bool ContainsPoint(Vector3S point)
+        {
+            var localPoint = collidable.transform.ToLocalPoint(point);
+
+            if (localPoint.x > halfSize.x || localPoint.x < -halfSize.x) return false;
+            if (localPoint.y > halfSize.y || localPoint.y < -halfSize.y) return false;
+            if (localPoint.z > halfSize.z || localPoint.z < -halfSize.z) return false;
+
+            return true;
         }
 
 

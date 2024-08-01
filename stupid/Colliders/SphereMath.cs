@@ -6,9 +6,6 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
-        private static Vector3S[] _axes = new Vector3S[15];
-        private static List<Vector3S> _contactPoints = new List<Vector3S>();
-
         public static int SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, ref ContactS contact)
         {
             f32 squaredDistance = Vector3S.DistanceSquared(positionA, positionB);

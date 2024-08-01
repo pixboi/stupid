@@ -43,65 +43,49 @@ namespace stupid.Colliders
                 throw new System.Exception("OOBB collision error");
             }
 
-            if (best < 3)
+            var normal = minAxis.Normalize();
+            if (Vector3S.Dot(normal, relativePosition) > f32.zero) normal = -normal;
+
+            contact.normal = normal;
+            contact.penetrationDepth = minPen;
+
+            if (GetContactPoint(a, b, out var point))
             {
-                FillPointFaceBoxBox(a, b, relativePosition, ref contact, best, minPen);
-                return 1;
-            }
-            else if (best < 6)
-            {
-                FillPointFaceBoxBox(b, a, relativePosition, ref contact, best - 3, minPen);
-                return 1;
+                contact.point = point;
             }
             else
             {
-                //FillEdgeEdgeContact(a, b, ref contact, minAxis, minPen);
-               //return 1;
+                //just use the average transform position?
+                contact.point = (a.collidable.transform.position + b.collidable.transform.position) * f32.half;
             }
 
-            return 0;
+            return 1;
         }
 
-        private static void FillPointFaceBoxBox(BoxColliderS a, BoxColliderS b, Vector3S relativePosition, ref ContactS contact, int best, f32 penetration)
+        static List<Vector3S> points = new List<Vector3S>();
+        public static bool GetContactPoint(BoxColliderS a, BoxColliderS b, out Vector3S averagePoint)
         {
-            Vector3S normal = a.axes[best];
-            if (Vector3S.Dot(normal, relativePosition) > f32.zero) normal = -normal;
+            points.Clear();
+            averagePoint = Vector3S.zero;
 
-            // Determine which vertex of box 'b' is colliding
-            Vector3S vertex = b.halfSize;
-            if (Vector3S.Dot(b.axes[0], normal) > f32.zero) vertex.x = -vertex.x;
-            if (Vector3S.Dot(b.axes[1], normal) > f32.zero) vertex.y = -vertex.y;
-            if (Vector3S.Dot(b.axes[2], normal) > f32.zero) vertex.z = -vertex.z;
-
-
-            // Create the contact data
-            contact.normal = normal; // Normal should point away from B
-            contact.penetrationDepth = penetration;
-            contact.point = b.collidable.transform.ToWorldPoint(vertex);
-        }
-
-        private static void FillEdgeEdgeContact(BoxColliderS a, BoxColliderS b, ref ContactS contact, Vector3S axis, f32 penetration)
-        {
-            Vector3S normal = axis;
-            if (Vector3S.Dot(normal, b.collidable.transform.position - a.collidable.transform.position) > f32.zero)
+            foreach (var v in a.vertices)
             {
-                normal = -normal;
+                if (b.ContainsPoint(v))
+                    points.Add(v);
             }
 
-            Vector3S contactPointA = FindSupportPoint(a, normal);
-            Vector3S contactPointB = FindSupportPoint(b, -normal);
-            contact.normal = normal;
-            contact.penetrationDepth = penetration;
-            contact.point = (contactPointA + contactPointB) * f32.half; // Midpoint of the support points
-        }
+            foreach (var v in b.vertices)
+            {
+                if (a.ContainsPoint(v))
+                    points.Add(v);
+            }
 
-        private static Vector3S FindSupportPoint(BoxColliderS box, Vector3S direction)
-        {
-            Vector3S result = box.halfSize;
-            if (Vector3S.Dot(box.axes[0], direction) < f32.zero) result.x = -result.x;
-            if (Vector3S.Dot(box.axes[1], direction) < f32.zero) result.y = -result.y;
-            if (Vector3S.Dot(box.axes[2], direction) < f32.zero) result.z = -result.z;
-            return box.collidable.transform.ToWorldPoint(result);
+            if (points.Count == 0) return false;
+
+            foreach (var p in points) averagePoint += p;
+
+            averagePoint = averagePoint / (f32)points.Count;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
