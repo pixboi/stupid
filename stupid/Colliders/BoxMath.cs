@@ -23,8 +23,6 @@ namespace stupid.Colliders
             if (!TryAxis(relativePosition, b.axes[1], a, b, 4, ref minPen, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, b.axes[2], a, b, 5, ref minPen, ref minAxis, ref best)) return 0;
 
-            int bestSingleAxis = best;
-
             // Check for overlaps on the cross product of axes pairs
             if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[0]), a, b, 6, ref minPen, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[1]), a, b, 7, ref minPen, ref minAxis, ref best)) return 0;
@@ -55,8 +53,8 @@ namespace stupid.Colliders
             }
             else
             {
-                //just use the average transform position?
-                contact.point = (a.collidable.transform.position + b.collidable.transform.position) * f32.half;
+                //Case, where there is collision, but none of the vertices overlap each box? what to do?
+                contact.point = a.GetIntersectionPoint(relativePosition);
             }
 
             return 1;

@@ -165,27 +165,6 @@ namespace stupid
             }
         }
 
-        private void ApplyWarmStarting(ref ContactS contact)
-        {
-            var a = contact.a as RigidbodyS;
-            var b = contact.b as RigidbodyS;
-            // return;
-
-            if (a != null)
-            {
-                a.velocity += a.inverseMass * contact.cachedImpulse;
-                a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(contact.point - a.transform.position, contact.cachedImpulse);
-            }
-
-            if (b != null)
-            {
-                b.velocity -= b.inverseMass * contact.cachedImpulse;
-                b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(contact.point - b.transform.position, contact.cachedImpulse);
-            }
-
-            contact.ResetCachedImpulses();
-        }
-
         private void ResolveCollision(ref ContactS contact)
         {
             if (contact.a.isDynamic && contact.b.isDynamic)
@@ -227,12 +206,14 @@ namespace stupid
             var contactPointB = bPosition + contact.pB;
 
             Vector3S normal = contact.normal;
+            /*
             if (Vector3S.DistanceSquared(contactPointA, contactPointB) > NORMAL_SLOP)
                 normal = (contactPointA - contactPointB).Normalize();
+            */
 
             f32 penetrationDepth = Vector3S.Dot((bPosition + contact.pB) - (aPosition + contact.pA), normal) + contact.penetrationDepth;
             penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
-            if (penetrationDepth == f32.zero) return;
+            //if (penetrationDepth == f32.zero) return;
 
             Vector3S ra = contactPointA - aPosition;
             Vector3S rb = isStatic ? Vector3S.zero : contactPointB - b.transform.position;
