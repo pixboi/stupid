@@ -98,22 +98,14 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S Cross(in Vector3S a, in Vector3S b)
-        {
-            long crossX = (a.y._value * b.z._value) - (a.z._value * b.y._value);
-            long crossY = (a.z._value * b.x._value) - (a.x._value * b.z._value);
-            long crossZ = (a.x._value * b.y._value) - (a.y._value * b.x._value);
-
-            return new Vector3S(
-                f32.FromRaw(crossX),
-                f32.FromRaw(crossY),
-                f32.FromRaw(crossZ)
-            );
-        }
+        public static Vector3S Cross(in Vector3S a, in Vector3S b) => new Vector3S(
+            a.y * b.z - a.z * b.y,
+            a.z * b.x - a.x * b.z,
+            a.x * b.y - a.y * b.x
+        );
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Cross(in Vector3S b) => Cross(this, b);
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
