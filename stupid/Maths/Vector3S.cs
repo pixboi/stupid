@@ -70,10 +70,7 @@ namespace stupid.Maths
         public override string ToString() => $"({x}, {y}, {z})";
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Dot(in Vector3S a, in Vector3S b) => (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 FastDot(in Vector3S a, in Vector3S b)
+        public static f32 Dot(in Vector3S a, in Vector3S b)
         {
             // Perform the dot product calculation directly on the raw values
             long dotX = (a.x._value * b.x._value) >> f32.FractionalBits;
@@ -89,6 +86,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Dot(in Vector3S b) => Dot(this, b);
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S ProjectPointOnPlane(in Vector3S point, in Vector3S planeNormal, in Vector3S planePoint)
         {
@@ -97,15 +95,24 @@ namespace stupid.Maths
             return point - planeNormal * distance;
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S Cross(in Vector3S a, in Vector3S b) => new Vector3S(
-            a.y * b.z - a.z * b.y,
-            a.z * b.x - a.x * b.z,
-            a.x * b.y - a.y * b.x
-        );
+        public static Vector3S Cross(in Vector3S a, in Vector3S b)
+        {
+            long crossX = (a.y._value * b.z._value - a.z._value * b.y._value) >> f32.FractionalBits;
+            long crossY = (a.z._value * b.x._value - a.x._value * b.z._value) >> f32.FractionalBits;
+            long crossZ = (a.x._value * b.y._value - a.y._value * b.x._value) >> f32.FractionalBits;
+
+            return new Vector3S(
+                f32.FromRaw(crossX),
+                f32.FromRaw(crossY),
+                f32.FromRaw(crossZ)
+            );
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Cross(in Vector3S b) => Cross(this, b);
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()

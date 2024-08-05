@@ -128,7 +128,7 @@ namespace stupid.GJK
 
         private bool IsVisible(Face face, Vector3S point)
         {
-            return Vector3S.FastDot(face.Normal, point - face.A) > f32.zero;
+            return Vector3S.Dot(face.Normal, point - face.A) > f32.zero;
         }
 
         private Vector3S Support(ISupport shapeA, ISupport shapeB, Vector3S direction)

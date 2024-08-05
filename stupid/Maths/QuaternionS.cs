@@ -76,8 +76,8 @@ namespace stupid.Maths
             Vector3S u = new Vector3S(q.x, q.y, q.z);
             f32 s = q.w;
 
-            return f32.two * Vector3S.FastDot(u, v) * u
-                 + (s * s - Vector3S.FastDot(u, u)) * v
+            return f32.two * Vector3S.Dot(u, v) * u
+                 + (s * s - Vector3S.Dot(u, u)) * v
                  + f32.two * s * Vector3S.Cross(u, v);
         }
 

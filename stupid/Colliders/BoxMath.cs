@@ -44,7 +44,7 @@ namespace stupid.Colliders
             }
 
             var normal = minAxis.Normalize();
-            if (Vector3S.FastDot(normal, relativePosition) > f32.zero) normal = -normal;
+            if (Vector3S.Dot(normal, relativePosition) > f32.zero) normal = -normal;
 
             contact.normal = normal;
             contact.penetrationDepth = minPen;
@@ -114,7 +114,7 @@ namespace stupid.Colliders
             for (int i = 0; i < edgeCache.Length; i++)
             {
                 var edgeNormal = shape.collidable.transform.TransformDirection(edgeCache[i].Item3);
-                var dotProduct = Vector3S.FastDot(normal, edgeNormal);
+                var dotProduct = Vector3S.Dot(normal, edgeNormal);
                 if (dotProduct > minDotProduct)
                 {
                     minDotProduct = dotProduct;
@@ -159,7 +159,7 @@ namespace stupid.Colliders
 
             f32 pA = ProjectBox(axis, a);
             f32 pB = ProjectBox(axis, b);
-            f32 distance = MathS.Abs(Vector3S.FastDot(relativePosition, axis));
+            f32 distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
             f32 overlap = pA + pB - distance;
             if (overlap < f32.zero) return false;
 
@@ -176,9 +176,9 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static f32 ProjectBox(in Vector3S axis, in BoxColliderS box)
         {
-            f32 absDot0 = MathS.Abs(Vector3S.FastDot(axis, box.axes[0]));
-            f32 absDot1 = MathS.Abs(Vector3S.FastDot(axis, box.axes[1]));
-            f32 absDot2 = MathS.Abs(Vector3S.FastDot(axis, box.axes[2]));
+            f32 absDot0 = MathS.Abs(Vector3S.Dot(axis, box.axes[0]));
+            f32 absDot1 = MathS.Abs(Vector3S.Dot(axis, box.axes[1]));
+            f32 absDot2 = MathS.Abs(Vector3S.Dot(axis, box.axes[2]));
 
             return
                 box.halfSize.x * absDot0 +
