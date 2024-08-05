@@ -22,6 +22,7 @@ namespace stupid
         // Updates rotation matrix
         public void UpdateRotationMatrix()
         {
+            //This is normally done in integration, just here for debugging purposes
             this.rotationMatrix = Matrix3S.Rotate(this.rotation);
         }
 
@@ -71,7 +72,7 @@ namespace stupid
         // Rotates the transform by a given quaternion
         public void Rotate(QuaternionS deltaRotation)
         {
-            rotation = deltaRotation * rotation;
+            rotation = (deltaRotation * rotation).Normalize();
             UpdateRotationMatrix();
         }
 

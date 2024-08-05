@@ -53,11 +53,74 @@ namespace stupid.Colliders
             }
             else
             {
-                //Case, where there is collision, but none of the vertices overlap each box? what to do?
-                contact.point = a.GetIntersectionPoint(relativePosition);
+                // Case where there is a collision but none of the vertices overlap each box.
+                var bestEdgeA = FindBestEdge(a, -normal);
+                var bestEdgeB = FindBestEdge(b, normal);
+
+                var totalIntersectionPoint = Vector3S.zero;
+                int intersectionCount = 0;
+
+                void CheckEdgeIntersections((Vector3S, Vector3S, Vector3S) edge, BoxColliderS other)
+                {
+                    var edgeDirection = (edge.Item2 - edge.Item1).NormalizeWithMagnitude(out var edgeMagnitude);
+
+                    // Check intersection with the first point of the edge
+                    if (other.RayTest(edge.Item1, edgeDirection, edgeMagnitude, out var intersectionPoint1))
+                    {
+                        totalIntersectionPoint += intersectionPoint1;
+                        intersectionCount++;
+                    }
+
+                    // Check intersection with the second point of the edge
+                    if (other.RayTest(edge.Item2, -edgeDirection, edgeMagnitude, out var intersectionPoint2))
+                    {
+                        totalIntersectionPoint += intersectionPoint2;
+                        intersectionCount++;
+                    }
+                }
+
+                CheckEdgeIntersections(bestEdgeA, b);
+                CheckEdgeIntersections(bestEdgeB, a);
+
+                if (intersectionCount == 0)
+                {
+                    // No intersections found, use intersection points from the centers
+                    var pointA = a.GetIntersectionPointFromLocalCenter(-normal);
+                    var pointB = b.GetIntersectionPointFromLocalCenter(normal);
+                    contact.point = (pointA + pointB) * f32.half;
+                }
+                else
+                {
+                    // Average of intersection points
+                    contact.point = totalIntersectionPoint / (f32)intersectionCount;
+                }
+
+
             }
 
             return 1;
+        }
+
+        static (Vector3S, Vector3S, Vector3S) FindBestEdge(BoxColliderS shape, Vector3S normal)
+        {
+            var edges = new (Vector3S, Vector3S, Vector3S)[12];
+            shape.GetAllEdges(ref edges);
+
+            var minDotProduct = f32.minValue;
+            int bestEdgeIndex = -1;
+
+            for (int i = 0; i < edges.Length; i++)
+            {
+                var edgeNormal = shape.collidable.transform.TransformDirection(edges[i].Item3);
+                var dotProduct = Vector3S.Dot(normal, edgeNormal);
+                if (dotProduct > minDotProduct)
+                {
+                    minDotProduct = dotProduct;
+                    bestEdgeIndex = i;
+                }
+            }
+
+            return edges[bestEdgeIndex];
         }
 
         static List<Vector3S> points = new List<Vector3S>();
@@ -78,13 +141,14 @@ namespace stupid.Colliders
                     points.Add(v);
             }
 
-            if (points.Count == 0) return false;
 
+            if (points.Count == 0) return false;
             foreach (var p in points) averagePoint += p;
 
             averagePoint = averagePoint / (f32)points.Count;
             return true;
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, int index, ref f32 minOverlap, ref Vector3S minAxis, ref int best)
