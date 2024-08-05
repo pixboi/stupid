@@ -211,7 +211,7 @@ namespace stupid
 
             f32 penetrationDepth = Vector3S.Dot((bPosition + contact.pB) - (aPosition + contact.pA), normal) + contact.penetrationDepth;
             penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
-            //if (penetrationDepth == f32.zero) return;
+            if (penetrationDepth == f32.zero) return;
 
             Vector3S ra = contactPointA - aPosition;
             Vector3S rb = isStatic ? Vector3S.zero : contactPointB - b.transform.position;

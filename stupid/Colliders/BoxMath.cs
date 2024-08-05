@@ -101,17 +101,17 @@ namespace stupid.Colliders
             return 1;
         }
 
+        static (Vector3S, Vector3S, Vector3S)[] edgeCache = new (Vector3S, Vector3S, Vector3S)[12];
         static (Vector3S, Vector3S, Vector3S) FindBestEdge(BoxColliderS shape, Vector3S normal)
         {
-            var edges = new (Vector3S, Vector3S, Vector3S)[12];
-            shape.GetAllEdges(ref edges);
+            shape.GetAllEdges(ref edgeCache);
 
             var minDotProduct = f32.minValue;
             int bestEdgeIndex = -1;
 
-            for (int i = 0; i < edges.Length; i++)
+            for (int i = 0; i < edgeCache.Length; i++)
             {
-                var edgeNormal = shape.collidable.transform.TransformDirection(edges[i].Item3);
+                var edgeNormal = shape.collidable.transform.TransformDirection(edgeCache[i].Item3);
                 var dotProduct = Vector3S.Dot(normal, edgeNormal);
                 if (dotProduct > minDotProduct)
                 {
@@ -120,7 +120,7 @@ namespace stupid.Colliders
                 }
             }
 
-            return edges[bestEdgeIndex];
+            return edgeCache[bestEdgeIndex];
         }
 
         static List<Vector3S> points = new List<Vector3S>();

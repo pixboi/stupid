@@ -70,10 +70,10 @@ namespace stupid.Maths
         public override string ToString() => $"({x}, {y}, {z})";
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Dot(Vector3S a, Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
+        public static f32 Dot(in Vector3S a, in Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public f32 Dot(Vector3S b) => Dot(this, b);
+        public f32 Dot(in Vector3S b) => Dot(this, b);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S ProjectPointOnPlane(Vector3S point, Vector3S planeNormal, Vector3S planePoint)
