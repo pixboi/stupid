@@ -209,7 +209,7 @@ namespace stupid
                 normal = (contactPointA - contactPointB).Normalize();
             */
 
-            f32 penetrationDepth = Vector3S.Dot((bPosition + contact.pB) - (aPosition + contact.pA), normal) + contact.penetrationDepth;
+            f32 penetrationDepth = Vector3S.FastDot((bPosition + contact.pB) - (aPosition + contact.pA), normal) + contact.penetrationDepth;
             penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
             if (penetrationDepth == f32.zero) return;
 
@@ -222,15 +222,15 @@ namespace stupid
             f32 invMassA = a.inverseMass;
             f32 invMassB = isStatic ? f32.zero : b.inverseMass;
             f32 effectiveMass = invMassA +
-                                Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal) +
+                                Vector3S.FastDot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal) +
                                 (isStatic ? f32.zero : invMassB +
-                                Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal));
+                                Vector3S.FastDot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal));
 
             Vector3S correction = (penetrationDepth / effectiveMass) * normal;
             a.transform.position += invMassA * correction;
             if (!isStatic) b.transform.position -= invMassB * correction;
 
-            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
+            f32 velocityAlongNormal = Vector3S.FastDot(relativeVelocityAtContact, normal);
             if (velocityAlongNormal > f32.zero) return;
 
             f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
@@ -255,10 +255,10 @@ namespace stupid
             Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
             Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
             f32 frictionDenominator = invMassA +
-                                      Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent) +
+                                      Vector3S.FastDot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent) +
                                       (isStatic ? f32.zero : invMassB +
-                                      Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent));
-            f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
+                                      Vector3S.FastDot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent));
+            f32 frictionImpulseScalar = -Vector3S.FastDot(relativeTangentialVelocity, tangent) / frictionDenominator;
             f32 effectiveFriction = (a.material.staticFriction + bStat.material.staticFriction) * f32.half;
 
             Vector3S frictionImpulse = frictionImpulseScalar * tangent;

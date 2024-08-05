@@ -40,22 +40,22 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S operator +(Vector3S a, Vector3S b) => new Vector3S(a.x + b.x, a.y + b.y, a.z + b.z);
+        public static Vector3S operator +(in Vector3S a, in Vector3S b) => new Vector3S(a.x + b.x, a.y + b.y, a.z + b.z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S operator -(Vector3S a, Vector3S b) => new Vector3S(a.x - b.x, a.y - b.y, a.z - b.z);
+        public static Vector3S operator -(in Vector3S a, in Vector3S b) => new Vector3S(a.x - b.x, a.y - b.y, a.z - b.z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S operator -(Vector3S a) => new Vector3S(-a.x, -a.y, -a.z);
+        public static Vector3S operator -(in Vector3S a) => new Vector3S(-a.x, -a.y, -a.z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S operator *(Vector3S a, f32 d) => new Vector3S(a.x * d, a.y * d, a.z * d);
+        public static Vector3S operator *(in Vector3S a, f32 d) => new Vector3S(a.x * d, a.y * d, a.z * d);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S operator /(Vector3S a, f32 d) => new Vector3S(a.x / d, a.y / d, a.z / d);
+        public static Vector3S operator /(in Vector3S a, f32 d) => new Vector3S(a.x / d, a.y / d, a.z / d);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S operator *(f32 d, Vector3S a) => new Vector3S(a.x * d, a.y * d, a.z * d);
+        public static Vector3S operator *(f32 d, in Vector3S a) => new Vector3S(a.x * d, a.y * d, a.z * d);
 
         public static readonly Vector3S zero = new Vector3S(0f, 0f, 0f);
         public static readonly Vector3S one = new Vector3S(1f, 1f, 1f);
@@ -70,28 +70,50 @@ namespace stupid.Maths
         public override string ToString() => $"({x}, {y}, {z})";
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Dot(in Vector3S a, in Vector3S b) => a.x * b.x + a.y * b.y + a.z * b.z;
+        public static f32 Dot(in Vector3S a, in Vector3S b) => (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static f32 FastDot(in Vector3S a, in Vector3S b)
+        {
+            // Perform the dot product calculation directly on the raw values
+            long dotX = (a.x._value * b.x._value) >> f32.FractionalBits;
+            long dotY = (a.y._value * b.y._value) >> f32.FractionalBits;
+            long dotZ = (a.z._value * b.z._value) >> f32.FractionalBits;
+
+            // Sum the results and create a new f32 instance from the raw sum
+            long rawSum = dotX + dotY + dotZ;
+            return f32.FromRaw(rawSum);
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Dot(in Vector3S b) => Dot(this, b);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S ProjectPointOnPlane(Vector3S point, Vector3S planeNormal, Vector3S planePoint)
+        public static Vector3S ProjectPointOnPlane(in Vector3S point, in Vector3S planeNormal, in Vector3S planePoint)
         {
             Vector3S toPoint = point - planePoint;
-            f32 distance = Vector3S.Dot(toPoint, planeNormal);
+            f32 distance = Dot(toPoint, planeNormal);
             return point - planeNormal * distance;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S Cross(Vector3S a, Vector3S b) => new Vector3S(
-            a.y * b.z - a.z * b.y,
-            a.z * b.x - a.x * b.z,
-            a.x * b.y - a.y * b.x
-        );
+        public static Vector3S Cross(in Vector3S a, in Vector3S b)
+        {
+            long crossX = (a.y._value * b.z._value) - (a.z._value * b.y._value);
+            long crossY = (a.z._value * b.x._value) - (a.x._value * b.z._value);
+            long crossZ = (a.x._value * b.y._value) - (a.y._value * b.x._value);
+
+            return new Vector3S(
+                f32.FromRaw(crossX),
+                f32.FromRaw(crossY),
+                f32.FromRaw(crossZ)
+            );
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3S Cross(Vector3S b) => Cross(this, b);
+        public Vector3S Cross(in Vector3S b) => Cross(this, b);
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
@@ -100,14 +122,14 @@ namespace stupid.Maths
             return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
-        public f32 sqrMagnitude => (x * x + y * y + z * z);
+        public f32 sqrMagnitude => x * x + y * y + z * z;
         public f32 magnitude => Magnitude();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Distance(Vector3S a, Vector3S b) => (a - b).Magnitude();
+        public static f32 Distance(in Vector3S a, in Vector3S b) => (a - b).Magnitude();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 DistanceSquared(Vector3S a, Vector3S b) => (a - b).sqrMagnitude;
+        public static f32 DistanceSquared(in Vector3S a, in Vector3S b) => (a - b).sqrMagnitude;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Normalize()
@@ -124,21 +146,21 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S Min(Vector3S a, Vector3S b) => new Vector3S(
+        public static Vector3S Min(in Vector3S a, in Vector3S b) => new Vector3S(
             MathS.Min(a.x, b.x),
             MathS.Min(a.y, b.y),
             MathS.Min(a.z, b.z)
         );
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S Max(Vector3S a, Vector3S b) => new Vector3S(
+        public static Vector3S Max(in Vector3S a, in Vector3S b) => new Vector3S(
             MathS.Max(a.x, b.x),
             MathS.Max(a.y, b.y),
             MathS.Max(a.z, b.z)
         );
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S Abs(Vector3S a) => new Vector3S(MathS.Abs(a.x), MathS.Abs(a.y), MathS.Abs(a.z));
+        public static Vector3S Abs(in Vector3S a) => new Vector3S(MathS.Abs(a.x), MathS.Abs(a.y), MathS.Abs(a.z));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Abs() => Abs(this);
@@ -147,7 +169,7 @@ namespace stupid.Maths
         public Vector3S Clamp(f32 min, f32 max) => Clamp(this, min, max);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S Clamp(Vector3S v, f32 min, f32 max) => new Vector3S(
+        public static Vector3S Clamp(in Vector3S v, f32 min, f32 max) => new Vector3S(
             MathS.Clamp(v.x, min, max),
             MathS.Clamp(v.y, min, max),
             MathS.Clamp(v.z, min, max)
@@ -157,7 +179,7 @@ namespace stupid.Maths
         public Vector3S ClampMagnitude(f32 min, f32 max) => ClampMagnitude(this, min, max);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S ClampMagnitude(Vector3S v, f32 min, f32 max)
+        public static Vector3S ClampMagnitude(in Vector3S v, f32 min, f32 max)
         {
             f32 sqrMagnitude = v.sqrMagnitude;
             if (sqrMagnitude > max * max)
@@ -174,7 +196,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3S Rotate(QuaternionS rotation)
+        public Vector3S Rotate(in QuaternionS rotation)
         {
             var qVector = new QuaternionS(x, y, z, f32.zero);
             var qConjugate = rotation.Conjugate();
@@ -190,9 +212,9 @@ namespace stupid.Maths
         public override int GetHashCode() => HashCode.Combine(x, y, z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(Vector3S left, Vector3S right) => left.Equals(right);
+        public static bool operator ==(in Vector3S left, in Vector3S right) => left.Equals(right);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(Vector3S left, Vector3S right) => !(left == right);
+        public static bool operator !=(in Vector3S left, in Vector3S right) => !(left == right);
     }
 }

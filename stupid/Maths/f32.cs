@@ -28,50 +28,28 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public long ToRaw()
-        {
-            return _value;
-        }
+        public long ToRaw() => _value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 FromRaw(long rawValue)
-        {
-            return new f32(rawValue);
-        }
+        public static f32 FromRaw(long rawValue) => new f32(rawValue);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 FromFloat(float value)
-        {
-            return new f32((long)(value * One));
-        }
+        public static f32 FromFloat(float value) => new f32((long)(value * One));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float ToFloat()
-        {
-            return (float)_value / One;
-        }
+        public float ToFloat() => (float)_value / One;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator +(f32 a, f32 b)
-        {
-            return new f32(a._value + b._value);
-        }
+        public static f32 operator +(in f32 a, in f32 b) => new f32(a._value + b._value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator -(f32 a, f32 b)
-        {
-            return new f32(a._value - b._value);
-        }
+        public static f32 operator -(in f32 a, in f32 b) => new f32(a._value - b._value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator *(f32 a, f32 b)
-        {
-            long result = (a._value * b._value) >> FractionalBits;
-            return new f32(result);
-        }
+        public static f32 operator *(in f32 a, in f32 b) => new f32((a._value * b._value) >> FractionalBits);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator /(f32 a, f32 b)
+        public static f32 operator /(in f32 a, in f32 b)
         {
             if (b._value == 0)
             {
@@ -83,85 +61,43 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator -(f32 value)
-        {
-            return new f32(-value._value);
-        }
+        public static f32 operator -(in f32 value) => new f32(-value._value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static explicit operator float(f32 fp)
-        {
-            return fp.ToFloat();
-        }
+        public static explicit operator float(in f32 fp) => fp.ToFloat();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static explicit operator f32(float value)
-        {
-            return FromFloat(value);
-        }
+        public static explicit operator f32(float value) => FromFloat(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override string ToString()
-        {
-            return ToFloat().ToString();
-        }
+        public override string ToString() => ToFloat().ToString();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(f32 other)
-        {
-            return _value == other._value;
-        }
+        public bool Equals(f32 other) => _value == other._value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int CompareTo(f32 other)
-        {
-            return _value.CompareTo(other._value);
-        }
+        public int CompareTo(f32 other) => _value.CompareTo(other._value);
 
-        public override bool Equals(object obj)
-        {
-            return obj is f32 other && Equals(other);
-        }
+        public override bool Equals(object obj) => obj is f32 other && Equals(other);
 
-        public override int GetHashCode()
-        {
-            return _value.GetHashCode();
-        }
+        public override int GetHashCode() => _value.GetHashCode();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(f32 left, f32 right)
-        {
-            return left.Equals(right);
-        }
+        public static bool operator ==(in f32 left, in f32 right) => left._value == right._value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(f32 left, f32 right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(in f32 left, in f32 right) => left._value != right._value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator <(f32 left, f32 right)
-        {
-            return left.CompareTo(right) < 0;
-        }
+        public static bool operator <(in f32 left, in f32 right) => left._value < right._value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator >(f32 left, f32 right)
-        {
-            return left.CompareTo(right) > 0;
-        }
+        public static bool operator >(in f32 left, in f32 right) => left._value > right._value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator <=(f32 left, f32 right)
-        {
-            return left.CompareTo(right) <= 0;
-        }
+        public static bool operator <=(in f32 left, in f32 right) => left._value <= right._value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator >=(f32 left, f32 right)
-        {
-            return left.CompareTo(right) >= 0;
-        }
+        public static bool operator >=(in f32 left, in f32 right) => left._value >= right._value;
     }
 }

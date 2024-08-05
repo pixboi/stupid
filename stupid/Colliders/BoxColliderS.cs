@@ -85,9 +85,9 @@ namespace stupid.Colliders
             }
 
             // Calculate axes
-            axes[0] = rotMat.GetColumn(0);
-            axes[1] = rotMat.GetColumn(1);
-            axes[2] = rotMat.GetColumn(2);
+            axes[0] = rotMat.GetColumn(0).Normalize();
+            axes[1] = rotMat.GetColumn(1).Normalize();
+            axes[2] = rotMat.GetColumn(2).Normalize();
         }
 
         public bool ContainsPoint(Vector3S point)

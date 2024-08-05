@@ -24,7 +24,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Matrix3S(Vector3S row1, Vector3S row2, Vector3S row3)
+        public Matrix3S(in Vector3S row1, in Vector3S row2, in Vector3S row3)
         {
             m00 = row1.x;
             m01 = row1.y;
@@ -40,21 +40,17 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S GetColumn(int index)
         {
-            switch (index)
+            return index switch
             {
-                case 0:
-                    return new Vector3S(m00, m10, m20);
-                case 1:
-                    return new Vector3S(m01, m11, m21);
-                case 2:
-                    return new Vector3S(m02, m12, m22);
-                default:
-                    throw new IndexOutOfRangeException("Invalid column index");
-            }
+                0 => new Vector3S(m00, m10, m20),
+                1 => new Vector3S(m01, m11, m21),
+                2 => new Vector3S(m02, m12, m22),
+                _ => throw new IndexOutOfRangeException("Invalid column index"),
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S operator *(Matrix3S m, Vector3S v)
+        public static Vector3S operator *(in Matrix3S m, in Vector3S v)
         {
             return new Vector3S(
                 m.m00 * v.x + m.m01 * v.y + m.m02 * v.z,
@@ -64,7 +60,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Matrix3S operator *(Matrix3S a, Matrix3S b)
+        public static Matrix3S operator *(in Matrix3S a, in Matrix3S b)
         {
             return new Matrix3S(
                 a.m00 * b.m00 + a.m01 * b.m10 + a.m02 * b.m20, a.m00 * b.m01 + a.m01 * b.m11 + a.m02 * b.m21, a.m00 * b.m02 + a.m01 * b.m12 + a.m02 * b.m22,
@@ -84,7 +80,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Matrix3S Scale(Vector3S v)
+        public static Matrix3S Scale(in Vector3S v)
         {
             return new Matrix3S(
                 v.x, f32.zero, f32.zero,
@@ -94,7 +90,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Matrix3S Rotate(QuaternionS q)
+        public static Matrix3S Rotate(in QuaternionS q)
         {
             f32 xx = q.x * q.x;
             f32 yy = q.y * q.y;
