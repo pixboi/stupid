@@ -2,22 +2,43 @@ using stupid.Maths;
 
 namespace stupid.Colliders
 {
-    public class SphereColliderS : BaseShape
+    public struct SphereColliderS : IShape
     {
         public f32 radius { get; private set; }
+
+        Collidable _collidable;
+        public Collidable collidable => _collidable;
+
+        BoundsS _bounds;
+        public BoundsS bounds => _bounds;
+
+        public bool NeedsRotationUpdate => false;
+
         public SphereColliderS(f32 radius)
         {
             this.radius = radius;
+            this._bounds = new BoundsS();
+            this._collidable = null;
         }
 
-        public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
+        public void Attach(Collidable body)
+        {
+            _collidable = body;
+        }
+
+        public void OnRotationUpdate()
+        {
+            return;
+        }
+
+        public BoundsS CalculateAABB(in Vector3S position, in QuaternionS rotation)
         {
             var size = new Vector3S(radius, radius, radius);
             _bounds = new BoundsS(position - size, position + size);
             return _bounds;
         }
 
-        public override int Intersects(Collidable other, ref ContactS contact)
+        public int Intersects(Collidable other, ref ContactS contact)
         {
             if (other.collider is SphereColliderS otherSphere)
             {
@@ -38,7 +59,7 @@ namespace stupid.Colliders
         }
 
         static readonly f32 sphereInertia = ((f32)2f / (f32)5f);
-        public override Matrix3S CalculateInertiaTensor(f32 mass)
+        public Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // For a solid sphere: I = 2/5 * m * r^2
             f32 inertia = sphereInertia * mass * radius * radius;
@@ -49,5 +70,7 @@ namespace stupid.Colliders
                 new Vector3S(f32.zero, f32.zero, inertia)
             );
         }
+
+
     }
 }

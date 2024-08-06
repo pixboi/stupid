@@ -1,37 +1,20 @@
 ﻿using stupid.Maths;
-using System.Numerics;
 using System;
 using stupid.GJK;
 
 namespace stupid.Colliders
 {
-    public class BoxColliderS : BaseShape, ISupport
+    public struct BoxColliderS : IShape, ISupport
     {
-        public static readonly EdgeS[] BOX_EDGES = new EdgeS[]
-        {
-                new EdgeS(0, 1), new EdgeS(0, 2), new EdgeS(0, 4),
-                new EdgeS(1, 3), new EdgeS(1, 5),
-                new EdgeS(2, 3), new EdgeS(2, 6),
-                new EdgeS(3, 7),
-                new EdgeS(4, 5), new EdgeS(4, 6),
-                new EdgeS(5, 7),
-                new EdgeS(6, 7),
-        };
-
-        public static readonly Vector3S[] BOX_NORMALS = new Vector3S[]
-        {
-            new Vector3S(1,1,0).Normalize(),new Vector3S(1,0,1).Normalize(),new Vector3S(0,1,1).Normalize(), new Vector3S(1,0,-1).Normalize(),
-            new Vector3S(0,1,-1).Normalize(),  new Vector3S(1,-1,0).Normalize(),  new Vector3S(0,-1,1).Normalize(),   new Vector3S(0,-1,-1).Normalize(),
-            new Vector3S(-1,1,0).Normalize(),   new Vector3S(-1,0,1).Normalize(), new Vector3S(-1,0,-1).Normalize(),new Vector3S(-1,-1,0).Normalize(),
-        };
-
-        public readonly Vector3S size;
-        public readonly Vector3S halfSize;
-
-        readonly Vector3S right, up, forward;
+        public readonly Vector3S size, halfSize, right, up, forward;
         public readonly Vector3S[] localVertices;
-        public Vector3S[] vertices;
-        public Vector3S[] axes;
+        public Vector3S[] vertices, axes;
+
+        private Collidable _collidable;
+        public Collidable collidable => _collidable;
+
+        private BoundsS _bounds;
+        public BoundsS bounds => _bounds;
 
         public BoxColliderS(Vector3S size)
         {
@@ -53,31 +36,26 @@ namespace stupid.Colliders
 
             this.vertices = new Vector3S[8];
             this.axes = new Vector3S[3];
-
-            if (this.collidable != null)
-                UpdateBox();
-
+            this._collidable = null;
+            this._bounds = new BoundsS();
         }
 
-        public void GetAllEdges(ref (Vector3S, Vector3S, Vector3S)[] pairs)
+        public void Attach(Collidable body)
         {
-            for (int i = 0; i < BOX_EDGES.Length; i++)
-            {
-                var e = BOX_EDGES[i];
-                pairs[i] = (vertices[e.a], vertices[e.b], BOX_NORMALS[i]);
-            }
+            this._collidable = body;
         }
 
-        public override bool NeedsRotationUpdate => true;
-        public override void OnRotationUpdate()
+        public bool NeedsRotationUpdate => true;
+
+        public void OnRotationUpdate()
         {
             UpdateBox();
         }
 
-        public void UpdateBox()
+        private void UpdateBox()
         {
-            var rotMat = this.collidable.transform.rotationMatrix;
-            var position = this.collidable.transform.position;
+            var rotMat = this._collidable.transform.rotationMatrix;
+            var position = this._collidable.transform.position;
 
             // Apply rotation matrix to local vertex positions and translate to the correct position
             for (int i = 0; i < localVertices.Length; i++)
@@ -93,17 +71,14 @@ namespace stupid.Colliders
 
         public bool ContainsPoint(Vector3S point)
         {
-            var localPoint = collidable.transform.ToLocalPoint(point);
+            var localPoint = _collidable.transform.ToLocalPoint(point);
 
-            if (localPoint.x > halfSize.x || localPoint.x < -halfSize.x) return false;
-            if (localPoint.y > halfSize.y || localPoint.y < -halfSize.y) return false;
-            if (localPoint.z > halfSize.z || localPoint.z < -halfSize.z) return false;
-
-            return true;
+            return localPoint.x <= halfSize.x && localPoint.x >= -halfSize.x &&
+                   localPoint.y <= halfSize.y && localPoint.y >= -halfSize.y &&
+                   localPoint.z <= halfSize.z && localPoint.z >= -halfSize.z;
         }
 
-
-        public override BoundsS CalculateAABB(Vector3S position, QuaternionS rotation)
+        public BoundsS CalculateAABB(in Vector3S position, in QuaternionS rotation)
         {
             // Get the rotation matrix from the quaternion
             var rotationMatrix = Matrix3S.Rotate(rotation);
@@ -121,7 +96,7 @@ namespace stupid.Colliders
             return _bounds;
         }
 
-        public override int Intersects(Collidable other, ref ContactS contact)
+        public int Intersects(Collidable other, ref ContactS contact)
         {
             if (other.collider is BoxColliderS otherBox)
             {
@@ -136,8 +111,8 @@ namespace stupid.Colliders
             return 0;
         }
 
-        static readonly f32 boxInertia = f32.FromFloat(0.08333333333f);
-        public override Matrix3S CalculateInertiaTensor(f32 mass)
+        private static readonly f32 boxInertia = f32.FromFloat(0.08333333333f);
+        public Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // For a solid box: I = 1/12 * m * (h^2 + d^2) for each axis
             var h = size.x;
@@ -154,10 +129,37 @@ namespace stupid.Colliders
             );
         }
 
+        public static readonly EdgeS[] BOX_EDGES = new EdgeS[]
+        {
+            new EdgeS(0, 1), new EdgeS(0, 2), new EdgeS(0, 4),
+            new EdgeS(1, 3), new EdgeS(1, 5),
+            new EdgeS(2, 3), new EdgeS(2, 6),
+            new EdgeS(3, 7),
+            new EdgeS(4, 5), new EdgeS(4, 6),
+            new EdgeS(5, 7),
+            new EdgeS(6, 7),
+        };
+
+        public static readonly Vector3S[] BOX_NORMALS = new Vector3S[]
+        {
+            new Vector3S(1,1,0).Normalize(), new Vector3S(1,0,1).Normalize(), new Vector3S(0,1,1).Normalize(), new Vector3S(1,0,-1).Normalize(),
+            new Vector3S(0,1,-1).Normalize(), new Vector3S(1,-1,0).Normalize(), new Vector3S(0,-1,1).Normalize(), new Vector3S(0,-1,-1).Normalize(),
+            new Vector3S(-1,1,0).Normalize(), new Vector3S(-1,0,1).Normalize(), new Vector3S(-1,0,-1).Normalize(), new Vector3S(-1,-1,0).Normalize(),
+        };
+
+        public void GetAllEdges(ref (Vector3S, Vector3S, Vector3S)[] pairs)
+        {
+            for (int i = 0; i < BOX_EDGES.Length; i++)
+            {
+                var e = BOX_EDGES[i];
+                pairs[i] = (vertices[e.a], vertices[e.b], BOX_NORMALS[i]);
+            }
+        }
+
         public Vector3S Support(Vector3S direction)
         {
             // Transform the direction to local space
-            Vector3S localDirection = collidable.transform.InverseTransformDirection(direction);
+            Vector3S localDirection = _collidable.transform.InverseTransformDirection(direction);
 
             // Calculate the furthest point in the direction of localDirection
             Vector3S localSupportPoint = new Vector3S(
@@ -167,7 +169,7 @@ namespace stupid.Colliders
             );
 
             // Transform the support point back to world space
-            return collidable.transform.ToWorldPoint(localSupportPoint);
+            return _collidable.transform.ToWorldPoint(localSupportPoint);
         }
 
         public bool RayTest(Vector3S origin, Vector3S direction, f32 maxDistance, out Vector3S point)
@@ -175,10 +177,10 @@ namespace stupid.Colliders
             point = Vector3S.zero;
 
             // Transform the direction to local space and normalize it
-            Vector3S localDirection = collidable.transform.InverseTransformDirection(direction).Normalize();
+            Vector3S localDirection = _collidable.transform.InverseTransformDirection(direction).Normalize();
 
             // Transform the origin to local space
-            Vector3S localOrigin = collidable.transform.ToLocalPoint(origin);
+            Vector3S localOrigin = _collidable.transform.ToLocalPoint(origin);
 
             // Initialize t values for each face
             f32 tMin = f32.minValue;
@@ -222,16 +224,15 @@ namespace stupid.Colliders
             Vector3S localIntersectionPoint = localOrigin + localDirection * t;
 
             // Transform the point back to world space
-            point = collidable.transform.ToWorldPoint(localIntersectionPoint);
+            point = _collidable.transform.ToWorldPoint(localIntersectionPoint);
 
             return true;
         }
 
-
         public Vector3S GetIntersectionPointFromLocalCenter(Vector3S worldDirection)
         {
             // Transform the direction to local space
-            Vector3S localDirection = collidable.transform.InverseTransformDirection(worldDirection);
+            Vector3S localDirection = _collidable.transform.InverseTransformDirection(worldDirection);
 
             // Normalize the direction vector
             localDirection.Normalize();
@@ -243,32 +244,21 @@ namespace stupid.Colliders
             f32 tMin = f32.minValue;
             f32 tMax = f32.maxValue;
 
-            // Calculate t values for x-axis
-            if (localDirection.x != f32.zero)
+            // Calculate t values for each axis
+            void UpdateTValues(f32 localDirComponent, f32 localOriginComponent, f32 halfSizeComponent)
             {
-                f32 tx1 = (halfSize.x - localOrigin.x) / localDirection.x;
-                f32 tx2 = (-halfSize.x - localOrigin.x) / localDirection.x;
-                tMin = MathS.Max(tMin, MathS.Min(tx1, tx2));
-                tMax = MathS.Min(tMax, MathS.Max(tx1, tx2));
+                if (localDirComponent != f32.zero)
+                {
+                    f32 t1 = (halfSizeComponent - localOriginComponent) / localDirComponent;
+                    f32 t2 = (-halfSizeComponent - localOriginComponent) / localDirComponent;
+                    tMin = MathS.Max(tMin, MathS.Min(t1, t2));
+                    tMax = MathS.Min(tMax, MathS.Max(t1, t2));
+                }
             }
 
-            // Calculate t values for y-axis
-            if (localDirection.y != f32.zero)
-            {
-                f32 ty1 = (halfSize.y - localOrigin.y) / localDirection.y;
-                f32 ty2 = (-halfSize.y - localOrigin.y) / localDirection.y;
-                tMin = MathS.Max(tMin, MathS.Min(ty1, ty2));
-                tMax = MathS.Min(tMax, MathS.Max(ty1, ty2));
-            }
-
-            // Calculate t values for z-axis
-            if (localDirection.z != f32.zero)
-            {
-                f32 tz1 = (halfSize.z - localOrigin.z) / localDirection.z;
-                f32 tz2 = (-halfSize.z - localOrigin.z) / localDirection.z;
-                tMin = MathS.Max(tMin, MathS.Min(tz1, tz2));
-                tMax = MathS.Min(tMax, MathS.Max(tz1, tz2));
-            }
+            UpdateTValues(localDirection.x, localOrigin.x, halfSize.x);
+            UpdateTValues(localDirection.y, localOrigin.y, halfSize.y);
+            UpdateTValues(localDirection.z, localOrigin.z, halfSize.z);
 
             // If tMax < tMin, no intersection exists
             if (tMax < tMin)
@@ -280,8 +270,7 @@ namespace stupid.Colliders
             Vector3S localIntersectionPoint = localOrigin + localDirection * tMax;
 
             // Transform the point back to world space
-            return collidable.transform.ToWorldPoint(localIntersectionPoint);
+            return _collidable.transform.ToWorldPoint(localIntersectionPoint);
         }
     }
-
 }

@@ -6,7 +6,7 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
-        public static int BoxVsBox(BoxColliderS a, BoxColliderS b, ref ContactS contact)
+        public static int BoxVsBox(in BoxColliderS a, in BoxColliderS b, ref ContactS contact)
         {
             Vector3S relativePosition = b.collidable.transform.position - a.collidable.transform.position;
 
@@ -104,7 +104,7 @@ namespace stupid.Colliders
         }
 
         static (Vector3S, Vector3S, Vector3S)[] edgeCache = new (Vector3S, Vector3S, Vector3S)[12];
-        static (Vector3S, Vector3S, Vector3S) FindBestEdge(BoxColliderS shape, Vector3S normal)
+        static (Vector3S, Vector3S, Vector3S) FindBestEdge(in BoxColliderS shape, in Vector3S normal)
         {
             shape.GetAllEdges(ref edgeCache);
 
@@ -126,7 +126,7 @@ namespace stupid.Colliders
         }
 
         static List<Vector3S> points = new List<Vector3S>();
-        public static bool GetContactPoint(BoxColliderS a, BoxColliderS b, out Vector3S averagePoint)
+        public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b, out Vector3S averagePoint)
         {
             points.Clear();
             averagePoint = Vector3S.zero;
@@ -151,10 +151,10 @@ namespace stupid.Colliders
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool TryAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, int index, ref f32 minOverlap, ref Vector3S minAxis, ref int best)
+        private static bool TryAxis(in Vector3S relativePosition, in Vector3S axis, in BoxColliderS a, in BoxColliderS b, int index, ref f32 minOverlap, ref Vector3S minAxis, ref int best)
         {
             if (axis.sqrMagnitude < f32.epsilon) return true; // Skip zero-length axes
-            
+
             //Axis was normalized previously, cross produsct are not guaranteed to be normalized
 
             f32 pA = ProjectBox(axis, a);

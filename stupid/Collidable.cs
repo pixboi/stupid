@@ -27,7 +27,7 @@ namespace stupid
             this.material = PhysicsMaterialS.DEFAULT_MATERIAL;
         }
 
-        public BoundsS GetBounds() => this.collider.GetAABB();
+        public BoundsS GetBounds() => this.collider.bounds;
         public BoundsS CalculateBounds() => this.collider.CalculateAABB(transform.position, transform.rotation);
 
         public override bool Equals(object? obj)

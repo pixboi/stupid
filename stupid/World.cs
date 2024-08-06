@@ -171,10 +171,7 @@ namespace stupid
             ResolveContact(body, stat, ref contact, isStatic: true);
         }
 
-        // Constants
-        private static readonly f32 BAUM = f32.FromFloat(0.2f);
-
-        // Property to get the default contact offset setting
+        private static readonly f32 BAUM = f32.FromFloat(0.1f);
         public f32 SLOP => Settings.DefaultContactOffset;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -254,14 +251,6 @@ namespace stupid
                                       (isStatic ? f32.zero : invMassB +
                                       Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent));
             f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
-
-            // Apply static friction
-            f32 effectiveStaticFriction = MathS.Max(a.material.staticFriction, bStat.material.staticFriction);
-            if (relativeTangentialVelocity.Magnitude() < effectiveStaticFriction)
-            {
-                frictionImpulseScalar = f32.zero;
-            }
-
             f32 effectiveFriction = (a.material.staticFriction + bStat.material.staticFriction) * f32.half;
 
             // Apply friction impulse

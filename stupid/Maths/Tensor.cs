@@ -25,7 +25,7 @@ namespace stupid.Maths
         public Matrix3S inertiaWorld { get; private set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculateInverseInertiaTensor(QuaternionS rotation)
+        public void CalculateInverseInertiaTensor(in QuaternionS rotation)
         {
             // Compute the world space inertia tensor using cached and precomputed values
             Matrix3S rotationMatrix = Matrix3S.Rotate(rotation);
@@ -35,7 +35,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Matrix3S MultiplyTransposed(Matrix3S rotationMatrix, Matrix3S inertiaTensorLocal)
+        private Matrix3S MultiplyTransposed(in Matrix3S rotationMatrix, in Matrix3S inertiaTensorLocal)
         {
             // Optimize combined multiplication without explicitly calculating the transpose
             f32 r11 = rotationMatrix.m00, r12 = rotationMatrix.m01, r13 = rotationMatrix.m02;
