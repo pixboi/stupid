@@ -42,59 +42,65 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator +(in Vector3S a, in Vector3S b)
         {
-            f32 newX = f32.FromRaw(a.x._value + b.x._value);
-            f32 newY = f32.FromRaw(a.y._value + b.y._value);
-            f32 newZ = f32.FromRaw(a.z._value + b.z._value);
-            return new Vector3S(newX, newY, newZ);
+            return new Vector3S(
+                f32.FromRaw(a.x._value + b.x._value),
+                f32.FromRaw(a.y._value + b.y._value),
+                f32.FromRaw(a.z._value + b.z._value)
+            );
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator -(in Vector3S a, in Vector3S b)
         {
-            f32 newX = f32.FromRaw(a.x._value - b.x._value);
-            f32 newY = f32.FromRaw(a.y._value - b.y._value);
-            f32 newZ = f32.FromRaw(a.z._value - b.z._value);
-            return new Vector3S(newX, newY, newZ);
+            return new Vector3S(
+                f32.FromRaw(a.x._value - b.x._value),
+                f32.FromRaw(a.y._value - b.y._value),
+                f32.FromRaw(a.z._value - b.z._value)
+            );
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator -(in Vector3S a)
         {
-            f32 newX = f32.FromRaw(-a.x._value);
-            f32 newY = f32.FromRaw(-a.y._value);
-            f32 newZ = f32.FromRaw(-a.z._value);
-            return new Vector3S(newX, newY, newZ);
+            return new Vector3S(
+                f32.FromRaw(-a.x._value),
+                f32.FromRaw(-a.y._value),
+                f32.FromRaw(-a.z._value)
+            );
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(in Vector3S a, f32 d)
         {
-            f32 newX = f32.FromRaw((a.x._value * d._value) >> f32.FractionalBits);
-            f32 newY = f32.FromRaw((a.y._value * d._value) >> f32.FractionalBits);
-            f32 newZ = f32.FromRaw((a.z._value * d._value) >> f32.FractionalBits);
-            return new Vector3S(newX, newY, newZ);
+            return new Vector3S(
+                f32.FromRaw((a.x._value * d._value) >> f32.FractionalBits),
+                f32.FromRaw((a.y._value * d._value) >> f32.FractionalBits),
+                f32.FromRaw((a.z._value * d._value) >> f32.FractionalBits)
+            );
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator /(in Vector3S a, f32 d)
         {
-            f32 newX = f32.FromRaw((a.x._value << f32.FractionalBits) / d._value);
-            f32 newY = f32.FromRaw((a.y._value << f32.FractionalBits) / d._value);
-            f32 newZ = f32.FromRaw((a.z._value << f32.FractionalBits) / d._value);
-            return new Vector3S(newX, newY, newZ);
+            return new Vector3S(
+                f32.FromRaw((a.x._value << f32.FractionalBits) / d._value),
+                f32.FromRaw((a.y._value << f32.FractionalBits) / d._value),
+                f32.FromRaw((a.z._value << f32.FractionalBits) / d._value)
+            );
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(f32 d, in Vector3S a)
         {
-            f32 newX = f32.FromRaw((d._value * a.x._value) >> f32.FractionalBits);
-            f32 newY = f32.FromRaw((d._value * a.y._value) >> f32.FractionalBits);
-            f32 newZ = f32.FromRaw((d._value * a.z._value) >> f32.FractionalBits);
-            return new Vector3S(newX, newY, newZ);
+            return new Vector3S(
+                f32.FromRaw((d._value * a.x._value) >> f32.FractionalBits),
+                f32.FromRaw((d._value * a.y._value) >> f32.FractionalBits),
+                f32.FromRaw((d._value * a.z._value) >> f32.FractionalBits)
+            );
         }
 
-        public static readonly Vector3S zero = new Vector3S(0f, 0f, 0f);
-        public static readonly Vector3S one = new Vector3S(1f, 1f, 1f);
+        public static readonly Vector3S zero = new Vector3S(0f);
+        public static readonly Vector3S one = new Vector3S(1f);
         public static readonly Vector3S up = new Vector3S(0f, 1f, 0f);
         public static readonly Vector3S down = new Vector3S(0f, -1f, 0f);
         public static readonly Vector3S left = new Vector3S(-1f, 0f, 0f);
@@ -108,14 +114,10 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Dot(in Vector3S a, in Vector3S b)
         {
-            // Perform the dot product calculation directly on the raw values
             long dotX = (a.x._value * b.x._value) >> f32.FractionalBits;
             long dotY = (a.y._value * b.y._value) >> f32.FractionalBits;
             long dotZ = (a.z._value * b.z._value) >> f32.FractionalBits;
-
-            // Sum the results and create a new f32 instance from the raw sum
-            long rawSum = dotX + dotY + dotZ;
-            return f32.FromRaw(rawSum);
+            return f32.FromRaw(dotX + dotY + dotZ);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -126,21 +128,18 @@ namespace stupid.Maths
             return point - planeNormal * distance;
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S Cross(in Vector3S a, in Vector3S b)
         {
             long crossX = (a.y._value * b.z._value - a.z._value * b.y._value) >> f32.FractionalBits;
             long crossY = (a.z._value * b.x._value - a.x._value * b.z._value) >> f32.FractionalBits;
             long crossZ = (a.x._value * b.y._value - a.y._value * b.x._value) >> f32.FractionalBits;
-
             return new Vector3S(
                 f32.FromRaw(crossX),
                 f32.FromRaw(crossY),
                 f32.FromRaw(crossZ)
             );
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
@@ -154,10 +153,9 @@ namespace stupid.Maths
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                long xx = x._value * x._value >> f32.FractionalBits;
-                long yy = y._value * y._value >> f32.FractionalBits;
-                long zz = z._value * z._value >> f32.FractionalBits;
-
+                long xx = (x._value * x._value) >> f32.FractionalBits;
+                long yy = (y._value * y._value) >> f32.FractionalBits;
+                long zz = (z._value * z._value) >> f32.FractionalBits;
                 return f32.FromRaw(xx + yy + zz);
             }
         }
@@ -197,7 +195,11 @@ namespace stupid.Maths
         );
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S Abs(in Vector3S a) => new Vector3S(MathS.Abs(a.x), MathS.Abs(a.y), MathS.Abs(a.z));
+        public static Vector3S Abs(in Vector3S a) => new Vector3S(
+            MathS.Abs(a.x),
+            MathS.Abs(a.y),
+            MathS.Abs(a.z)
+        );
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Clamp(f32 min, f32 max) => Clamp(this, min, max);

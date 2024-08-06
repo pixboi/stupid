@@ -25,7 +25,7 @@ namespace stupid.Maths
         {
             long raw = value.ToRaw();
             long fractionalPart = raw & ((1L << f32.FractionalBits) - 1);
-            return f32.FromRaw(raw - fractionalPart);
+            return new f32(raw - fractionalPart);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -39,7 +39,7 @@ namespace stupid.Maths
             f32 square = value * value;
 
             // Taylor series terms
-            term *= -square / f32.FromRaw(6L << f32.FractionalBits);
+            term *= -square / new f32(6L << f32.FractionalBits);
             result += term;
             term *= -square / f32.FromRaw(20L << f32.FractionalBits);
             result += term;
