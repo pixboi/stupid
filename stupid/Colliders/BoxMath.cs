@@ -176,15 +176,15 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static f32 ProjectBox(in Vector3S axis, in BoxColliderS box)
         {
-            f32 absDot0 = MathS.Abs(Vector3S.Dot(axis, box.axes[0]));
-            f32 absDot1 = MathS.Abs(Vector3S.Dot(axis, box.axes[1]));
-            f32 absDot2 = MathS.Abs(Vector3S.Dot(axis, box.axes[2]));
+            f32 absDot0 = Vector3S.AbsDot(axis, box.axes[0]);
+            f32 absDot1 = Vector3S.AbsDot(axis, box.axes[1]);
+            f32 absDot2 = Vector3S.AbsDot(axis, box.axes[2]);
 
-            var x1 = (box.halfSize.x._value * absDot0._value) >> f32.FractionalBits;
-            var x2 = (box.halfSize.y._value * absDot1._value) >> f32.FractionalBits;
-            var x3 = (box.halfSize.z._value * absDot2._value) >> f32.FractionalBits;
+            var x1 = ((box.halfSize.x._value * absDot0._value) + (box.halfSize.y._value * absDot1._value) + (box.halfSize.z._value * absDot2._value)) >> f32.FractionalBits;
+            // var x2 =  >> f32.FractionalBits;
+            // var x3 =  >> f32.FractionalBits;
 
-            return new f32(x1 + x2 + x3);
+            return new f32(x1);
 
             return
                 box.halfSize.x * absDot0 +

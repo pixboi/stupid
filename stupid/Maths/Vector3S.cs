@@ -121,6 +121,21 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static f32 AbsDot(in Vector3S a, in Vector3S b)
+        {
+            long dotX = (a.x._value * b.x._value) >> f32.FractionalBits;
+            long dotY = (a.y._value * b.y._value) >> f32.FractionalBits;
+            long dotZ = (a.z._value * b.z._value) >> f32.FractionalBits;
+            long dotProduct = dotX + dotY + dotZ;
+
+            long mask = dotProduct >> 63; // Create a mask of all 1s if the value is negative, all 0s otherwise
+            long absDotProduct = (dotProduct + mask) ^ mask; // If negative, flip the sign bits
+
+            return new f32(absDotProduct);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S ProjectPointOnPlane(in Vector3S point, in Vector3S planeNormal, in Vector3S planePoint)
         {
             Vector3S toPoint = point - planePoint;
