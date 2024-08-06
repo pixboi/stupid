@@ -56,7 +56,7 @@ namespace stupid.Maths
             long y = ((m.m10._value * v.x._value) + (m.m11._value * v.y._value) + (m.m12._value * v.z._value)) >> f32.FractionalBits;
             long z = ((m.m20._value * v.x._value) + (m.m21._value * v.y._value) + (m.m22._value * v.z._value)) >> f32.FractionalBits;
 
-            return new Vector3S(f32.FromRaw(x), f32.FromRaw(y), f32.FromRaw(z));
+            return new Vector3S(new f32(x), new f32(y), new f32(z));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -75,9 +75,9 @@ namespace stupid.Maths
             long m22 = ((a.m20._value * b.m02._value) + (a.m21._value * b.m12._value) + (a.m22._value * b.m22._value)) >> f32.FractionalBits;
 
             return new Matrix3S(
-                f32.FromRaw(m00), f32.FromRaw(m01), f32.FromRaw(m02),
-                f32.FromRaw(m10), f32.FromRaw(m11), f32.FromRaw(m12),
-                f32.FromRaw(m20), f32.FromRaw(m21), f32.FromRaw(m22)
+                new f32(m00), new f32(m01), new f32(m02),
+                new f32(m10), new f32(m11), new f32(m12),
+                new f32(m20), new f32(m21), new f32(m22)
             );
         }
 

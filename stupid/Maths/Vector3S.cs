@@ -43,9 +43,9 @@ namespace stupid.Maths
         public static Vector3S operator +(in Vector3S a, in Vector3S b)
         {
             return new Vector3S(
-                f32.FromRaw(a.x._value + b.x._value),
-                f32.FromRaw(a.y._value + b.y._value),
-                f32.FromRaw(a.z._value + b.z._value)
+                new f32(a.x._value + b.x._value),
+                new f32(a.y._value + b.y._value),
+                new f32(a.z._value + b.z._value)
             );
         }
 
@@ -53,9 +53,9 @@ namespace stupid.Maths
         public static Vector3S operator -(in Vector3S a, in Vector3S b)
         {
             return new Vector3S(
-                f32.FromRaw(a.x._value - b.x._value),
-                f32.FromRaw(a.y._value - b.y._value),
-                f32.FromRaw(a.z._value - b.z._value)
+                new f32(a.x._value - b.x._value),
+                new f32(a.y._value - b.y._value),
+                new f32(a.z._value - b.z._value)
             );
         }
 
@@ -63,9 +63,9 @@ namespace stupid.Maths
         public static Vector3S operator -(in Vector3S a)
         {
             return new Vector3S(
-                f32.FromRaw(-a.x._value),
-                f32.FromRaw(-a.y._value),
-                f32.FromRaw(-a.z._value)
+                new f32(-a.x._value),
+                new f32(-a.y._value),
+                new f32(-a.z._value)
             );
         }
 
@@ -73,9 +73,9 @@ namespace stupid.Maths
         public static Vector3S operator *(in Vector3S a, f32 d)
         {
             return new Vector3S(
-                f32.FromRaw((a.x._value * d._value) >> f32.FractionalBits),
-                f32.FromRaw((a.y._value * d._value) >> f32.FractionalBits),
-                f32.FromRaw((a.z._value * d._value) >> f32.FractionalBits)
+                new f32((a.x._value * d._value) >> f32.FractionalBits),
+                new f32((a.y._value * d._value) >> f32.FractionalBits),
+                new f32((a.z._value * d._value) >> f32.FractionalBits)
             );
         }
 
@@ -83,9 +83,9 @@ namespace stupid.Maths
         public static Vector3S operator /(in Vector3S a, f32 d)
         {
             return new Vector3S(
-                f32.FromRaw((a.x._value << f32.FractionalBits) / d._value),
-                f32.FromRaw((a.y._value << f32.FractionalBits) / d._value),
-                f32.FromRaw((a.z._value << f32.FractionalBits) / d._value)
+                new f32((a.x._value << f32.FractionalBits) / d._value),
+                new f32((a.y._value << f32.FractionalBits) / d._value),
+                new f32((a.z._value << f32.FractionalBits) / d._value)
             );
         }
 
@@ -93,9 +93,9 @@ namespace stupid.Maths
         public static Vector3S operator *(f32 d, in Vector3S a)
         {
             return new Vector3S(
-                f32.FromRaw((d._value * a.x._value) >> f32.FractionalBits),
-                f32.FromRaw((d._value * a.y._value) >> f32.FractionalBits),
-                f32.FromRaw((d._value * a.z._value) >> f32.FractionalBits)
+                new f32((d._value * a.x._value) >> f32.FractionalBits),
+                new f32((d._value * a.y._value) >> f32.FractionalBits),
+                new f32((d._value * a.z._value) >> f32.FractionalBits)
             );
         }
 
@@ -117,7 +117,7 @@ namespace stupid.Maths
             long dotX = (a.x._value * b.x._value) >> f32.FractionalBits;
             long dotY = (a.y._value * b.y._value) >> f32.FractionalBits;
             long dotZ = (a.z._value * b.z._value) >> f32.FractionalBits;
-            return f32.FromRaw(dotX + dotY + dotZ);
+            return new f32(dotX + dotY + dotZ);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -135,9 +135,9 @@ namespace stupid.Maths
             long crossY = (a.z._value * b.x._value - a.x._value * b.z._value) >> f32.FractionalBits;
             long crossZ = (a.x._value * b.y._value - a.y._value * b.x._value) >> f32.FractionalBits;
             return new Vector3S(
-                f32.FromRaw(crossX),
-                f32.FromRaw(crossY),
-                f32.FromRaw(crossZ)
+                new f32(crossX),
+                new f32(crossY),
+                new f32(crossZ)
             );
         }
 
@@ -156,7 +156,7 @@ namespace stupid.Maths
                 long xx = (x._value * x._value) >> f32.FractionalBits;
                 long yy = (y._value * y._value) >> f32.FractionalBits;
                 long zz = (z._value * z._value) >> f32.FractionalBits;
-                return f32.FromRaw(xx + yy + zz);
+                return new f32(xx + yy + zz);
             }
         }
 

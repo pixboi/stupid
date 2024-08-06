@@ -41,11 +41,11 @@ namespace stupid.Maths
             // Taylor series terms
             term *= -square / new f32(6L << f32.FractionalBits);
             result += term;
-            term *= -square / f32.FromRaw(20L << f32.FractionalBits);
+            term *= -square / new f32(20L << f32.FractionalBits);
             result += term;
-            term *= -square / f32.FromRaw(42L << f32.FractionalBits);
+            term *= -square / new f32(42L << f32.FractionalBits);
             result += term;
-            term *= -square / f32.FromRaw(72L << f32.FractionalBits);
+            term *= -square / new f32(72L << f32.FractionalBits);
             result += term;
 
             return result;
@@ -59,13 +59,13 @@ namespace stupid.Maths
             f32 square = value * value;
 
             // Taylor series terms
-            term *= -square / f32.FromRaw(2L << f32.FractionalBits);
+            term *= -square / new f32(2L << f32.FractionalBits);
             result += term;
-            term *= -square / f32.FromRaw(12L << f32.FractionalBits);
+            term *= -square / new f32(12L << f32.FractionalBits);
             result += term;
-            term *= -square / f32.FromRaw(30L << f32.FractionalBits);
+            term *= -square / new f32(30L << f32.FractionalBits);
             result += term;
-            term *= -square / f32.FromRaw(56L << f32.FractionalBits);
+            term *= -square / new f32(56L << f32.FractionalBits);
             result += term;
 
             return result;
@@ -90,7 +90,7 @@ namespace stupid.Maths
                 xRaw = (xRaw + div) >> 1; // (x + value / x) / 2
             }
 
-            return f32.FromRaw(xRaw);
+            return new f32(xRaw);
         }
 
 
@@ -103,7 +103,7 @@ namespace stupid.Maths
 
             for (int i = 1; i <= iterations; i++)
             {
-                term *= value / f32.FromRaw(i << f32.FractionalBits);
+                term *= value / new f32(i << f32.FractionalBits);
                 result += term;
             }
 
@@ -122,7 +122,7 @@ namespace stupid.Maths
 
             for (int i = 1; i <= iterations; i += 2)
             {
-                result += term / f32.FromRaw(i << f32.FractionalBits);
+                result += term / new f32(i << f32.FractionalBits);
                 term *= xSquared;
             }
 

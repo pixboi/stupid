@@ -184,7 +184,7 @@ namespace stupid.Colliders
             var x2 = (box.halfSize.y._value * absDot1._value) >> f32.FractionalBits;
             var x3 = (box.halfSize.z._value * absDot2._value) >> f32.FractionalBits;
 
-            return f32.FromRaw(x1 + x2 + x3);
+            return new f32(x1 + x2 + x3);
 
             return
                 box.halfSize.x * absDot0 +
