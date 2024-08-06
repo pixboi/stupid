@@ -154,7 +154,7 @@ namespace stupid.Colliders
         private static bool TryAxis(Vector3S relativePosition, Vector3S axis, BoxColliderS a, BoxColliderS b, int index, ref f32 minOverlap, ref Vector3S minAxis, ref int best)
         {
             if (axis.sqrMagnitude < f32.epsilon) return true; // Skip zero-length axes
-
+            
             //Axis was normalized previously, cross produsct are not guaranteed to be normalized
 
             f32 pA = ProjectBox(axis, a);

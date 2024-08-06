@@ -73,9 +73,9 @@ namespace stupid
         }
 
         public event Action<ContactS> OnContact;
-        private Dictionary<BodyPair, ContactS> _contacts = new Dictionary<BodyPair, ContactS>();
+        private Dictionary<IntPair, ContactS> _contacts = new Dictionary<IntPair, ContactS>();
 
-        private void UpdateManifold(BodyPair pair)
+        private void UpdateManifold(IntPair pair)
         {
             var a = Collidables[pair.aIndex];
             var b = Collidables[pair.bIndex];
@@ -96,20 +96,17 @@ namespace stupid
             {
                 contact.CalculateRelativePoints();
 
-                if (!_contacts.TryGetValue(pair, out var oldManifold))
-                {
-                    // On ENTER: Add a new manifold
-                    _contacts[pair] = contact;
-                }
-                else
+                if (_contacts.TryGetValue(pair, out var oldManifold))
                 {
                     // On STAY: Update the manifold while preserving warm start data
                     // Copy old manifold's cached impulses to the new manifold
                     contact.cachedNormalImpulse = oldManifold.cachedNormalImpulse;
                     contact.cachedFrictionImpulse = oldManifold.cachedFrictionImpulse;
                     contact.cachedImpulse = oldManifold.cachedImpulse;
-                    _contacts[pair] = contact;
                 }
+
+                // On ENTER: Add a new manifold
+                _contacts[pair] = contact;
 
                 // Trigger the contact event
                 OnContact?.Invoke(contact);
@@ -121,35 +118,20 @@ namespace stupid
             }
         }
 
-        List<BodyPair> _removeCache = new List<BodyPair>();
-        private void NarrowPhase(HashSet<BodyPair> pairs)
+        List<IntPair> _removeCache = new List<IntPair>();
+        private void NarrowPhase(HashSet<IntPair> pairs)
         {
             // Collect keys that were not touched by the broadphase
             _removeCache.Clear();
-            foreach (var key in _contacts.Keys)
-            {
-                if (!pairs.Contains(key))
-                {
-                    _removeCache.Add(key);
-                }
-            }
+            foreach (var key in _contacts.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
 
             // Remove the old keys
-            foreach (var key in _removeCache)
-            {
-                _contacts.Remove(key);
-            }
+            foreach (var key in _removeCache) _contacts.Remove(key);
 
             // Update the manifolds for the current pairs
-            foreach (var pair in pairs)
-            {
-                UpdateManifold(pair);
-            }
+            foreach (var pair in pairs) UpdateManifold(pair);
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
-
-            /// var sortedContacts = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
-            //var sorted = _contacts.Values.OrderByDescending(x => x.penetrationDepth);
 
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
@@ -189,36 +171,41 @@ namespace stupid
             ResolveContact(body, stat, ref contact, isStatic: true);
         }
 
+        // Constants
+        private static readonly f32 BAUM = f32.FromFloat(0.2f);
 
-        private static readonly f32 BAUM = (f32)0.2;
+        // Property to get the default contact offset setting
+        public f32 SLOP => Settings.DefaultContactOffset;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ResolveContact(RigidbodyS a, Collidable bStat, ref ContactS contact, bool isStatic = false)
         {
+            // Determine the other rigidbody involved in the contact
             RigidbodyS? b = isStatic ? null : bStat as RigidbodyS;
 
-            f32 slop = Settings.DefaultContactOffset;
-            f32 NORMAL_SLOP = f32.one;
+            // Positions
+            Vector3S aPosition = a.transform.position;
+            Vector3S bPosition = bStat.transform.position;
 
-            var aPosition = a.transform.position;
-            var bPosition = bStat.transform.position;
-            var contactPointA = aPosition + contact.pA;
-            var contactPointB = bPosition + contact.pB;
-
+            // Contact points
+            Vector3S contactPointA = aPosition + contact.pA;
+            Vector3S contactPointB = bPosition + contact.pB;
             Vector3S normal = contact.normal;
-            /*
-            if (Vector3S.DistanceSquared(contactPointA, contactPointB) > NORMAL_SLOP)
-                normal = (contactPointA - contactPointB).Normalize();
-            */
 
-            f32 penetrationDepth = Vector3S.Dot((bPosition + contact.pB) - (aPosition + contact.pA), normal) + contact.penetrationDepth;
-            penetrationDepth = MathS.Max(penetrationDepth - slop, f32.zero);
+            // Calculate penetration depth
+            f32 penetrationDepth = Vector3S.Dot(contactPointB - contactPointA, normal) + contact.penetrationDepth;
+            penetrationDepth = MathS.Max(penetrationDepth - SLOP, f32.zero);
             if (penetrationDepth == f32.zero) return;
 
+            // Relative positions from centers of mass
             Vector3S ra = contactPointA - aPosition;
             Vector3S rb = isStatic ? Vector3S.zero : contactPointB - b.transform.position;
 
+            // Relative velocity at the contact point
             Vector3S relativeVelocityAtContact = a.velocity + Vector3S.Cross(a.angularVelocity, ra) -
-                (isStatic ? Vector3S.zero : b.velocity + Vector3S.Cross(b.angularVelocity, rb));
+                                                 (isStatic ? Vector3S.zero : b.velocity + Vector3S.Cross(b.angularVelocity, rb));
 
+            // Effective mass calculation
             f32 invMassA = a.inverseMass;
             f32 invMassB = isStatic ? f32.zero : b.inverseMass;
             f32 effectiveMass = invMassA +
@@ -226,32 +213,40 @@ namespace stupid
                                 (isStatic ? f32.zero : invMassB +
                                 Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal));
 
+            // Correct positions based on penetration
             Vector3S correction = (penetrationDepth / effectiveMass) * normal;
             a.transform.position += invMassA * correction;
             if (!isStatic) b.transform.position -= invMassB * correction;
 
+            // Relative velocity along the normal
             f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
             if (velocityAlongNormal > f32.zero) return;
 
+            // Restitution (bounciness)
             f32 restitution = relativeVelocityAtContact.Magnitude() >= Settings.BounceThreshold
                 ? MathS.Min(a.material.restitution, bStat.material.restitution)
                 : f32.zero;
 
+            // Baumgarte stabilization factor
             f32 baumFactor = (BAUM * penetrationDepth / DeltaTime);
+
+            // Impulse calculation
             f32 incrementalImpulse = -(f32.one + restitution) * velocityAlongNormal / effectiveMass;
             f32 newAccumulatedImpulse = MathS.Max(contact.cachedNormalImpulse + incrementalImpulse, f32.zero);
             f32 appliedImpulse = newAccumulatedImpulse - contact.cachedNormalImpulse;
             contact.cachedNormalImpulse = newAccumulatedImpulse;
 
+            // Apply impulses to velocities
             Vector3S normalImpulse = appliedImpulse * normal;
-
             Vector3S linearImpulseWithBaum = normalImpulse + (baumFactor * normal);
             a.velocity += invMassA * linearImpulseWithBaum;
             if (!isStatic) b.velocity -= invMassB * linearImpulseWithBaum;
 
+            // Angular impulses
             a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
             if (!isStatic) b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
 
+            // Friction calculation
             Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
             Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
             f32 frictionDenominator = invMassA +
@@ -259,8 +254,17 @@ namespace stupid
                                       (isStatic ? f32.zero : invMassB +
                                       Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent));
             f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
+
+            // Apply static friction
+            f32 effectiveStaticFriction = MathS.Max(a.material.staticFriction, bStat.material.staticFriction);
+            if (relativeTangentialVelocity.Magnitude() < effectiveStaticFriction)
+            {
+                frictionImpulseScalar = f32.zero;
+            }
+
             f32 effectiveFriction = (a.material.staticFriction + bStat.material.staticFriction) * f32.half;
 
+            // Apply friction impulse
             Vector3S frictionImpulse = frictionImpulseScalar * tangent;
             if (frictionImpulse.Magnitude() > appliedImpulse * effectiveFriction)
             {
@@ -275,6 +279,7 @@ namespace stupid
                 b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
             }
 
+            // Cache impulses
             contact.cachedImpulse = normalImpulse + frictionImpulse;
             contact.cachedFrictionImpulse = frictionImpulseScalar;
         }

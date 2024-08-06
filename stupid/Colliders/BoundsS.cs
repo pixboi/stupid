@@ -39,10 +39,11 @@ namespace stupid.Colliders
             if (max.z < other.min.z || min.z > other.max.z) return false;
 
             // Calculate the penetration depth on each axis
-            penetrationDepth.x = (max.x < other.max.x) ? max.x - other.min.x : other.max.x - min.x;
-            penetrationDepth.y = (max.y < other.max.y) ? max.y - other.min.y : other.max.y - min.y;
-            penetrationDepth.z = (max.z < other.max.z) ? max.z - other.min.z : other.max.z - min.z;
+            var x = (max.x < other.max.x) ? max.x - other.min.x : other.max.x - min.x;
+            var y = (max.y < other.max.y) ? max.y - other.min.y : other.max.y - min.y;
+            var z = (max.z < other.max.z) ? max.z - other.min.z : other.max.z - min.z;
 
+            penetrationDepth = new Vector3S(x, y, z);   
             return true;
         }
 

@@ -7,7 +7,7 @@ namespace stupid
 {
     public interface IBroadphase
     {
-        HashSet<BodyPair> ComputePairs(DumbList<Collidable> rigidbodies);
+        HashSet<IntPair> ComputePairs(DumbList<Collidable> rigidbodies);
     }
 
     public class SortAndSweepBroadphase : IBroadphase
@@ -16,7 +16,7 @@ namespace stupid
         public AxisEndpoint[] endpointsY { get; private set; }
         public AxisEndpoint[] endpointsZ { get; private set; }
 
-        private readonly HashSet<BodyPair> pairs;
+        private readonly HashSet<IntPair> pairs;
         private int[] overlapCount;
         private int rbCount = 0;
         private Collidable[] activeList;
@@ -27,7 +27,7 @@ namespace stupid
             endpointsX = new AxisEndpoint[initialCapacity * 2];
             endpointsY = new AxisEndpoint[initialCapacity * 2];
             endpointsZ = new AxisEndpoint[initialCapacity * 2];
-            pairs = new HashSet<BodyPair>(initialCapacity * initialCapacity, new BodyPairComparer());
+            pairs = new HashSet<IntPair>(initialCapacity * initialCapacity, new BodyPairComparer());
             activeList = new Collidable[initialCapacity];
             overlapCount = new int[initialCapacity * initialCapacity];
         }
@@ -59,7 +59,7 @@ namespace stupid
             overlapCount = new int[rbCount * rbCount];
         }
 
-        public HashSet<BodyPair> ComputePairs(DumbList<Collidable> rigidbodies)
+        public HashSet<IntPair> ComputePairs(DumbList<Collidable> rigidbodies)
         {
             if (rbCount != rigidbodies.Count)
             {
@@ -99,11 +99,11 @@ namespace stupid
                     var ab = bodyA.GetBounds();
                     var bb = bodyB.GetBounds();
 
-                    ab.Expand(fat);
-                    bb.Expand(fat);
+                  // ab.Expand(fat);
+                  // bb.Expand(fat);
                     if (ab.Intersects(bb))
                     {
-                        pairs.Add(new BodyPair(aIndex, bIndex));
+                        pairs.Add(new IntPair(aIndex, bIndex));
                     }
                 }
             }
@@ -202,12 +202,12 @@ namespace stupid
         }
     }
 
-    public readonly struct BodyPair : IEquatable<BodyPair>
+    public readonly struct IntPair : IEquatable<IntPair>
     {
         public readonly int aIndex;
         public readonly int bIndex;
 
-        public BodyPair(int aIndex, int bIndex)
+        public IntPair(int aIndex, int bIndex)
         {
             bool condition = aIndex < bIndex;
             this.aIndex = condition ? aIndex : bIndex;
@@ -216,10 +216,10 @@ namespace stupid
 
         public override bool Equals(object? obj)
         {
-            return obj is BodyPair pair && Equals(pair);
+            return obj is IntPair pair && Equals(pair);
         }
 
-        public bool Equals(BodyPair other)
+        public bool Equals(IntPair other)
         {
             return aIndex == other.aIndex &&
                    bIndex == other.bIndex;
@@ -232,14 +232,14 @@ namespace stupid
     }
 
 
-    public class BodyPairComparer : IEqualityComparer<BodyPair>
+    public class BodyPairComparer : IEqualityComparer<IntPair>
     {
-        public bool Equals(BodyPair x, BodyPair y)
+        public bool Equals(IntPair x, IntPair y)
         {
             return x.aIndex == y.aIndex && x.bIndex == y.bIndex;
         }
 
-        public int GetHashCode(BodyPair obj)
+        public int GetHashCode(IntPair obj)
         {
             return obj.GetHashCode();
         }

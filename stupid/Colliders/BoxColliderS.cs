@@ -25,12 +25,13 @@ namespace stupid.Colliders
             new Vector3S(-1,1,0).Normalize(),   new Vector3S(-1,0,1).Normalize(), new Vector3S(-1,0,-1).Normalize(),new Vector3S(-1,-1,0).Normalize(),
         };
 
-        public Vector3S size { get; private set; }
-        public Vector3S halfSize { get; private set; }
-        Vector3S right, up, forward;
-        public Vector3S[] localVertices { get; private set; }
-        public Vector3S[] vertices { get; private set; }
-        public Vector3S[] axes { get; private set; }
+        public readonly Vector3S size;
+        public readonly Vector3S halfSize;
+
+        readonly Vector3S right, up, forward;
+        public readonly Vector3S[] localVertices;
+        public Vector3S[] vertices;
+        public Vector3S[] axes;
 
         public BoxColliderS(Vector3S size)
         {
