@@ -73,7 +73,7 @@ namespace stupid.Colliders
         {
             // Transform the point to local space
             var localPoint = _collidable.transform.ToLocalPoint(worldPoint);
-            
+
             //_collidable.transform.ToLocalPointInPlace(worldPoint, out var localPoint);
 
             localPoint.x.AbsInPlace();
@@ -119,7 +119,7 @@ namespace stupid.Colliders
             return 0;
         }
 
-        private static readonly f32 boxInertia = f32.FromFloat(0.08333333333f);
+        private static readonly f32 boxInertia = f32.FromFloat(1f / 12f);
         public Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // For a solid box: I = 1/12 * m * (h^2 + d^2) for each axis

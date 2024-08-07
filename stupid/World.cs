@@ -171,7 +171,7 @@ namespace stupid
             ResolveContact(body, stat, ref contact, isStatic: true);
         }
 
-        private static readonly f32 BAUM = f32.FromFloat(0.05f);
+        private static readonly f32 BAUM = f32.FromFloat(0.00f);
         public f32 SLOP => Settings.DefaultContactOffset;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -4,7 +4,6 @@ namespace stupid.Maths
 {
     public struct Tensor
     {
-        // Tensors
         public readonly Matrix3S inertia; // Precalculated local inertia tensor
         public readonly Matrix3S inertiaInverse; // Precalculated local inverse inertia tensor
 
@@ -46,6 +45,7 @@ namespace stupid.Maths
             f32 i21 = inertiaTensorLocal.m10, i22 = inertiaTensorLocal.m11, i23 = inertiaTensorLocal.m12;
             f32 i31 = inertiaTensorLocal.m20, i32 = inertiaTensorLocal.m21, i33 = inertiaTensorLocal.m22;
 
+            // Perform R * I
             f32 m11 = r11 * i11 + r12 * i21 + r13 * i31;
             f32 m12 = r11 * i12 + r12 * i22 + r13 * i32;
             f32 m13 = r11 * i13 + r12 * i23 + r13 * i33;
@@ -58,10 +58,23 @@ namespace stupid.Maths
             f32 m32 = r31 * i12 + r32 * i22 + r33 * i32;
             f32 m33 = r31 * i13 + r32 * i23 + r33 * i33;
 
+            // Perform the final multiplication with the transpose of R
             return new Matrix3S(
-                new Vector3S(m11, m12, m13),
-                new Vector3S(m21, m22, m23),
-                new Vector3S(m31, m32, m33)
+                new Vector3S(
+                    m11 * r11 + m12 * r12 + m13 * r13,
+                    m11 * r21 + m12 * r22 + m13 * r23,
+                    m11 * r31 + m12 * r32 + m13 * r33
+                ),
+                new Vector3S(
+                    m21 * r11 + m22 * r12 + m23 * r13,
+                    m21 * r21 + m22 * r22 + m23 * r23,
+                    m21 * r31 + m22 * r32 + m23 * r33
+                ),
+                new Vector3S(
+                    m31 * r11 + m32 * r12 + m33 * r13,
+                    m31 * r21 + m32 * r22 + m33 * r23,
+                    m31 * r31 + m32 * r32 + m33 * r33
+                )
             );
         }
     }

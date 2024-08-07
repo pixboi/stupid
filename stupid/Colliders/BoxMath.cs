@@ -56,7 +56,7 @@ namespace stupid.Colliders
             }
             else
             {
-                // Case where there is a collision but none of the vertices overlap each box.
+                //Get the best edges with the separating axis
                 var bestEdgeA = FindBestEdge(a, -normal);
                 var bestEdgeB = FindBestEdge(b, normal);
 
@@ -82,8 +82,20 @@ namespace stupid.Colliders
                     }
                 }
 
-                CheckEdgeIntersections(bestEdgeA, b);
-                CheckEdgeIntersections(bestEdgeB, a);
+                a.GetAllEdges(ref edgeCache);
+                foreach (var e in edgeCache)
+                {
+                    CheckEdgeIntersections(e, b);
+                }
+
+                b.GetAllEdges(ref edgeCache);
+                foreach (var e in edgeCache)
+                {
+                    CheckEdgeIntersections(e, a);
+                }
+
+                //CheckEdgeIntersections(bestEdgeA, b);
+                // CheckEdgeIntersections(bestEdgeB, a);
 
                 if (intersectionCount == 0)
                 {
