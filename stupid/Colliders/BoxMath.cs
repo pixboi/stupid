@@ -1,4 +1,5 @@
 ﻿using stupid.Maths;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -26,17 +27,17 @@ namespace stupid.Colliders
 
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[0]).Normalize(), a, b, 6, ref minPen, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[1]).Normalize(), a, b, 7, ref minPen, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[2]).Normalize(), a, b, 8, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[0]).NormalizeInPlace(), a, b, 6, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[1]).NormalizeInPlace(), a, b, 7, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[2]).NormalizeInPlace(), a, b, 8, ref minPen, ref minAxis, ref best)) return 0;
 
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[0]).Normalize(), a, b, 9, ref minPen, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[1]).Normalize(), a, b, 10, ref minPen, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[2]).Normalize(), a, b, 11, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[0]).NormalizeInPlace(), a, b, 9, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[1]).NormalizeInPlace(), a, b, 10, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[2]).NormalizeInPlace(), a, b, 11, ref minPen, ref minAxis, ref best)) return 0;
 
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[0]).Normalize(), a, b, 12, ref minPen, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[1]).Normalize(), a, b, 13, ref minPen, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[2]).Normalize(), a, b, 14, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[0]).NormalizeInPlace(), a, b, 12, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[1]).NormalizeInPlace(), a, b, 13, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[2]).NormalizeInPlace(), a, b, 14, ref minPen, ref minAxis, ref best)) return 0;
 
             if (best == -1)
             {
@@ -125,27 +126,34 @@ namespace stupid.Colliders
             return edgeCache[bestEdgeIndex];
         }
 
-        static List<Vector3S> points = new List<Vector3S>();
         public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b, out Vector3S averagePoint)
         {
-            points.Clear();
             averagePoint = Vector3S.zero;
+            int count = 0;
 
-            foreach (var v in a.vertices)
+            for (int i = 0; i < 8; i++)
             {
-                if (b.ContainsPoint(v)) points.Add(v);
+                var v = a.vertices[i];
+                if (b.ContainsPoint(v))
+                {
+                    averagePoint.AddInPlace(v);
+                    count++;
+                }
             }
 
-            foreach (var v in b.vertices)
+            for (int i = 0; i < 8; i++)
             {
-                if (a.ContainsPoint(v)) points.Add(v);
+                var v = b.vertices[i];
+                if (a.ContainsPoint(v))
+                {
+                    averagePoint.AddInPlace(v);
+                    count++;
+                }
             }
 
+            if (count == 0) return false;
 
-            if (points.Count == 0) return false;
-            foreach (var p in points) averagePoint += p;
-
-            averagePoint = averagePoint / (f32)points.Count;
+            averagePoint.DivideInPlace((f32)count);
             return true;
         }
 
@@ -159,8 +167,13 @@ namespace stupid.Colliders
 
             f32 pA = ProjectBox(axis, a);
             f32 pB = ProjectBox(axis, b);
-            f32 distance = MathS.Abs(Vector3S.Dot(relativePosition, axis));
-            f32 overlap = pA + pB - distance;
+            f32 distance = Vector3S.AbsDot(relativePosition, axis);
+
+            pA.AddInPlace(pB);
+            pA.SubtractInPlace(distance);
+
+            //f32 overlap = pA + pB - distance;
+            f32 overlap = pA;
             if (overlap < f32.zero) return false;
 
             if (overlap < minOverlap)
@@ -176,20 +189,13 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static f32 ProjectBox(in Vector3S axis, in BoxColliderS box)
         {
-            f32 absDot0 = Vector3S.AbsDot(axis, box.axes[0]);
-            f32 absDot1 = Vector3S.AbsDot(axis, box.axes[1]);
-            f32 absDot2 = Vector3S.AbsDot(axis, box.axes[2]);
+            long absDot0 = Vector3S.RawAbsDot(axis, box.axes[0]);
+            long absDot1 = Vector3S.RawAbsDot(axis, box.axes[1]);
+            long absDot2 = Vector3S.RawAbsDot(axis, box.axes[2]);
 
-            var x1 = ((box.halfSize.x.rawValue * absDot0.rawValue) + (box.halfSize.y.rawValue * absDot1.rawValue) + (box.halfSize.z.rawValue * absDot2.rawValue)) >> f32.FractionalBits;
-            // var x2 =  >> f32.FractionalBits;
-            // var x3 =  >> f32.FractionalBits;
+            var x1 = ((box.halfSize.x.rawValue * absDot0) + (box.halfSize.y.rawValue * absDot1) + (box.halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
 
             return new f32(x1);
-
-            return
-                box.halfSize.x * absDot0 +
-                box.halfSize.y * absDot1 +
-                box.halfSize.z * absDot2;
         }
 
     }

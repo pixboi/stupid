@@ -171,7 +171,7 @@ namespace stupid
             ResolveContact(body, stat, ref contact, isStatic: true);
         }
 
-        private static readonly f32 BAUM = f32.FromFloat(0.1f);
+        private static readonly f32 BAUM = f32.FromFloat(0.05f);
         public f32 SLOP => Settings.DefaultContactOffset;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -185,35 +185,65 @@ namespace stupid
             Vector3S bPosition = bStat.transform.position;
 
             // Contact points
-            Vector3S contactPointA = aPosition + contact.pA;
-            Vector3S contactPointB = bPosition + contact.pB;
+            Vector3S contactPointA = aPosition;
+            contactPointA.AddInPlace(contact.pA);
+            Vector3S contactPointB = bPosition;
+            contactPointB.AddInPlace(contact.pB);
             Vector3S normal = contact.normal;
 
             // Calculate penetration depth
-            f32 penetrationDepth = Vector3S.Dot(contactPointB - contactPointA, normal) + contact.penetrationDepth;
-            penetrationDepth = MathS.Max(penetrationDepth - SLOP, f32.zero);
+            Vector3S temp = contactPointB;
+            temp.SubtractInPlace(contactPointA);
+            f32 penetrationDepth = Vector3S.Dot(temp, normal);
+            penetrationDepth.AddInPlace(contact.penetrationDepth);
+            penetrationDepth.SubtractInPlace(SLOP);
+            penetrationDepth = MathS.Max(penetrationDepth, f32.zero);
             if (penetrationDepth == f32.zero) return;
 
             // Relative positions from centers of mass
-            Vector3S ra = contactPointA - aPosition;
-            Vector3S rb = isStatic ? Vector3S.zero : contactPointB - b.transform.position;
+            Vector3S ra = contactPointA;
+            ra.SubtractInPlace(aPosition);
+            Vector3S rb = isStatic ? Vector3S.zero : contactPointB;
+            if (!isStatic)
+            {
+                rb.SubtractInPlace(b.transform.position);
+            }
 
             // Relative velocity at the contact point
-            Vector3S relativeVelocityAtContact = a.velocity + Vector3S.Cross(a.angularVelocity, ra) -
-                                                 (isStatic ? Vector3S.zero : b.velocity + Vector3S.Cross(b.angularVelocity, rb));
+            Vector3S relativeVelocityAtContact = a.velocity;
+            Vector3S crossResult = Vector3S.Cross(a.angularVelocity, ra);
+            relativeVelocityAtContact.AddInPlace(crossResult);
+            if (!isStatic)
+            {
+                Vector3S tempVelocity = b.velocity;
+                Vector3S crossResultB = Vector3S.Cross(b.angularVelocity, rb);
+                tempVelocity.AddInPlace(crossResultB);
+                relativeVelocityAtContact.SubtractInPlace(tempVelocity);
+            }
 
             // Effective mass calculation
             f32 invMassA = a.inverseMass;
             f32 invMassB = isStatic ? f32.zero : b.inverseMass;
-            f32 effectiveMass = invMassA +
-                                Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal) +
-                                (isStatic ? f32.zero : invMassB +
-                                Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal));
+            f32 effectiveMass = invMassA;
+            Vector3S crossA = Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra);
+            effectiveMass.AddInPlace(Vector3S.Dot(crossA, normal));
+            if (!isStatic)
+            {
+                effectiveMass.AddInPlace(invMassB);
+                Vector3S crossB = Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb);
+                effectiveMass.AddInPlace(Vector3S.Dot(crossB, normal));
+            }
 
             // Correct positions based on penetration
-            Vector3S correction = (penetrationDepth / effectiveMass) * normal;
-            a.transform.position += invMassA * correction;
-            if (!isStatic) b.transform.position -= invMassB * correction;
+            Vector3S correction = normal;
+            correction.MultiplyInPlace(penetrationDepth / effectiveMass);
+            a.transform.position.AddInPlace(correction * invMassA);
+            if (!isStatic)
+            {
+                Vector3S correctionB = correction;
+                correctionB.MultiplyInPlace(invMassB);
+                b.transform.position.SubtractInPlace(correctionB);
+            }
 
             // Relative velocity along the normal
             f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, normal);
@@ -225,53 +255,98 @@ namespace stupid
                 : f32.zero;
 
             // Baumgarte stabilization factor
-            f32 baumFactor = (BAUM * penetrationDepth / DeltaTime);
+            f32 baumFactor = BAUM;
+            baumFactor.MultiplyInPlace(penetrationDepth);
+            baumFactor.DivideInPlace(DeltaTime);
 
             // Impulse calculation
-            f32 incrementalImpulse = -(f32.one + restitution) * velocityAlongNormal / effectiveMass;
-            f32 newAccumulatedImpulse = MathS.Max(contact.cachedNormalImpulse + incrementalImpulse, f32.zero);
-            f32 appliedImpulse = newAccumulatedImpulse - contact.cachedNormalImpulse;
+            f32 incrementalImpulse = -(f32.one + restitution);
+            incrementalImpulse.MultiplyInPlace(velocityAlongNormal);
+            incrementalImpulse.DivideInPlace(effectiveMass);
+            f32 newAccumulatedImpulse = contact.cachedNormalImpulse;
+            newAccumulatedImpulse.AddInPlace(incrementalImpulse);
+            newAccumulatedImpulse = MathS.Max(newAccumulatedImpulse, f32.zero);
+            f32 appliedImpulse = newAccumulatedImpulse;
+            appliedImpulse.SubtractInPlace(contact.cachedNormalImpulse);
             contact.cachedNormalImpulse = newAccumulatedImpulse;
 
             // Apply impulses to velocities
-            Vector3S normalImpulse = appliedImpulse * normal;
-            Vector3S linearImpulseWithBaum = normalImpulse + (baumFactor * normal);
-            a.velocity += invMassA * linearImpulseWithBaum;
-            if (!isStatic) b.velocity -= invMassB * linearImpulseWithBaum;
-
-            // Angular impulses
-            a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
-            if (!isStatic) b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
-
-            // Friction calculation
-            Vector3S relativeTangentialVelocity = relativeVelocityAtContact - (velocityAlongNormal * normal);
-            Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
-            f32 frictionDenominator = invMassA +
-                                      Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent) +
-                                      (isStatic ? f32.zero : invMassB +
-                                      Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent));
-            f32 frictionImpulseScalar = -Vector3S.Dot(relativeTangentialVelocity, tangent) / frictionDenominator;
-            f32 effectiveFriction = (a.material.staticFriction + bStat.material.staticFriction) * f32.half;
-
-            // Apply friction impulse
-            Vector3S frictionImpulse = frictionImpulseScalar * tangent;
-            if (frictionImpulse.Magnitude() > appliedImpulse * effectiveFriction)
-            {
-                frictionImpulse = frictionImpulse.Normalize() * (appliedImpulse * effectiveFriction);
-            }
-
-            a.velocity += invMassA * frictionImpulse;
-            a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
+            Vector3S normalImpulse = normal;
+            normalImpulse.MultiplyInPlace(appliedImpulse);
+            Vector3S linearImpulseWithBaum = normalImpulse;
+            Vector3S baumImpulse = normal;
+            baumImpulse.MultiplyInPlace(baumFactor);
+            linearImpulseWithBaum.AddInPlace(baumImpulse);
+            a.velocity.AddInPlace(linearImpulseWithBaum * invMassA);
             if (!isStatic)
             {
-                b.velocity -= invMassB * frictionImpulse;
-                b.angularVelocity -= b.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+                Vector3S linearImpulseWithBaumB = linearImpulseWithBaum;
+                linearImpulseWithBaumB.MultiplyInPlace(invMassB);
+                b.velocity.SubtractInPlace(linearImpulseWithBaumB);
+            }
+
+            // Angular impulses
+            Vector3S angularImpulseA = Vector3S.Cross(ra, normalImpulse);
+            angularImpulseA.MultiplyInPlace(a.tensor.inertiaWorld);
+            a.angularVelocity.AddInPlace(angularImpulseA);
+            if (!isStatic)
+            {
+                Vector3S angularImpulseB = Vector3S.Cross(rb, normalImpulse);
+                angularImpulseB.MultiplyInPlace(b.tensor.inertiaWorld);
+                b.angularVelocity.SubtractInPlace(angularImpulseB);
+            }
+
+            // Friction calculation
+            Vector3S relativeTangentialVelocity = relativeVelocityAtContact;
+            Vector3S normalVelocity = normal;
+            normalVelocity.MultiplyInPlace(velocityAlongNormal);
+            relativeTangentialVelocity.SubtractInPlace(normalVelocity);
+            Vector3S tangent = relativeTangentialVelocity.Magnitude() > f32.zero ? relativeTangentialVelocity.Normalize() : Vector3S.zero;
+            f32 frictionDenominator = invMassA;
+            Vector3S crossTangentA = Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra);
+            frictionDenominator.AddInPlace(Vector3S.Dot(crossTangentA, tangent));
+            if (!isStatic)
+            {
+                frictionDenominator.AddInPlace(invMassB);
+                Vector3S crossTangentB = Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb);
+                frictionDenominator.AddInPlace(Vector3S.Dot(crossTangentB, tangent));
+            }
+            f32 frictionImpulseScalar = Vector3S.Dot(relativeTangentialVelocity, tangent);
+            frictionImpulseScalar.DivideInPlace(frictionDenominator);
+            frictionImpulseScalar = -frictionImpulseScalar;
+            f32 effectiveFriction = a.material.staticFriction;
+            effectiveFriction.AddInPlace(bStat.material.staticFriction);
+            effectiveFriction.MultiplyInPlace(f32.half);
+
+            // Apply friction impulse
+            Vector3S frictionImpulse = tangent;
+            frictionImpulse.MultiplyInPlace(frictionImpulseScalar);
+            f32 maxFrictionImpulse = appliedImpulse;
+            maxFrictionImpulse.MultiplyInPlace(effectiveFriction);
+            if (frictionImpulse.Magnitude() > maxFrictionImpulse)
+            {
+                frictionImpulse = frictionImpulse.Normalize();
+                frictionImpulse.MultiplyInPlace(maxFrictionImpulse);
+            }
+
+            a.velocity.AddInPlace(frictionImpulse * invMassA);
+            Vector3S angularFrictionImpulseA = Vector3S.Cross(ra, frictionImpulse);
+            angularFrictionImpulseA.MultiplyInPlace(a.tensor.inertiaWorld);
+            a.angularVelocity.AddInPlace(angularFrictionImpulseA);
+            if (!isStatic)
+            {
+                b.velocity.SubtractInPlace(frictionImpulse * invMassB);
+                Vector3S angularFrictionImpulseB = Vector3S.Cross(rb, frictionImpulse);
+                angularFrictionImpulseB.MultiplyInPlace(b.tensor.inertiaWorld);
+                b.angularVelocity.SubtractInPlace(angularFrictionImpulseB);
             }
 
             // Cache impulses
-            contact.cachedImpulse = normalImpulse + frictionImpulse;
+            contact.cachedImpulse = normalImpulse;
+            contact.cachedImpulse.AddInPlace(frictionImpulse);
             contact.cachedFrictionImpulse = frictionImpulseScalar;
         }
+
 
     }
 }

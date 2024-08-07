@@ -85,6 +85,15 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(in f32 value) => new f32(-value.rawValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AbsInPlace()
+        {
+            if (rawValue < 0)
+            {
+                rawValue = ~rawValue + 1; // Equivalent to rawValue = -rawValue without creating a new instance
+            }
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static explicit operator float(in f32 fp) => fp.ToFloat();

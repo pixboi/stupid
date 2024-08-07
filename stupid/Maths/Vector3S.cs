@@ -45,9 +45,9 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddInPlace(in Vector3S b)
         {
-            this.x.AddInPlace(b.x);
-            this.y.AddInPlace(b.y);
-            this.z.AddInPlace(b.z);
+            this.x.rawValue += b.x.rawValue;
+            this.y.rawValue += b.y.rawValue;
+            this.z.rawValue += b.z.rawValue;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -63,9 +63,9 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SubtractInPlace(in Vector3S b)
         {
-            this.x.SubtractInPlace(b.x);
-            this.y.SubtractInPlace(b.y);
-            this.z.SubtractInPlace(b.z);
+            this.x.rawValue -= b.x.rawValue;
+            this.y.rawValue -= b.y.rawValue;
+            this.z.rawValue -= b.z.rawValue;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -91,9 +91,9 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void MultiplyInPlace(in Vector3S b)
         {
-            this.x.MultiplyInPlace(b.x);
-            this.y.MultiplyInPlace(b.y);
-            this.z.MultiplyInPlace(b.z);
+            this.x.rawValue = (this.x.rawValue * b.x.rawValue) >> f32.FractionalBits;
+            this.y.rawValue = (this.y.rawValue * b.y.rawValue) >> f32.FractionalBits;
+            this.z.rawValue = (this.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -107,11 +107,20 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void DivideInPlace(in Vector3S b)
+        public void DivideInPlace(in f32 d)
         {
-            this.x.DivideInPlace(b.x);
-            this.y.DivideInPlace(b.y);
-            this.z.DivideInPlace(b.z);
+            if (d.rawValue == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero.");
+            }
+
+            this.x.rawValue = (this.x.rawValue << f32.FractionalBits) / d.rawValue;
+            this.y.rawValue = (this.y.rawValue << f32.FractionalBits) / d.rawValue;
+            this.z.rawValue = (this.z.rawValue << f32.FractionalBits) / d.rawValue;
+
+           // this.x.DivideInPlace(d);
+           // this.y.DivideInPlace(d);
+           // this.z.DivideInPlace(d);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -127,12 +136,18 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void MultiplyInPlace(in f32 b)
         {
-            this.x.MultiplyInPlace(b);
-            this.y.MultiplyInPlace(b);
-            this.z.MultiplyInPlace(b);
+            this.x.rawValue = (this.x.rawValue * b.rawValue) >> f32.FractionalBits;
+            this.y.rawValue = (this.y.rawValue * b.rawValue) >> f32.FractionalBits;
+            this.z.rawValue = (this.z.rawValue * b.rawValue) >> f32.FractionalBits;
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void MultiplyInPlace(in Matrix3S m)
+        {
+            this.x.rawValue = ((m.m00.rawValue * x.rawValue) + (m.m01.rawValue * y.rawValue) + (m.m02.rawValue * z.rawValue)) >> f32.FractionalBits;
+            this.y.rawValue = ((m.m10.rawValue * x.rawValue) + (m.m11.rawValue * y.rawValue) + (m.m12.rawValue * z.rawValue)) >> f32.FractionalBits;
+            this.z.rawValue = ((m.m20.rawValue * x.rawValue) + (m.m21.rawValue * y.rawValue) + (m.m22.rawValue * z.rawValue)) >> f32.FractionalBits;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString() => $"({x}, {y}, {z})";
@@ -158,6 +173,18 @@ namespace stupid.Maths
             long absDotProduct = (dotProduct + mask) ^ mask; // If negative, flip the sign bits
 
             return new f32(absDotProduct);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long RawAbsDot(in Vector3S a, in Vector3S b)
+        {
+            long dotX = a.x.rawValue * b.x.rawValue;
+            long dotY = a.y.rawValue * b.y.rawValue;
+            long dotZ = a.z.rawValue * b.z.rawValue;
+            long dotProduct = (dotX + dotY + dotZ) >> f32.FractionalBits;
+
+            // Ensure the result is non-negative by taking the absolute value
+            return dotProduct < 0 ? -dotProduct : dotProduct;
         }
 
 
@@ -221,6 +248,20 @@ namespace stupid.Maths
         {
             mag = Magnitude();
             return mag > f32.zero ? this / mag : zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3S NormalizeInPlace()
+        {
+            f32 mag = Magnitude();
+
+            if (mag > f32.zero)
+            {
+                this.DivideInPlace(mag);
+                return this;
+            }
+
+            return zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

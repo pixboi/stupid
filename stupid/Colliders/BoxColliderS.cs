@@ -69,15 +69,20 @@ namespace stupid.Colliders
             axes[2] = rotMat.GetColumn(2).Normalize();
         }
 
-        public bool ContainsPoint(in Vector3S point)
+        public bool ContainsPoint(in Vector3S worldPoint)
         {
             // Transform the point to local space
-            var localPoint = _collidable.transform.ToLocalPoint(point);
+            var localPoint = _collidable.transform.ToLocalPoint(worldPoint);
+            
+            //_collidable.transform.ToLocalPointInPlace(worldPoint, out var localPoint);
 
+            localPoint.x.AbsInPlace();
+            localPoint.y.AbsInPlace();
+            localPoint.z.AbsInPlace();
             // Check if the point is within the bounds of the box
-            return MathS.Abs(localPoint.x) <= halfSize.x &&
-                   MathS.Abs(localPoint.y) <= halfSize.y &&
-                   MathS.Abs(localPoint.z) <= halfSize.z;
+            return (localPoint.x) <= halfSize.x &&
+                   (localPoint.y) <= halfSize.y &&
+                   (localPoint.z) <= halfSize.z;
         }
 
 
