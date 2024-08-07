@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public readonly struct f32 : IEquatable<f32>, IComparable<f32>
+    public struct f32 : IEquatable<f32>, IComparable<f32>
     {
-        public readonly long _value;
+        public long rawValue;
         public const int FractionalBits = 16;
         private const long One = 1L << FractionalBits;
 
@@ -26,41 +26,65 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32(long value)
         {
-            _value = value;
+            rawValue = value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public long ToRaw() => _value;
+        public long ToRaw() => rawValue;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 FromFloat(float value) => new f32((long)(value * One));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float ToFloat() => (float)_value / One;
+        public float ToFloat() => (float)rawValue / One;
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator +(in f32 a, in f32 b) => new f32(a._value + b._value);
+        public static f32 operator +(in f32 a, in f32 b) => new f32(a.rawValue + b.rawValue);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator -(in f32 a, in f32 b) => new f32(a._value - b._value);
+        public void AddInPlace(in f32 b) { rawValue += b.rawValue; }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator *(in f32 a, in f32 b) => new f32((a._value * b._value) >> FractionalBits);
+        public static f32 operator -(in f32 a, in f32 b) => new f32(a.rawValue - b.rawValue);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SubtractInPlace(in f32 b) { rawValue -= b.rawValue; }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static f32 operator *(in f32 a, in f32 b) => new f32((a.rawValue * b.rawValue) >> FractionalBits);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void MultiplyInPlace(in f32 b) { rawValue = (rawValue * b.rawValue) >> FractionalBits; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator /(in f32 a, in f32 b)
         {
-            if (b._value == 0)
+            if (b.rawValue == 0)
             {
                 throw new DivideByZeroException("Cannot divide by zero.");
             }
-            long dividend = (a._value << FractionalBits);
-            long result = dividend / b._value;
+            long dividend = (a.rawValue << FractionalBits);
+            long result = dividend / b.rawValue;
             return new f32(result);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator -(in f32 value) => new f32(-value._value);
+        public void DivideInPlace(in f32 b)
+        {
+            if (b.rawValue == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero.");
+            }
+            long dividend = (this.rawValue << FractionalBits);
+            this.rawValue = dividend / b.rawValue;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static f32 operator -(in f32 value) => new f32(-value.rawValue);
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static explicit operator float(in f32 fp) => fp.ToFloat();
@@ -72,31 +96,31 @@ namespace stupid.Maths
         public override string ToString() => ToFloat().ToString();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(f32 other) => _value == other._value;
+        public bool Equals(f32 other) => rawValue == other.rawValue;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int CompareTo(f32 other) => _value.CompareTo(other._value);
+        public int CompareTo(f32 other) => rawValue.CompareTo(other.rawValue);
 
         public override bool Equals(object obj) => obj is f32 other && Equals(other);
 
-        public override int GetHashCode() => _value.GetHashCode();
+        public override int GetHashCode() => rawValue.GetHashCode();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(in f32 left, in f32 right) => left._value == right._value;
+        public static bool operator ==(in f32 left, in f32 right) => left.rawValue == right.rawValue;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(in f32 left, in f32 right) => left._value != right._value;
+        public static bool operator !=(in f32 left, in f32 right) => left.rawValue != right.rawValue;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator <(in f32 left, in f32 right) => left._value < right._value;
+        public static bool operator <(in f32 left, in f32 right) => left.rawValue < right.rawValue;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator >(in f32 left, in f32 right) => left._value > right._value;
+        public static bool operator >(in f32 left, in f32 right) => left.rawValue > right.rawValue;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator <=(in f32 left, in f32 right) => left._value <= right._value;
+        public static bool operator <=(in f32 left, in f32 right) => left.rawValue <= right.rawValue;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator >=(in f32 left, in f32 right) => left._value >= right._value;
+        public static bool operator >=(in f32 left, in f32 right) => left.rawValue >= right.rawValue;
     }
 }

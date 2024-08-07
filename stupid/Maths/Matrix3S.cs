@@ -52,9 +52,9 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(in Matrix3S m, in Vector3S v)
         {
-            long x = ((m.m00._value * v.x._value) + (m.m01._value * v.y._value) + (m.m02._value * v.z._value)) >> f32.FractionalBits;
-            long y = ((m.m10._value * v.x._value) + (m.m11._value * v.y._value) + (m.m12._value * v.z._value)) >> f32.FractionalBits;
-            long z = ((m.m20._value * v.x._value) + (m.m21._value * v.y._value) + (m.m22._value * v.z._value)) >> f32.FractionalBits;
+            long x = ((m.m00.rawValue * v.x.rawValue) + (m.m01.rawValue * v.y.rawValue) + (m.m02.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+            long y = ((m.m10.rawValue * v.x.rawValue) + (m.m11.rawValue * v.y.rawValue) + (m.m12.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+            long z = ((m.m20.rawValue * v.x.rawValue) + (m.m21.rawValue * v.y.rawValue) + (m.m22.rawValue * v.z.rawValue)) >> f32.FractionalBits;
 
             return new Vector3S(new f32(x), new f32(y), new f32(z));
         }
@@ -62,17 +62,17 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S operator *(in Matrix3S a, in Matrix3S b)
         {
-            long m00 = ((a.m00._value * b.m00._value) + (a.m01._value * b.m10._value) + (a.m02._value * b.m20._value)) >> f32.FractionalBits;
-            long m01 = ((a.m00._value * b.m01._value) + (a.m01._value * b.m11._value) + (a.m02._value * b.m21._value)) >> f32.FractionalBits;
-            long m02 = ((a.m00._value * b.m02._value) + (a.m01._value * b.m12._value) + (a.m02._value * b.m22._value)) >> f32.FractionalBits;
+            long m00 = ((a.m00.rawValue * b.m00.rawValue) + (a.m01.rawValue * b.m10.rawValue) + (a.m02.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
+            long m01 = ((a.m00.rawValue * b.m01.rawValue) + (a.m01.rawValue * b.m11.rawValue) + (a.m02.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
+            long m02 = ((a.m00.rawValue * b.m02.rawValue) + (a.m01.rawValue * b.m12.rawValue) + (a.m02.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
 
-            long m10 = ((a.m10._value * b.m00._value) + (a.m11._value * b.m10._value) + (a.m12._value * b.m20._value)) >> f32.FractionalBits;
-            long m11 = ((a.m10._value * b.m01._value) + (a.m11._value * b.m11._value) + (a.m12._value * b.m21._value)) >> f32.FractionalBits;
-            long m12 = ((a.m10._value * b.m02._value) + (a.m11._value * b.m12._value) + (a.m12._value * b.m22._value)) >> f32.FractionalBits;
+            long m10 = ((a.m10.rawValue * b.m00.rawValue) + (a.m11.rawValue * b.m10.rawValue) + (a.m12.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
+            long m11 = ((a.m10.rawValue * b.m01.rawValue) + (a.m11.rawValue * b.m11.rawValue) + (a.m12.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
+            long m12 = ((a.m10.rawValue * b.m02.rawValue) + (a.m11.rawValue * b.m12.rawValue) + (a.m12.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
 
-            long m20 = ((a.m20._value * b.m00._value) + (a.m21._value * b.m10._value) + (a.m22._value * b.m20._value)) >> f32.FractionalBits;
-            long m21 = ((a.m20._value * b.m01._value) + (a.m21._value * b.m11._value) + (a.m22._value * b.m21._value)) >> f32.FractionalBits;
-            long m22 = ((a.m20._value * b.m02._value) + (a.m21._value * b.m12._value) + (a.m22._value * b.m22._value)) >> f32.FractionalBits;
+            long m20 = ((a.m20.rawValue * b.m00.rawValue) + (a.m21.rawValue * b.m10.rawValue) + (a.m22.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
+            long m21 = ((a.m20.rawValue * b.m01.rawValue) + (a.m21.rawValue * b.m11.rawValue) + (a.m22.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
+            long m22 = ((a.m20.rawValue * b.m02.rawValue) + (a.m21.rawValue * b.m12.rawValue) + (a.m22.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
 
             return new Matrix3S(
                 new f32(m00), new f32(m01), new f32(m02),

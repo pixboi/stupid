@@ -180,7 +180,7 @@ namespace stupid.Colliders
             f32 absDot1 = Vector3S.AbsDot(axis, box.axes[1]);
             f32 absDot2 = Vector3S.AbsDot(axis, box.axes[2]);
 
-            var x1 = ((box.halfSize.x._value * absDot0._value) + (box.halfSize.y._value * absDot1._value) + (box.halfSize.z._value * absDot2._value)) >> f32.FractionalBits;
+            var x1 = ((box.halfSize.x.rawValue * absDot0.rawValue) + (box.halfSize.y.rawValue * absDot1.rawValue) + (box.halfSize.z.rawValue * absDot2.rawValue)) >> f32.FractionalBits;
             // var x2 =  >> f32.FractionalBits;
             // var x3 =  >> f32.FractionalBits;
 

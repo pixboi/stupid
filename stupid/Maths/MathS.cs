@@ -34,8 +34,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 FastAbs(in f32 value)
         {
-            long mask = value._value >> 63; // Creates a mask of all 1s if the value is negative, all 0s otherwise
-            long absValue = (value._value + mask) ^ mask; // If negative, it flips the sign bits
+            long mask = value.rawValue >> 63; // Creates a mask of all 1s if the value is negative, all 0s otherwise
+            long absValue = (value.rawValue + mask) ^ mask; // If negative, it flips the sign bits
             return new f32(absValue);
         }
 
@@ -89,8 +89,8 @@ namespace stupid.Maths
             if (value == f32.zero)
                 return f32.zero;
 
-            long rawValue = value._value;
-            long xRaw = rawValue > f32.one._value ? rawValue : f32.one._value; // Initial guess in raw form
+            long rawValue = value.rawValue;
+            long xRaw = rawValue > f32.one.rawValue ? rawValue : f32.one.rawValue; // Initial guess in raw form
             const int iterations = 8; // Number of iterations can be adjusted
 
             for (int i = 0; i < iterations; i++)
