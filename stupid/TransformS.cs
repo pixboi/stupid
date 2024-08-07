@@ -6,9 +6,12 @@ namespace stupid
     {
         // Transform properties
         public Vector3S position;
+
         public QuaternionS rotation;
+
         public Vector3S localScale;
-        public Matrix3S rotationMatrix { get; private set; }
+
+        public Matrix3S rotationMatrix;
 
         // Constructor
         public TransformS(Vector3S position = default, QuaternionS rotation = default, Vector3S localScale = default)

@@ -16,27 +16,11 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3S(f32 x)
-        {
-            this.x = x;
-            this.y = x;
-            this.z = x;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S(float x, float y, float z)
         {
             this.x = f32.FromFloat(x);
             this.y = f32.FromFloat(y);
             this.z = f32.FromFloat(z);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3S(float x)
-        {
-            this.x = f32.FromFloat(x);
-            this.y = this.x;
-            this.z = this.x;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,8 +83,8 @@ namespace stupid.Maths
             );
         }
 
-        public static readonly Vector3S zero = new Vector3S(0f);
-        public static readonly Vector3S one = new Vector3S(1f);
+        public static readonly Vector3S zero = new Vector3S(0f, 0f, 0f);
+        public static readonly Vector3S one = new Vector3S(1f, 1f, 1f);
         public static readonly Vector3S up = new Vector3S(0f, 1f, 0f);
         public static readonly Vector3S down = new Vector3S(0f, -1f, 0f);
         public static readonly Vector3S left = new Vector3S(-1f, 0f, 0f);
@@ -149,7 +133,9 @@ namespace stupid.Maths
             long crossX = (a.y._value * b.z._value - a.z._value * b.y._value) >> f32.FractionalBits;
             long crossY = (a.z._value * b.x._value - a.x._value * b.z._value) >> f32.FractionalBits;
             long crossZ = (a.x._value * b.y._value - a.y._value * b.x._value) >> f32.FractionalBits;
-            return new Vector3S(
+
+            return new Vector3S
+            (
                 new f32(crossX),
                 new f32(crossY),
                 new f32(crossZ)
@@ -159,8 +145,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
         {
-            f32 magnitudeSquared = sqrMagnitude;
-            return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
+            f32 ms = sqrMagnitude;
+            return ms > f32.zero ? MathS.Sqrt(ms) : f32.zero;
         }
 
         public f32 sqrMagnitude
@@ -215,6 +201,7 @@ namespace stupid.Maths
             MathS.Abs(a.y),
             MathS.Abs(a.z)
         );
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Clamp(f32 min, f32 max) => Clamp(this, min, max);

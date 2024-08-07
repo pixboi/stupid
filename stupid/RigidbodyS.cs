@@ -22,11 +22,11 @@ namespace stupid
         //Runtime
         public Vector3S forceBucket { get; private set; }
         public Vector3S torqueBucket { get; private set; }
-        public Tensor tensor { get; private set; }
+        public readonly Tensor tensor;
 
         // Settings
         public f32 mass = f32.one;
-        public f32 inverseMass => f32.one / mass;
+        public f32 inverseMass;
 
         public f32 drag = f32.zero;
         public f32 angularDrag = (f32)0.05;
@@ -43,6 +43,7 @@ namespace stupid
 
             this.mass = mass;
             if (this.mass <= f32.zero) this.mass = f32.one;
+            this.inverseMass = f32.one / mass;
 
             if (collider != null)
             {

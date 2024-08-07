@@ -6,7 +6,7 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
-        public static int SphereVSphere(Vector3S positionA, Vector3S positionB, f32 radA, f32 radB, ref ContactS contact)
+        public static int SphereVSphere(in Vector3S positionA, in Vector3S positionB, in f32 radA, in f32 radB, ref ContactS contact)
         {
             f32 squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
             f32 combinedRadius = radA + radB;
@@ -14,7 +14,7 @@ namespace stupid.Colliders
 
             if (squaredDistance > squaredCombinedRadius)
             {
-                return -1; // No intersection
+                return 0; // No intersection
             }
 
             Vector3S direction = (positionA - positionB).NormalizeWithMagnitude(out f32 distance);
@@ -29,7 +29,7 @@ namespace stupid.Colliders
         }
 
         //Contact point on box, normal pointing towards box
-        public static int BoxVsSphere(BoxColliderS box, SphereColliderS sphere, ref ContactS contact)
+        public static int BoxVsSphere(in BoxColliderS box, in SphereColliderS sphere, ref ContactS contact)
         {
             var boxTrans = box.collidable.transform;
             var sphereTrans = sphere.collidable.transform;
@@ -78,7 +78,7 @@ namespace stupid.Colliders
 
 
         //Contact point on sphere, normal points towards sphere
-        public static int SphereVsBox(SphereColliderS sphere, BoxColliderS box, ref ContactS contact)
+        public static int SphereVsBox(in SphereColliderS sphere, in BoxColliderS box, ref ContactS contact)
         {
             var boxTrans = box.collidable.transform;
             var sphereTrans = sphere.collidable.transform;
