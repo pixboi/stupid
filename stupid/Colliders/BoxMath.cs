@@ -52,7 +52,7 @@ namespace stupid.Colliders
 
             if (GetContactPoint(a, b, out var point))
             {
-                contact.point = point;
+                contact.worldPoint = point;
             }
             else
             {
@@ -98,12 +98,12 @@ namespace stupid.Colliders
                     // No intersections found, use intersection points from the centers
                     var pointA = a.GetIntersectionPointFromLocalCenter(-normal);
                     var pointB = b.GetIntersectionPointFromLocalCenter(normal);
-                    contact.point = (pointA + pointB) * f32.half;
+                    contact.worldPoint = (pointA + pointB) * f32.half;
                 }
                 else
                 {
                     // Average of intersection points
-                    contact.point = totalIntersectionPoint / (f32)intersectionCount;
+                    contact.worldPoint = totalIntersectionPoint / (f32)intersectionCount;
                 }
 
 

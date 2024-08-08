@@ -94,7 +94,7 @@ namespace stupid
 
             if (contactCount > 0)
             {
-                contact.CalculateRelativePoints();
+                contact.CalculateInternals();
 
                 if (_contacts.TryGetValue(pair, out var oldManifold))
                 {
@@ -186,9 +186,9 @@ namespace stupid
 
             // Contact points
             Vector3S contactPointA = aPosition;
-            contactPointA.AddInPlace(contact.pA);
+            contactPointA.AddInPlace(contact.localPointA);
             Vector3S contactPointB = bPosition;
-            contactPointB.AddInPlace(contact.pB);
+            contactPointB.AddInPlace(contact.localPointB);
             Vector3S normal = contact.normal;
 
             // Calculate penetration depth
