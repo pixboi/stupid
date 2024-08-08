@@ -99,6 +99,11 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator /(in Vector3S a, f32 d)
         {
+            if (d.rawValue == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero.");
+            }
+
             return new Vector3S(
                 new f32((a.x.rawValue << f32.FractionalBits) / d.rawValue),
                 new f32((a.y.rawValue << f32.FractionalBits) / d.rawValue),
@@ -117,10 +122,6 @@ namespace stupid.Maths
             this.x.rawValue = (this.x.rawValue << f32.FractionalBits) / d.rawValue;
             this.y.rawValue = (this.y.rawValue << f32.FractionalBits) / d.rawValue;
             this.z.rawValue = (this.z.rawValue << f32.FractionalBits) / d.rawValue;
-
-           // this.x.DivideInPlace(d);
-           // this.y.DivideInPlace(d);
-           // this.z.DivideInPlace(d);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

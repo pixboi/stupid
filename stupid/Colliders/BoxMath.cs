@@ -56,10 +56,6 @@ namespace stupid.Colliders
             }
             else
             {
-                //Get the best edges with the separating axis
-                var bestEdgeA = FindBestEdge(a, -normal);
-                var bestEdgeB = FindBestEdge(b, normal);
-
                 var totalIntersectionPoint = Vector3S.zero;
                 int intersectionCount = 0;
 
@@ -88,14 +84,14 @@ namespace stupid.Colliders
                     CheckEdgeIntersections(e, b);
                 }
 
+                /*
                 b.GetAllEdges(ref edgeCache);
                 foreach (var e in edgeCache)
                 {
                     CheckEdgeIntersections(e, a);
                 }
-
-                //CheckEdgeIntersections(bestEdgeA, b);
-                // CheckEdgeIntersections(bestEdgeB, a);
+                
+                */
 
                 if (intersectionCount == 0)
                 {
@@ -117,26 +113,6 @@ namespace stupid.Colliders
         }
 
         static (Vector3S, Vector3S, Vector3S)[] edgeCache = new (Vector3S, Vector3S, Vector3S)[12];
-        static (Vector3S, Vector3S, Vector3S) FindBestEdge(in BoxColliderS shape, in Vector3S normal)
-        {
-            shape.GetAllEdges(ref edgeCache);
-
-            var minDotProduct = f32.minValue;
-            int bestEdgeIndex = -1;
-
-            for (int i = 0; i < edgeCache.Length; i++)
-            {
-                var edgeNormal = shape.collidable.transform.TransformDirection(edgeCache[i].Item3);
-                var dotProduct = Vector3S.Dot(normal, edgeNormal);
-                if (dotProduct > minDotProduct)
-                {
-                    minDotProduct = dotProduct;
-                    bestEdgeIndex = i;
-                }
-            }
-
-            return edgeCache[bestEdgeIndex];
-        }
 
         public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b, out Vector3S averagePoint)
         {

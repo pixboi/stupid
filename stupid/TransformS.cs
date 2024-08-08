@@ -37,7 +37,8 @@ namespace stupid
         //After this, the worldpoint should in be local
         public void ToLocalPointInPlace(in Vector3S worldPoint, out Vector3S localPoint)
         {
-            localPoint = worldPoint;
+            //Use constructor once
+            localPoint = new Vector3S(worldPoint.x, worldPoint.y, worldPoint.z);
             localPoint.SubtractInPlace(position);
             localPoint.MultiplyInPlace(rotationMatrix.Transpose());
         }
