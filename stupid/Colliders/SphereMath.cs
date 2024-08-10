@@ -22,7 +22,7 @@ namespace stupid.Colliders
             Vector3S normal = direction;
             f32 penetrationDepth = combinedRadius - distance;
 
-            contact.worldPoint = point;
+            contact.point = point;
             contact.normal = normal;
             contact.penetrationDepth = penetrationDepth;
             return 1;
@@ -69,7 +69,7 @@ namespace stupid.Colliders
             if (penetrationDepth < f32.zero)
                 penetrationDepth = f32.zero; // Ensure non-negative depth
 
-            contact.worldPoint = worldClosestPoint;
+            contact.point = worldClosestPoint;
             contact.normal = -worldNormal;
             contact.penetrationDepth = penetrationDepth;
 
@@ -118,7 +118,7 @@ namespace stupid.Colliders
             if (penetrationDepth < f32.zero)
                 penetrationDepth = f32.zero; // Ensure non-negative depth
 
-            contact.worldPoint = worldContactPoint;
+            contact.point = worldContactPoint;
             contact.normal = worldNormal;
             contact.penetrationDepth = penetrationDepth;
             return 1;

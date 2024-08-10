@@ -52,7 +52,7 @@ namespace stupid.Colliders
 
             if (GetContactPoint(a, b, out var point))
             {
-                contact.worldPoint = point;
+                contact.point = point;
             }
             else
             {
@@ -84,26 +84,23 @@ namespace stupid.Colliders
                     CheckEdgeIntersections(e, b);
                 }
 
-                /*
                 b.GetAllEdges(ref edgeCache);
                 foreach (var e in edgeCache)
                 {
                     CheckEdgeIntersections(e, a);
                 }
-                
-                */
 
                 if (intersectionCount == 0)
                 {
                     // No intersections found, use intersection points from the centers
                     var pointA = a.GetIntersectionPointFromLocalCenter(-normal);
                     var pointB = b.GetIntersectionPointFromLocalCenter(normal);
-                    contact.worldPoint = (pointA + pointB) * f32.half;
+                    contact.point = (pointA + pointB) * f32.half;
                 }
                 else
                 {
                     // Average of intersection points
-                    contact.worldPoint = totalIntersectionPoint / (f32)intersectionCount;
+                    contact.point = totalIntersectionPoint / (f32)intersectionCount;
                 }
 
 
