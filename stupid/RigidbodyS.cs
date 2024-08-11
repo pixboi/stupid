@@ -60,52 +60,61 @@ namespace stupid
 
         public void Integrate(f32 deltaTime, WorldSettings settings)
         {
+            // Exit early if the object is kinematic, as no integration is needed.
             if (isKinematic) return;
 
+            // Apply gravity to the velocity if gravity is enabled.
             if (useGravity)
             {
                 velocity += settings.Gravity * deltaTime;
             }
 
-            // Update linear velocity with accumulated forces
+            // Apply accumulated forces to the velocity.
             if (forceBucket != Vector3S.zero)
             {
-                velocity += forceBucket / mass * deltaTime;
+                velocity += (forceBucket / mass) * deltaTime;
             }
 
-            // Update position
+            // Update the object's position based on the current velocity.
             transform.position += velocity * deltaTime;
 
-            // Update angular velocity with accumulated torques
+            // Apply accumulated torques to the angular velocity.
             if (torqueBucket != Vector3S.zero)
             {
-                angularVelocity += tensor.inertiaWorld * torqueBucket / mass * deltaTime;
+                angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * deltaTime;
             }
 
-            // Apply drags
-            if (drag != f32.zero)
-                velocity *= MathS.Clamp(f32.one - drag * deltaTime, f32.zero, f32.one);
-
-            if (angularDrag != f32.zero)
-                angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
-
-            // Clamp the angular velocity
-            if (angularVelocity.sqrMagnitude > settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed)
+            // Apply linear drag, ensuring it doesn't invert the velocity direction.
+            if (drag > f32.zero)
             {
-                angularVelocity = angularVelocity.ClampMagnitude(f32.zero, settings.DefaultMaxAngularSpeed);
+                velocity *= MathS.Clamp(f32.one - drag * deltaTime, f32.zero, f32.one);
             }
 
-            // Update rotation
+            // Apply angular drag, ensuring it doesn't invert the angular velocity direction.
+            if (angularDrag > f32.zero)
+            {
+                angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
+            }
+
+            // Clamp the angular velocity to avoid excessive rotational speeds.
+            var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
+            if (angularVelocity.sqrMagnitude > maxAngularSpeedSq)
+            {
+                angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
+            }
+
+            // Update the object's rotation based on the angular velocity.
             if (angularVelocity.sqrMagnitude > f32.zero)
             {
-                Vector3S angDelta = angularVelocity * deltaTime * f32.half;
+                var angDelta = angularVelocity * deltaTime * f32.half;
                 var dq = new QuaternionS(angDelta.x, angDelta.y, angDelta.z, f32.one);
                 transform.rotation = (dq * transform.rotation).Normalize();
             }
 
-            // Clear accumulated forces and torques
+            // Clear the accumulated forces and torques after applying them.
             ClearBuckets();
         }
+
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {

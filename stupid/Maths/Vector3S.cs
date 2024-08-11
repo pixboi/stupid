@@ -304,18 +304,25 @@ namespace stupid.Maths
         public static Vector3S ClampMagnitude(in Vector3S v, f32 min, f32 max)
         {
             f32 sqrMagnitude = v.sqrMagnitude;
+
             if (sqrMagnitude > max * max)
             {
-                f32 scale = max / MathS.Sqrt(sqrMagnitude);
+                // Clamp to max magnitude
+                f32 magnitude = MathS.Sqrt(sqrMagnitude);
+                f32 scale = max / magnitude;
                 return v * scale;
             }
-            else if (sqrMagnitude < min * min)
+            else if (sqrMagnitude < min * min && sqrMagnitude > f32.zero)
             {
-                f32 scale = min / MathS.Sqrt(sqrMagnitude);
+                // Clamp to min magnitude, ensuring we don't divide by zero
+                f32 magnitude = MathS.Sqrt(sqrMagnitude);
+                f32 scale = min / magnitude;
                 return v * scale;
             }
-            return v;
+
+            return v; // Already within the desired magnitude range
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S Rotate(in QuaternionS rotation)

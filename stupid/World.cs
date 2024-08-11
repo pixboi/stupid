@@ -130,13 +130,15 @@ namespace stupid
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
 
+            f32 subDelta = DeltaTime;
+
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
             {
                 foreach (var pair in pairs)
                 {
                     var contact = _contacts[pair];
-                    contact.ResolveContact(DeltaTime, Settings.DefaultSolverVelocityIterations);
+                    contact.ResolveContact(subDelta, Settings);
                     _contacts[pair] = contact;
                 }
             }

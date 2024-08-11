@@ -6,16 +6,16 @@ namespace stupid.Colliders
     public struct ContactS
     {
         public Collidable a, b;
-        public Vector3S point, normal, localOffsetA, localOffsetB;
-        public f32 penetrationDepth;
+        public Vector3S point, normal, ra, rb;
+        public f32 penetrationDepth, effectiveMass;
         public readonly f32 friction, restitution;
 
         // Cached impulses for warm starting
         public f32 cachedNormalImpulse;
 
         private static readonly f32 Tolerance = f32.epsilon;
-        private static readonly f32 BaumgarteFactor = f32.FromFloat(0.2f);
-        private static readonly f32 PositionCorrectionFactor = f32.FromFloat(0.2f); // Position correction factor
+        private static readonly f32 BaumgarteFactor = f32.FromFloat(0.1f);
+        private static readonly f32 PositionCorrectionFactor = f32.FromFloat(0.1f); // Position correction factor
 
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
@@ -31,78 +31,9 @@ namespace stupid.Colliders
             this.cachedNormalImpulse = f32.zero;
 
             // Compute initial local offsets, these are invalid if point is not set
-            this.localOffsetA = this.point - a.transform.position; // Local offset from body A's position
-            this.localOffsetB = this.point - b.transform.position; // Local offset from body B's position
-        }
-
-        // Recalculate local offsets based on the current world position of the colliders
-        public void ComputeInternals()
-        {
-            this.localOffsetA = this.point - a.transform.position; // Local offset from body A's position
-            this.localOffsetB = this.point - b.transform.position; // Local offset from body B's position
-        }
-
-        public void ResolveContact(f32 deltaTime, int maxIterations = 1)
-        {
-            RigidbodyS bodyA = (RigidbodyS)a;
-            RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
-
-            // Iteratively solve the contact
-            f32 accumulatedImpulse = this.cachedNormalImpulse;
-
-            for (int iter = 0; iter < maxIterations; iter++)
-            {
-
-                f32 oldImpulse = accumulatedImpulse;
-
-                // Use local offsets directly since rotation hasn't been applied yet
-                Vector3S ra = this.localOffsetA; // Local offset is directly used as ra
-                Vector3S rb = this.localOffsetB; // Local offset is directly used as rb
-                // Calculate relative velocity at contact point
-                Vector3S relativeVelocityAtContact = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
-
-                // Calculate velocity along normal
-                f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, this.normal);
-                if (velocityAlongNormal > f32.zero) break; // Moving away, no impulse required
-
-                // Calculate effective mass
-                f32 effectiveMass = CalculateEffectiveMass(bodyA, bodyB, ra, rb, this.normal);
-
-                // Compute the current contact separation for a sub-step
-                Vector3S worldPointA = a.transform.position + ra;
-                Vector3S worldPointB = b.transform.position + rb;
-                f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
-
-                // Baumgarte stabilization factor
-                f32 baumFactor = BaumgarteFactor * separation / deltaTime;
-
-                // Calculate impulse
-                f32 impulse = -(f32.one + this.restitution) * velocityAlongNormal / effectiveMass + baumFactor;
-                accumulatedImpulse = MathS.Max(f32.zero, oldImpulse + impulse); // Project impulse to be non-negative
-                f32 appliedImpulse = accumulatedImpulse - oldImpulse;
-
-                // Apply impulse
-                ApplyImpulse(bodyA, bodyB, ra, rb, this.normal, appliedImpulse);
-
-                // Check for convergence
-                if (MathS.Abs(appliedImpulse) < Tolerance) break;
-            }
-
-            // Update cached normal impulse
-            this.cachedNormalImpulse = accumulatedImpulse;
-
-            // Handle friction after resolving normal impulses
-            ResolveFriction(bodyA, bodyB);
-
-            // Correct positions to reduce penetration
-            CorrectPositions(bodyA, bodyB);
-        }
-
-        private static Vector3S CalculateRelativeVelocityAtContact(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb)
-        {
-            Vector3S relativeVelocity = bodyA.velocity + Vector3S.Cross(bodyA.angularVelocity, ra);
-            if (bodyB != null) relativeVelocity -= bodyB.velocity + Vector3S.Cross(bodyB.angularVelocity, rb);
-            return relativeVelocity;
+            this.ra = this.point - a.transform.position; // Local offset from body A's position
+            this.rb = this.point - b.transform.position; // Local offset from body B's position
+            this.effectiveMass = f32.zero;
         }
 
         private static f32 CalculateEffectiveMass(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S normal)
@@ -116,25 +47,94 @@ namespace stupid.Colliders
             return effectiveMass;
         }
 
-        private static void ApplyImpulse(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S normal, f32 impulse)
+        // This is per one physics step, this data is reused between substeps
+        public void ComputeInternals()
+        {
+            this.ra = this.point - a.transform.position; // Local offset from body A's position
+            this.rb = this.point - b.transform.position; // Local offset from body B's position
+
+            RigidbodyS bodyA = (RigidbodyS)a;
+            RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
+
+            this.effectiveMass = CalculateEffectiveMass(bodyA, bodyB, this.ra, this.rb, this.normal);
+        }
+
+
+        public void ResolveContact(f32 subDeltaTime, in WorldSettings settings)
+        {
+            RigidbodyS bodyA = (RigidbodyS)a;
+            RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
+
+            // Calculate relative velocity at contact point
+            Vector3S relativeVelocityAtContact = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
+
+            // Calculate velocity along normal
+            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, this.normal);
+            if (velocityAlongNormal > f32.zero) return;
+
+            // Compute the current contact separation for a sub-step
+            Vector3S worldPointA = a.transform.position + this.ra;
+            Vector3S worldPointB = b.transform.position + this.rb;
+            f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
+            separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
+
+
+            // Baumgarte stabilization factor for position correction
+            f32 baumFactor = BaumgarteFactor * separation / subDeltaTime;
+
+            // Calculate impulse only affecting linear velocity
+            f32 impulse = -(f32.one + this.restitution) * velocityAlongNormal / effectiveMass + baumFactor;
+            f32 appliedImpulse = MathS.Max(f32.zero, this.cachedNormalImpulse + impulse) - this.cachedNormalImpulse;
+
+            // Apply impulse to linear velocity only
+            ApplyLinearImpulse(bodyA, bodyB, this.normal, appliedImpulse);
+
+            // Apply angular impulse based on the regular collision response without Baumgarte
+            ApplyAngularImpulse(bodyA, bodyB, ra, rb, this.normal, appliedImpulse);
+
+            // Update cached normal impulse
+            this.cachedNormalImpulse += appliedImpulse;
+
+            // Handle friction after resolving normal impulses
+            ResolveFriction(bodyA, bodyB);
+
+            // Apply position correction to reduce interpenetration
+            Vector3S finalCorrectionVector = this.normal * separation * PositionCorrectionFactor;
+
+            bodyA.transform.position += finalCorrectionVector * bodyA.inverseMass;
+            if (bodyB != null) bodyB.transform.position -= finalCorrectionVector * bodyB.inverseMass;
+        }
+
+
+        private static Vector3S CalculateRelativeVelocityAtContact(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb)
+        {
+            Vector3S relativeVelocity = bodyA.velocity + Vector3S.Cross(bodyA.angularVelocity, ra);
+            if (bodyB != null) relativeVelocity -= bodyB.velocity + Vector3S.Cross(bodyB.angularVelocity, rb);
+            return relativeVelocity;
+        }
+
+        private static void ApplyLinearImpulse(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S normal, f32 impulse)
         {
             Vector3S normalImpulse = normal * impulse;
 
-            // Apply linear impulse
+            // Apply linear impulse to body A
             bodyA.velocity += normalImpulse * bodyA.inverseMass;
+            // Apply linear impulse to body B if dynamic
             if (bodyB != null) bodyB.velocity -= normalImpulse * bodyB.inverseMass;
+        }
 
-            // Apply angular impulse
+        private static void ApplyAngularImpulse(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S normal, f32 impulse)
+        {
+            Vector3S normalImpulse = normal * impulse;
+
+            // Apply angular impulse to body A
             bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
+            // Apply angular impulse to body B if dynamic
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
         }
 
         private void ResolveFriction(RigidbodyS bodyA, RigidbodyS bodyB)
         {
-            // Use local offsets directly since rotation hasn't been applied yet
-            Vector3S ra = this.localOffsetA;
-            Vector3S rb = this.localOffsetB;
-
             // Calculate the relative velocity at the contact point
             Vector3S relativeVelocityAtContact = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
 
@@ -168,14 +168,17 @@ namespace stupid.Colliders
                 frictionImpulse = frictionImpulse.Normalize() * maxFrictionImpulse;
             }
 
-            // Apply the linear friction impulse
+            // Apply the linear friction impulse to body A
             bodyA.velocity += frictionImpulse * bodyA.inverseMass;
+            // Apply the linear friction impulse to body B if dynamic
             if (bodyB != null) bodyB.velocity -= frictionImpulse * bodyB.inverseMass;
 
-            // Apply the angular friction impulse
+            // Apply the angular friction impulse to body A
             bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
+            // Apply the angular friction impulse to body B if dynamic
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
+
         private static f32 CalculateFrictionDenominator(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S tangent)
         {
             f32 invMassA = bodyA.inverseMass;
@@ -188,25 +191,6 @@ namespace stupid.Colliders
             }
 
             return frictionDenominator;
-        }
-
-        private void CorrectPositions(RigidbodyS bodyA, RigidbodyS bodyB)
-        {
-            // Calculate relative positions using local points
-            Vector3S ra = this.localOffsetA;
-            Vector3S rb = this.localOffsetB;
-
-            // Compute the current contact separation for position correction
-            Vector3S worldPointA = a.transform.position + ra;
-            Vector3S worldPointB = b.transform.position + rb;
-            f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
-
-            // Apply position correction to reduce interpenetration
-            Vector3S correctionVector = this.normal * separation * PositionCorrectionFactor;
-
-            bodyA.transform.position += correctionVector * bodyA.inverseMass;
-            if (bodyB != null) bodyB.transform.position -= correctionVector * bodyB.inverseMass;
-
         }
     }
 }
