@@ -14,8 +14,8 @@ namespace stupid.Colliders
         public f32 cachedNormalImpulse;
 
         private static readonly f32 Tolerance = f32.epsilon;
-        private static readonly f32 BaumgarteFactor = f32.FromFloat(0.1f);
-        private static readonly f32 PositionCorrectionFactor = f32.FromFloat(0.1f); // Position correction factor
+        private static readonly f32 BaumgarteFactor = f32.FromFloat(0.01f);
+        private static readonly f32 PositionCorrectionFactor = f32.FromFloat(0.2f); // Position correction factor
 
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
@@ -60,7 +60,7 @@ namespace stupid.Colliders
         }
 
 
-        public void ResolveContact(f32 subDeltaTime, in WorldSettings settings)
+        public void ResolveContact(f32 deltaTime, in WorldSettings settings)
         {
             RigidbodyS bodyA = (RigidbodyS)a;
             RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
@@ -78,19 +78,20 @@ namespace stupid.Colliders
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
-
             // Baumgarte stabilization factor for position correction
-            f32 baumFactor = BaumgarteFactor * separation / subDeltaTime;
+            f32 baumFactor = BaumgarteFactor * separation / deltaTime;
 
             // Calculate impulse only affecting linear velocity
             f32 impulse = -(f32.one + this.restitution) * velocityAlongNormal / effectiveMass + baumFactor;
             f32 appliedImpulse = MathS.Max(f32.zero, this.cachedNormalImpulse + impulse) - this.cachedNormalImpulse;
 
-            // Apply impulse to linear velocity only
-            ApplyLinearImpulse(bodyA, bodyB, this.normal, appliedImpulse);
+            Vector3S normalImpulse = normal * impulse;
 
-            // Apply angular impulse based on the regular collision response without Baumgarte
-            ApplyAngularImpulse(bodyA, bodyB, ra, rb, this.normal, appliedImpulse);
+            bodyA.velocity += normalImpulse * bodyA.inverseMass;
+            if (bodyB != null) bodyB.velocity -= normalImpulse * bodyB.inverseMass;
+
+            bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
+            if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
 
             // Update cached normal impulse
             this.cachedNormalImpulse += appliedImpulse;
@@ -113,26 +114,6 @@ namespace stupid.Colliders
             return relativeVelocity;
         }
 
-        private static void ApplyLinearImpulse(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S normal, f32 impulse)
-        {
-            Vector3S normalImpulse = normal * impulse;
-
-            // Apply linear impulse to body A
-            bodyA.velocity += normalImpulse * bodyA.inverseMass;
-            // Apply linear impulse to body B if dynamic
-            if (bodyB != null) bodyB.velocity -= normalImpulse * bodyB.inverseMass;
-        }
-
-        private static void ApplyAngularImpulse(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S normal, f32 impulse)
-        {
-            Vector3S normalImpulse = normal * impulse;
-
-            // Apply angular impulse to body A
-            bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
-            // Apply angular impulse to body B if dynamic
-            if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
-        }
-
         private void ResolveFriction(RigidbodyS bodyA, RigidbodyS bodyB)
         {
             // Calculate the relative velocity at the contact point
@@ -151,8 +132,14 @@ namespace stupid.Colliders
             // Normalize the tangential velocity to get the friction direction (tangent)
             Vector3S tangent = tangentialVelocity.Normalize();
 
-            // Calculate the friction denominator (based on the tangent direction, not the normal)
-            f32 frictionDenominator = CalculateFrictionDenominator(bodyA, bodyB, ra, rb, tangent);
+            f32 invMassA = bodyA.inverseMass;
+            f32 invMassB = bodyB != null ? bodyB.inverseMass : f32.zero;
+
+            f32 frictionDenominator = invMassA + Vector3S.Dot(Vector3S.Cross(bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent);
+            if (bodyB != null)
+            {
+                frictionDenominator += invMassB + Vector3S.Dot(Vector3S.Cross(bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
+            }
 
             // Calculate the friction impulse scalar
             f32 frictionImpulseScalar = Vector3S.Dot(tangentialVelocity, tangent) / frictionDenominator;
@@ -179,18 +166,5 @@ namespace stupid.Colliders
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
         }
 
-        private static f32 CalculateFrictionDenominator(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S tangent)
-        {
-            f32 invMassA = bodyA.inverseMass;
-            f32 invMassB = bodyB != null ? bodyB.inverseMass : f32.zero;
-
-            f32 frictionDenominator = invMassA + Vector3S.Dot(Vector3S.Cross(bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent);
-            if (bodyB != null)
-            {
-                frictionDenominator += invMassB + Vector3S.Dot(Vector3S.Cross(bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
-            }
-
-            return frictionDenominator;
-        }
     }
 }

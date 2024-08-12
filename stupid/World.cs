@@ -73,10 +73,13 @@ namespace stupid
         public event Action<ContactS> OnContact;
         private Dictionary<IntPair, ContactS> _contacts = new Dictionary<IntPair, ContactS>();
 
+        //Could there be a way of approximating just how penetrated things are on brtoadphase?
         private void UpdateManifold(IntPair pair)
         {
             var a = Collidables[pair.aIndex];
             var b = Collidables[pair.bIndex];
+
+            f32 subDelta = DeltaTime / (f32)Settings.DefaultSolverIterations;
 
             // Ensure the dynamic body is 'a' for consistent processing
             if (b.isDynamic && !a.isDynamic)
@@ -97,6 +100,9 @@ namespace stupid
                 }
 
                 contact.ComputeInternals();
+
+                //Resolve straight a way? this way we get more accurate collision data on the proceeding pairs?
+                contact.ResolveContact(DeltaTime, Settings);
 
                 // On ENTER: Add a new manifold
                 _contacts[pair] = contact;
@@ -130,7 +136,8 @@ namespace stupid
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
 
-            f32 subDelta = DeltaTime;
+            //f32 subDelta = DeltaTime / (f32)Settings.DefaultSolverIterations;
+
 
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
@@ -138,7 +145,7 @@ namespace stupid
                 foreach (var pair in pairs)
                 {
                     var contact = _contacts[pair];
-                    contact.ResolveContact(subDelta, Settings);
+                    contact.ResolveContact(DeltaTime, Settings);
                     _contacts[pair] = contact;
                 }
             }
