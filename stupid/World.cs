@@ -35,24 +35,11 @@ namespace stupid
         public void Simulate(f32 deltaTime)
         {
             DeltaTime = deltaTime;
-            IntegrateBodies(deltaTime);
-            RecalculatePositionsAndBounds();
-
-            var pairs = Broadphase.ComputePairs(Collidables);
-            NarrowPhase(pairs);
-            SimulationFrame++;
-        }
-
-        private void IntegrateBodies(f32 deltaTime)
-        {
             foreach (var c in Collidables)
             {
                 if (c is RigidbodyS rb) rb.Integrate(deltaTime, Settings);
             }
-        }
 
-        private void RecalculatePositionsAndBounds()
-        {
             foreach (var c in Collidables)
             {
                 if (c.collider.NeedsRotationUpdate)
@@ -68,7 +55,12 @@ namespace stupid
                     rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
                 }
             }
+
+            var pairs = Broadphase.ComputePairs(Collidables);
+            NarrowPhase(pairs);
+            SimulationFrame++;
         }
+
 
         public event Action<ContactS> OnContact;
         private Dictionary<IntPair, ContactS> _contacts = new Dictionary<IntPair, ContactS>();
@@ -122,6 +114,7 @@ namespace stupid
         {
             // Collect keys that were not touched by the broadphase
             _removeCache.Clear();
+
             foreach (var key in _contacts.Keys)
                 if (!pairs.Contains(key))
                     _removeCache.Add(key);
@@ -135,9 +128,6 @@ namespace stupid
                 UpdateManifold(pair);
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
-
-            //f32 subDelta = DeltaTime / (f32)Settings.DefaultSolverIterations;
-
 
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)

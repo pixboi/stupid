@@ -13,9 +13,8 @@ namespace stupid.Colliders
         // Cached impulses for warm starting
         public f32 cachedNormalImpulse;
 
-        private static readonly f32 Tolerance = f32.epsilon;
-        private static readonly f32 BaumgarteFactor = f32.FromFloat(0.01f);
-        private static readonly f32 PositionCorrectionFactor = f32.FromFloat(0.5f); // Position correction factor
+        private static readonly f32 BaumgarteFactor = f32.zero;
+        private static readonly f32 PositionCorrectionFactor = f32.half; // Position correction factor
 
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
@@ -67,9 +66,6 @@ namespace stupid.Colliders
 
             // Calculate relative velocity at contact point
             Vector3S relativeVelocityAtContact = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
-
-            // Skip resolution if below threshold
-            //if (relativeVelocityAtContact.sqrMagnitude < f32.one) return;
 
             // Calculate velocity along normal
             f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, this.normal);
@@ -128,21 +124,13 @@ namespace stupid.Colliders
             // Calculate the tangential velocity (relative velocity minus the normal component)
             Vector3S tangentialVelocity = relativeVelocityAtContact - normalVelocity;
 
-            // Early exit if tangential velocity is near zero
-            if (tangentialVelocity.Magnitude() < Tolerance)
-                return;
-
             // Normalize the tangential velocity to get the friction direction (tangent)
             Vector3S tangent = tangentialVelocity.Normalize();
 
             f32 invMassA = bodyA.inverseMass;
             f32 invMassB = bodyB != null ? bodyB.inverseMass : f32.zero;
-
             f32 frictionDenominator = invMassA + Vector3S.Dot(Vector3S.Cross(bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, tangent), ra), tangent);
-            if (bodyB != null)
-            {
-                frictionDenominator += invMassB + Vector3S.Dot(Vector3S.Cross(bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
-            }
+            if (bodyB != null) frictionDenominator += invMassB + Vector3S.Dot(Vector3S.Cross(bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, tangent), rb), tangent);
 
             // Calculate the friction impulse scalar
             f32 frictionImpulseScalar = Vector3S.Dot(tangentialVelocity, tangent) / frictionDenominator;

@@ -84,20 +84,6 @@ namespace stupid
                 angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * deltaTime;
             }
 
-            // Clamp the angular velocity to avoid excessive rotational speeds.
-            var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
-            if (angularVelocity.sqrMagnitude > maxAngularSpeedSq)
-            {
-                angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
-            }
-
-            // Update the object's rotation based on the angular velocity.
-            if (angularVelocity.sqrMagnitude > f32.zero)
-            {
-                var angDelta = angularVelocity * deltaTime * f32.half;
-                var dq = new QuaternionS(angDelta.x, angDelta.y, angDelta.z, f32.one);
-                transform.rotation = (dq * transform.rotation).Normalize();
-            }
 
             // Apply linear drag, ensuring it doesn't invert the velocity direction.
             if (drag > f32.zero)
@@ -109,6 +95,18 @@ namespace stupid
             if (angularDrag > f32.zero)
             {
                 angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
+            }
+
+            // Clamp the angular velocity to avoid excessive rotational speeds.
+            var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
+            if (angularVelocity.sqrMagnitude > maxAngularSpeedSq) angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
+
+            // Update the object's rotation based on the angular velocity.
+            if (angularVelocity.sqrMagnitude > f32.zero)
+            {
+                var angDelta = angularVelocity * deltaTime * f32.half;
+                var dq = new QuaternionS(angDelta.x, angDelta.y, angDelta.z, f32.one);
+                transform.rotation = (dq * transform.rotation).Normalize();
             }
 
             // Clear the accumulated forces and torques after applying them.
