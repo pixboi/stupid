@@ -84,14 +84,15 @@ namespace stupid
 
             if (contactCount > 0)
             {
+
                 if (_contacts.TryGetValue(pair, out var oldManifold))
                 {
                     // On STAY: Update the manifold while preserving warm start data
                     // Copy old manifold's cached impulses to the new manifold
-                    contact.cachedNormalImpulse = oldManifold.cachedNormalImpulse;
+                    contact.accumulatedImpulse = oldManifold.accumulatedImpulse;
                 }
 
-                contact.ComputeInternals();
+                contact.PreStep();
 
                 //Resolve straight a way? this way we get more accurate collision data on the proceeding pairs?
                 contact.ResolveContact(DeltaTime, Settings);

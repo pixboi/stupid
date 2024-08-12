@@ -11,7 +11,7 @@ namespace stupid.Colliders
         public readonly f32 friction, restitution;
 
         // Cached impulses for warm starting
-        public f32 cachedNormalImpulse;
+        public f32 accumulatedImpulse;
 
         private static readonly f32 BaumgarteFactor = f32.zero;
         private static readonly f32 PositionCorrectionFactor = f32.half; // Position correction factor
@@ -27,7 +27,7 @@ namespace stupid.Colliders
             this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
 
             // Initialize cached impulses to zero
-            this.cachedNormalImpulse = f32.zero;
+            this.accumulatedImpulse = f32.zero;
 
             // Compute initial local offsets, these are invalid if point is not set
             this.ra = this.point - a.transform.position; // Local offset from body A's position
@@ -47,7 +47,7 @@ namespace stupid.Colliders
         }
 
         // This is per one physics step, this data is reused between substeps
-        public void ComputeInternals()
+        public void PreStep()
         {
             this.ra = this.point - a.transform.position; // Local offset from body A's position
             this.rb = this.point - b.transform.position; // Local offset from body B's position
@@ -65,11 +65,11 @@ namespace stupid.Colliders
             RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
 
             // Calculate relative velocity at contact point
-            Vector3S relativeVelocityAtContact = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
+            Vector3S contactVelocity = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
 
             // Calculate velocity along normal
-            f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, this.normal);
-            if (velocityAlongNormal > f32.zero) return;
+            f32 vn = Vector3S.Dot(contactVelocity, this.normal);
+            if (vn > f32.zero) return;
 
             // Compute the current contact separation for a sub-step
             Vector3S worldPointA = a.transform.position + this.ra;
@@ -81,8 +81,8 @@ namespace stupid.Colliders
             f32 baumFactor = BaumgarteFactor * separation / deltaTime;
 
             // Calculate impulse only affecting linear velocity
-            f32 impulse = -(f32.one + this.restitution) * velocityAlongNormal / effectiveMass + baumFactor;
-            f32 appliedImpulse = MathS.Max(f32.zero, this.cachedNormalImpulse + impulse) - this.cachedNormalImpulse;
+            f32 impulse = -(f32.one + this.restitution) * vn / effectiveMass + baumFactor;
+            f32 appliedImpulse = MathS.Max(f32.zero, this.accumulatedImpulse + impulse) - this.accumulatedImpulse;
 
             Vector3S normalImpulse = normal * impulse;
 
@@ -93,7 +93,7 @@ namespace stupid.Colliders
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
 
             // Update cached normal impulse
-            this.cachedNormalImpulse += appliedImpulse;
+            this.accumulatedImpulse += appliedImpulse;
 
             // Handle friction after resolving normal impulses
             ResolveFriction(bodyA, bodyB);
@@ -140,7 +140,7 @@ namespace stupid.Colliders
             Vector3S frictionImpulse = tangent * frictionImpulseScalar;
 
             // Limit the friction impulse based on Coulomb's law (maximum friction = normal impulse * friction coefficient)
-            f32 maxFrictionImpulse = this.cachedNormalImpulse * this.friction;
+            f32 maxFrictionImpulse = this.accumulatedImpulse * this.friction;
             if (frictionImpulse.Magnitude() > maxFrictionImpulse)
             {
                 frictionImpulse = frictionImpulse.Normalize() * maxFrictionImpulse;
