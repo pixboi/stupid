@@ -15,7 +15,7 @@ namespace stupid.Colliders
 
         private static readonly f32 Tolerance = f32.epsilon;
         private static readonly f32 BaumgarteFactor = f32.FromFloat(0.01f);
-        private static readonly f32 PositionCorrectionFactor = f32.FromFloat(0.2f); // Position correction factor
+        private static readonly f32 PositionCorrectionFactor = f32.FromFloat(0.5f); // Position correction factor
 
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
@@ -67,6 +67,9 @@ namespace stupid.Colliders
 
             // Calculate relative velocity at contact point
             Vector3S relativeVelocityAtContact = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
+
+            // Skip resolution if below threshold
+            //if (relativeVelocityAtContact.sqrMagnitude < f32.one) return;
 
             // Calculate velocity along normal
             f32 velocityAlongNormal = Vector3S.Dot(relativeVelocityAtContact, this.normal);

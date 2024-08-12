@@ -84,18 +84,6 @@ namespace stupid
                 angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * deltaTime;
             }
 
-            // Apply linear drag, ensuring it doesn't invert the velocity direction.
-            if (drag > f32.zero)
-            {
-                velocity *= MathS.Clamp(f32.one - drag * deltaTime, f32.zero, f32.one);
-            }
-
-            // Apply angular drag, ensuring it doesn't invert the angular velocity direction.
-            if (angularDrag > f32.zero)
-            {
-                angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
-            }
-
             // Clamp the angular velocity to avoid excessive rotational speeds.
             var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
             if (angularVelocity.sqrMagnitude > maxAngularSpeedSq)
@@ -109,6 +97,18 @@ namespace stupid
                 var angDelta = angularVelocity * deltaTime * f32.half;
                 var dq = new QuaternionS(angDelta.x, angDelta.y, angDelta.z, f32.one);
                 transform.rotation = (dq * transform.rotation).Normalize();
+            }
+
+            // Apply linear drag, ensuring it doesn't invert the velocity direction.
+            if (drag > f32.zero)
+            {
+                velocity *= MathS.Clamp(f32.one - drag * deltaTime, f32.zero, f32.one);
+            }
+
+            // Apply angular drag, ensuring it doesn't invert the angular velocity direction.
+            if (angularDrag > f32.zero)
+            {
+                angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
             }
 
             // Clear the accumulated forces and torques after applying them.
