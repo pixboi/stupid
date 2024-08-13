@@ -95,7 +95,7 @@ namespace stupid
                 contact.PreStep();
 
                 //Resolve straight a way? this way we get more accurate collision data on the proceeding pairs?
-                contact.ResolveContact(DeltaTime, Settings);
+                //contact.ResolveContact(DeltaTime, Settings);
 
                 // On ENTER: Add a new manifold
                 _contacts[pair] = contact;
@@ -139,6 +139,15 @@ namespace stupid
                     contact.ResolveContact(DeltaTime, Settings);
                     _contacts[pair] = contact;
                 }
+            }
+
+            //Relax
+            foreach (var pair in pairs)
+            {
+                var contact = _contacts[pair];
+                //Relax should not apply position changes
+                contact.ResolveContact(DeltaTime, Settings, false);
+                _contacts[pair] = contact;
             }
         }
     }

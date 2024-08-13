@@ -14,7 +14,7 @@ namespace stupid.Colliders
         public f32 accumulatedImpulse;
 
         private static readonly f32 BaumgarteFactor = f32.zero;
-        private static readonly f32 PositionCorrectionFactor = f32.half; // Position correction factor
+        private static readonly f32 PositionCorrectionFactor = (f32)0.5; // Position correction factor
 
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
@@ -59,13 +59,13 @@ namespace stupid.Colliders
         }
 
 
-        public void ResolveContact(f32 deltaTime, in WorldSettings settings)
+        public void ResolveContact(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
             RigidbodyS bodyA = (RigidbodyS)a;
             RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
 
             // Calculate relative velocity at contact point
-            Vector3S contactVelocity = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
+            Vector3S contactVelocity = CalculateContactVelocity(bodyA, bodyB, ra, rb);
 
             // Calculate velocity along normal
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
@@ -81,10 +81,15 @@ namespace stupid.Colliders
             f32 baumFactor = BaumgarteFactor * separation / deltaTime;
 
             // Calculate impulse only affecting linear velocity
-            f32 impulse = -(f32.one + this.restitution) * vn / effectiveMass + baumFactor;
+            f32 impulse = -(f32.one + this.restitution) * vn / effectiveMass;
+            if (bias) impulse += baumFactor;
+
             f32 appliedImpulse = MathS.Max(f32.zero, this.accumulatedImpulse + impulse) - this.accumulatedImpulse;
 
-            Vector3S normalImpulse = normal * impulse;
+            // Update cached normal impulse
+            this.accumulatedImpulse += appliedImpulse;
+
+            Vector3S normalImpulse = normal * appliedImpulse;
 
             bodyA.velocity += normalImpulse * bodyA.inverseMass;
             if (bodyB != null) bodyB.velocity -= normalImpulse * bodyB.inverseMass;
@@ -92,21 +97,21 @@ namespace stupid.Colliders
             bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
 
-            // Update cached normal impulse
-            this.accumulatedImpulse += appliedImpulse;
-
             // Handle friction after resolving normal impulses
             ResolveFriction(bodyA, bodyB);
+
+
+            if (!bias) return;
 
             // Apply position correction to reduce interpenetration
             Vector3S finalCorrectionVector = this.normal * separation * PositionCorrectionFactor;
 
-            bodyA.transform.position += finalCorrectionVector * bodyA.inverseMass;
-            if (bodyB != null) bodyB.transform.position -= finalCorrectionVector * bodyB.inverseMass;
+            bodyA.transform.position += finalCorrectionVector;
+            if (bodyB != null) bodyB.transform.position -= finalCorrectionVector;
         }
 
 
-        private static Vector3S CalculateRelativeVelocityAtContact(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb)
+        private static Vector3S CalculateContactVelocity(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb)
         {
             Vector3S relativeVelocity = bodyA.velocity + Vector3S.Cross(bodyA.angularVelocity, ra);
             if (bodyB != null) relativeVelocity -= bodyB.velocity + Vector3S.Cross(bodyB.angularVelocity, rb);
@@ -116,7 +121,7 @@ namespace stupid.Colliders
         private void ResolveFriction(RigidbodyS bodyA, RigidbodyS bodyB)
         {
             // Calculate the relative velocity at the contact point
-            Vector3S relativeVelocityAtContact = CalculateRelativeVelocityAtContact(bodyA, bodyB, ra, rb);
+            Vector3S relativeVelocityAtContact = CalculateContactVelocity(bodyA, bodyB, ra, rb);
 
             // Calculate the velocity along the normal
             Vector3S normalVelocity = this.normal * Vector3S.Dot(relativeVelocityAtContact, this.normal);
