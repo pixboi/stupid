@@ -95,7 +95,7 @@ namespace stupid
                 contact.PreStep();
 
                 //Resolve straight a way? this way we get more accurate collision data on the proceeding pairs?
-                contact.ResolveContact(DeltaTime, Settings);
+                //contact.ResolveContact(DeltaTime, Settings);
 
                 // On ENTER: Add a new manifold
                 _contacts[pair] = contact;

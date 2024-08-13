@@ -5,16 +5,25 @@ namespace stupid.Colliders
 {
     public struct ContactS
     {
+        static readonly f32 zeta = f32.one; // damping ratio
+        static readonly f32 hertz = (f32)5; // cycles per second
+        static readonly f32 omega = f32.two * f32.pi * hertz; // angular frequency
+        static readonly f32 a1 = f32.two * zeta + omega * (f32)0.02;
+        static readonly f32 a2 = (f32)0.02 * omega * a1;
+        static readonly f32 a3 = f32.one / (f32.one + a2);
+        static readonly f32 biasRate = omega / a1;
+        static readonly f32 massCoeff = a2 * a3;
+        static readonly f32 impulseCoeff = a3;
+
+
         public Collidable a, b;
         public Vector3S point, normal, ra, rb;
-        public f32 penetrationDepth, effectiveMass;
-        public readonly f32 friction, restitution;
+        public f32 penetrationDepth, effectiveMass, friction, restitution;
 
         // Cached impulses for warm starting
         public f32 accumulatedImpulse;
 
-        private static readonly f32 BaumgarteFactor = f32.zero;
-        private static readonly f32 PositionCorrectionFactor = (f32)0.5; // Position correction factor
+        private static readonly f32 PositionCorrectionFactor = (f32)0.1; // Position correction factor
 
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
@@ -35,16 +44,33 @@ namespace stupid.Colliders
             this.effectiveMass = f32.zero;
         }
 
+        //Box 2D guide was using an inverse thing... so thats why we can multiply this now
         private static f32 CalculateEffectiveMass(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S normal)
         {
             f32 invMassA = bodyA.inverseMass;
             f32 invMassB = bodyB != null ? bodyB.inverseMass : f32.zero;
 
-            f32 effectiveMass = invMassA + Vector3S.Dot(Vector3S.Cross(bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, normal), ra), normal);
-            if (bodyB != null) effectiveMass += invMassB + Vector3S.Dot(Vector3S.Cross(bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normal), rb), normal);
+            // Linear effective mass
+            f32 effectiveMass = invMassA + invMassB;
 
-            return effectiveMass;
+            // Angular effective mass for body A
+            Vector3S raCrossNormal = Vector3S.Cross(ra, normal);
+            f32 angularMassA = Vector3S.Dot(raCrossNormal, bodyA.tensor.inertiaWorld * raCrossNormal);
+
+            // Angular effective mass for body B
+            if (bodyB != null)
+            {
+                Vector3S rbCrossNormal = Vector3S.Cross(rb, normal);
+                f32 angularMassB = Vector3S.Dot(rbCrossNormal, bodyB.tensor.inertiaWorld * rbCrossNormal);
+                effectiveMass += angularMassB;
+            }
+
+            effectiveMass += angularMassA;
+
+            // Invert to get effective mass
+            return effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
         }
+
 
         // This is per one physics step, this data is reused between substeps
         public void PreStep()
@@ -72,23 +98,19 @@ namespace stupid.Colliders
             if (vn > f32.zero) return;
 
             // Compute the current contact separation for a sub-step
+            //The box2d solver site uses negative pen depth
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
-            f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
-            separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
+            f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) - this.penetrationDepth;
+            separation = MathS.Min(separation + settings.DefaultContactOffset, f32.zero);
 
-            // Baumgarte stabilization factor for position correction
-            f32 baumFactor = BaumgarteFactor * separation / deltaTime;
-
-            // Calculate impulse only affecting linear velocity
-            f32 impulse = -(f32.one + this.restitution) * vn / effectiveMass + baumFactor;
-            f32 appliedImpulse = MathS.Max(f32.zero, this.accumulatedImpulse + impulse) - this.accumulatedImpulse;
-
-            // Update cached normal impulse
-            this.accumulatedImpulse += appliedImpulse;
+            f32 baum = (f32)0.2f * separation / deltaTime;
+            f32 incrementalImpulse = -effectiveMass * (vn + baum);
+            f32 newAccumulatedImpulse = MathS.Max(f32.zero, accumulatedImpulse + incrementalImpulse);
+            f32 appliedImpulse = newAccumulatedImpulse - accumulatedImpulse;
+            accumulatedImpulse = newAccumulatedImpulse;
 
             Vector3S normalImpulse = normal * appliedImpulse;
-
             bodyA.velocity += normalImpulse * bodyA.inverseMass;
             if (bodyB != null) bodyB.velocity -= normalImpulse * bodyB.inverseMass;
 
@@ -98,20 +120,27 @@ namespace stupid.Colliders
             // Handle friction after resolving normal impulses
             ResolveFriction(bodyA, bodyB);
 
+
+            /*
             // Apply position correction to reduce interpenetration
             Vector3S finalCorrectionVector = this.normal * separation * PositionCorrectionFactor;
 
-            bodyA.transform.position += finalCorrectionVector;
-            if (bodyB != null) bodyB.transform.position -= finalCorrectionVector;
+            a.transform.position -= finalCorrectionVector;
+            if (bodyB != null) b.transform.position += finalCorrectionVector;
+            */
         }
 
 
-        private static Vector3S CalculateContactVelocity(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb)
+        private static Vector3S CalculateContactVelocity(RigidbodyS a, RigidbodyS b, Vector3S ra, Vector3S rb)
         {
-            Vector3S relativeVelocity = bodyA.velocity + Vector3S.Cross(bodyA.angularVelocity, ra);
-            if (bodyB != null) relativeVelocity -= bodyB.velocity + Vector3S.Cross(bodyB.angularVelocity, rb);
+            Vector3S relativeVelocity = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            if (b != null)
+            {
+                relativeVelocity -= b.velocity + Vector3S.Cross(b.angularVelocity, rb);
+            }
             return relativeVelocity;
         }
+
 
         private void ResolveFriction(RigidbodyS bodyA, RigidbodyS bodyB)
         {
