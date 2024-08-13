@@ -23,7 +23,7 @@ namespace stupid.Colliders
         // Cached impulses for warm starting
         public f32 accumulatedImpulse;
 
-        private static readonly f32 PositionCorrectionFactor = (f32)0.1; // Position correction factor
+        private static readonly f32 PositionCorrectionFactor = (f32)0.5; // Position correction factor
 
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
@@ -56,6 +56,7 @@ namespace stupid.Colliders
             // Angular effective mass for body A
             Vector3S raCrossNormal = Vector3S.Cross(ra, normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, bodyA.tensor.inertiaWorld * raCrossNormal);
+            effectiveMass += angularMassA;
 
             // Angular effective mass for body B
             if (bodyB != null)
@@ -65,7 +66,6 @@ namespace stupid.Colliders
                 effectiveMass += angularMassB;
             }
 
-            effectiveMass += angularMassA;
 
             // Invert to get effective mass
             return effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
@@ -101,11 +101,11 @@ namespace stupid.Colliders
             //The box2d solver site uses negative pen depth
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
-            f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) - this.penetrationDepth;
-            separation = MathS.Min(separation + settings.DefaultContactOffset, f32.zero);
+            f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
+            separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
             f32 baum = (f32)0.2f * separation / deltaTime;
-            f32 incrementalImpulse = -effectiveMass * (vn + baum);
+            f32 incrementalImpulse = -effectiveMass * vn;
             f32 newAccumulatedImpulse = MathS.Max(f32.zero, accumulatedImpulse + incrementalImpulse);
             f32 appliedImpulse = newAccumulatedImpulse - accumulatedImpulse;
             accumulatedImpulse = newAccumulatedImpulse;
@@ -120,14 +120,12 @@ namespace stupid.Colliders
             // Handle friction after resolving normal impulses
             ResolveFriction(bodyA, bodyB);
 
-
-            /*
             // Apply position correction to reduce interpenetration
-            Vector3S finalCorrectionVector = this.normal * separation * PositionCorrectionFactor;
+            Vector3S posCorrect = this.normal * separation * PositionCorrectionFactor;
 
-            a.transform.position -= finalCorrectionVector;
-            if (bodyB != null) b.transform.position += finalCorrectionVector;
-            */
+            bodyA.transform.position += posCorrect;
+            if (bodyB != null) bodyB.transform.position -= posCorrect;
+
         }
 
 
