@@ -59,7 +59,7 @@ namespace stupid.Colliders
         }
 
 
-        public void ResolveContact(f32 deltaTime, in WorldSettings settings, bool bias = true)
+        public void ResolveContact(f32 deltaTime, in WorldSettings settings)
         {
             RigidbodyS bodyA = (RigidbodyS)a;
             RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
@@ -81,9 +81,7 @@ namespace stupid.Colliders
             f32 baumFactor = BaumgarteFactor * separation / deltaTime;
 
             // Calculate impulse only affecting linear velocity
-            f32 impulse = -(f32.one + this.restitution) * vn / effectiveMass;
-            if (bias) impulse += baumFactor;
-
+            f32 impulse = -(f32.one + this.restitution) * vn / effectiveMass + baumFactor;
             f32 appliedImpulse = MathS.Max(f32.zero, this.accumulatedImpulse + impulse) - this.accumulatedImpulse;
 
             // Update cached normal impulse
@@ -99,9 +97,6 @@ namespace stupid.Colliders
 
             // Handle friction after resolving normal impulses
             ResolveFriction(bodyA, bodyB);
-
-
-            if (!bias) return;
 
             // Apply position correction to reduce interpenetration
             Vector3S finalCorrectionVector = this.normal * separation * PositionCorrectionFactor;
