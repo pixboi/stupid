@@ -104,8 +104,10 @@ namespace stupid.Colliders
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
-            f32 baum = (f32)0.2f * separation / deltaTime;
-            f32 incrementalImpulse = -effectiveMass * vn;
+            //I think separation is negated like here?
+            f32 baum = -(f32)0.2f * separation / deltaTime;
+
+            f32 incrementalImpulse = -effectiveMass * (vn + baum);
             f32 newAccumulatedImpulse = MathS.Max(f32.zero, accumulatedImpulse + incrementalImpulse);
             f32 appliedImpulse = newAccumulatedImpulse - accumulatedImpulse;
             accumulatedImpulse = newAccumulatedImpulse;
@@ -117,15 +119,14 @@ namespace stupid.Colliders
             bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
 
+
             // Handle friction after resolving normal impulses
             ResolveFriction(bodyA, bodyB);
 
             // Apply position correction to reduce interpenetration
             Vector3S posCorrect = this.normal * separation * PositionCorrectionFactor;
-
             bodyA.transform.position += posCorrect;
-            if (bodyB != null) bodyB.transform.position -= posCorrect;
-
+            if (bodyB != null) bodyB.transform.position -= posCorrect;            
         }
 
 

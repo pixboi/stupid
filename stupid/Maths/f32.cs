@@ -7,9 +7,10 @@ namespace stupid.Maths
     {
         public long rawValue;
         public const int FractionalBits = 16;
-        private const long One = 1L << FractionalBits;
+        public const long One = 1L << FractionalBits;
 
-        public static readonly f32 zero = new f32(0);
+        public static readonly f32 epsilon = new f32(1L);
+        public static readonly f32 zero = new f32(0L);
         public static readonly f32 one = new f32(One);
         public static readonly f32 two = new f32(2L << FractionalBits);
         public static readonly f32 quarter = FromFloat(0.25f);
@@ -19,7 +20,7 @@ namespace stupid.Maths
         public static readonly f32 pi = FromFloat(3.14159265358979323846f);
         public static readonly f32 twoPi = FromFloat(6.28318530717958647692f);
         public static readonly f32 halfPi = FromFloat(1.57079632679489661923f);
-        public static readonly f32 epsilon = new f32(1); // Smallest possible value greater than zero
+
         public static readonly f32 maxValue = new f32(long.MaxValue);
         public static readonly f32 minValue = new f32(long.MinValue);
 
