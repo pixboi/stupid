@@ -90,20 +90,10 @@ namespace stupid.Colliders
                     CheckEdgeIntersections(e, a);
                 }
 
-                if (intersectionCount == 0)
-                {
-                    // No intersections found, use intersection points from the centers
-                    var pointA = a.GetIntersectionPointFromLocalCenter(-normal);
-                    var pointB = b.GetIntersectionPointFromLocalCenter(normal);
-                    contact.point = (pointA + pointB) * f32.half;
-                }
-                else
-                {
-                    // Average of intersection points
-                    contact.point = totalIntersectionPoint / (f32)intersectionCount;
-                }
+                if (intersectionCount == 0) return 0;
 
-
+                // Average of intersection points
+                contact.point = totalIntersectionPoint / (f32)intersectionCount;
             }
 
             return 1;

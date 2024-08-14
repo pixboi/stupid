@@ -130,27 +130,18 @@ namespace stupid
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
 
+            f32 delta = DeltaTime;
+
             // Solve collisions
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
             {
                 foreach (var pair in pairs)
                 {
-                    var contact = _contacts[pair];
-                    contact.ResolveContact(DeltaTime, Settings);
-                    _contacts[pair] = contact;
+                    _contacts[pair].ResolveContact(delta, Settings, true);
                 }
             }
 
-            /*
             //Relax
-            foreach (var pair in pairs)
-            {
-                var contact = _contacts[pair];
-                //Relax should not apply position changes
-                contact.ResolveContact(DeltaTime, Settings, false);
-                _contacts[pair] = contact;
-            }
-            */
         }
     }
 }
