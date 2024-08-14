@@ -144,6 +144,11 @@ namespace stupid
             }
 
             //Relax
+            foreach (var pair in pairs)
+            {
+                _contacts[pair].ResolveContact(delta, Settings, false);
+            }
+           
         }
     }
 }

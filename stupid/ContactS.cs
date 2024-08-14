@@ -138,7 +138,7 @@ namespace stupid.Colliders
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
-            //separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
+            separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
             //I think separation is negated like here?
             f32 baum = -(f32)0.2f * separation / deltaTime;
