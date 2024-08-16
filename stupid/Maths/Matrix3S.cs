@@ -124,10 +124,11 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S Inverse()
         {
-            f32 determinant =
-                m00 * (m11 * m22 - m12 * m21) -
-                m01 * (m10 * m22 - m12 * m20) +
-                m02 * (m10 * m21 - m11 * m20);
+            var a = (m00 * (m11 * m22 - m12 * m21));
+            var b = (m01 * (m10 * m22 - m12 * m20));
+            var c = (m02 * (m10 * m21 - m11 * m20));
+
+            f32 determinant = a - b + c;
 
             if (MathS.Abs(determinant) < f32.epsilon)
             {

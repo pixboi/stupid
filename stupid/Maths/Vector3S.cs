@@ -156,24 +156,16 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Dot(in Vector3S a, in Vector3S b)
         {
-            long dotX = (a.x.rawValue * b.x.rawValue) >> f32.FractionalBits;
-            long dotY = (a.y.rawValue * b.y.rawValue) >> f32.FractionalBits;
-            long dotZ = (a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
-            return new f32(dotX + dotY + dotZ);
+            long dotX = (a.x.rawValue * b.x.rawValue);
+            long dotY = (a.y.rawValue * b.y.rawValue);
+            long dotZ = (a.z.rawValue * b.z.rawValue);
+            return new f32((dotX + dotY + dotZ) >> f32.FractionalBits);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 AbsDot(in Vector3S a, in Vector3S b)
         {
-            long dotX = (a.x.rawValue * b.x.rawValue) >> f32.FractionalBits;
-            long dotY = (a.y.rawValue * b.y.rawValue) >> f32.FractionalBits;
-            long dotZ = (a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
-            long dotProduct = dotX + dotY + dotZ;
-
-            long mask = dotProduct >> 63; // Create a mask of all 1s if the value is negative, all 0s otherwise
-            long absDotProduct = (dotProduct + mask) ^ mask; // If negative, flip the sign bits
-
-            return new f32(absDotProduct);
+            return MathS.Abs(Dot(a, b));    
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -53,48 +53,48 @@ namespace stupid.Colliders
             if (GetContactPoint(a, b, out var point))
             {
                 contact.point = point;
+                return 1;
             }
-            else
+
+            var totalIntersectionPoint = Vector3S.zero;
+            int intersectionCount = 0;
+
+            void CheckEdgeIntersections((Vector3S, Vector3S, Vector3S) edge, BoxColliderS other)
             {
-                var totalIntersectionPoint = Vector3S.zero;
-                int intersectionCount = 0;
+                var edgeDirection = (edge.Item2 - edge.Item1).NormalizeWithMagnitude(out var edgeMagnitude);
 
-                void CheckEdgeIntersections((Vector3S, Vector3S, Vector3S) edge, BoxColliderS other)
+                // Check intersection with the first point of the edge
+                if (other.RayTest(edge.Item1, edgeDirection, edgeMagnitude, out var intersectionPoint1))
                 {
-                    var edgeDirection = (edge.Item2 - edge.Item1).NormalizeWithMagnitude(out var edgeMagnitude);
-
-                    // Check intersection with the first point of the edge
-                    if (other.RayTest(edge.Item1, edgeDirection, edgeMagnitude, out var intersectionPoint1))
-                    {
-                        totalIntersectionPoint += intersectionPoint1;
-                        intersectionCount++;
-                    }
-
-                    // Check intersection with the second point of the edge
-                    if (other.RayTest(edge.Item2, -edgeDirection, edgeMagnitude, out var intersectionPoint2))
-                    {
-                        totalIntersectionPoint += intersectionPoint2;
-                        intersectionCount++;
-                    }
+                    totalIntersectionPoint += intersectionPoint1;
+                    intersectionCount++;
                 }
 
-                a.GetAllEdges(ref edgeCache);
-                foreach (var e in edgeCache)
+                // Check intersection with the second point of the edge
+                if (other.RayTest(edge.Item2, -edgeDirection, edgeMagnitude, out var intersectionPoint2))
                 {
-                    CheckEdgeIntersections(e, b);
+                    totalIntersectionPoint += intersectionPoint2;
+                    intersectionCount++;
                 }
-
-                b.GetAllEdges(ref edgeCache);
-                foreach (var e in edgeCache)
-                {
-                    CheckEdgeIntersections(e, a);
-                }
-
-                if (intersectionCount == 0) return 0;
-
-                // Average of intersection points
-                contact.point = totalIntersectionPoint / (f32)intersectionCount;
             }
+
+            a.GetAllEdges(ref edgeCache);
+            foreach (var e in edgeCache)
+            {
+                CheckEdgeIntersections(e, b);
+            }
+
+            b.GetAllEdges(ref edgeCache);
+            foreach (var e in edgeCache)
+            {
+                CheckEdgeIntersections(e, a);
+            }
+
+            if (intersectionCount == 0) return 0;
+
+            // Average of intersection points
+            contact.point = totalIntersectionPoint / (f32)intersectionCount;
+
 
             return 1;
         }
@@ -168,9 +168,9 @@ namespace stupid.Colliders
             long absDot1 = Vector3S.RawAbsDot(axis, box.axes[1]);
             long absDot2 = Vector3S.RawAbsDot(axis, box.axes[2]);
 
-            var x1 = ((box.halfSize.x.rawValue * absDot0) + (box.halfSize.y.rawValue * absDot1) + (box.halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
+            var projection = ((box.halfSize.x.rawValue * absDot0) + (box.halfSize.y.rawValue * absDot1) + (box.halfSize.z.rawValue * absDot2));
 
-            return new f32(x1);
+            return new f32(projection >> f32.FractionalBits);
         }
 
     }

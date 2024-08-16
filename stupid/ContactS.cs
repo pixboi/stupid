@@ -23,9 +23,6 @@ namespace stupid.Colliders
 
         // Cached impulses for warm starting
         public f32 accumulatedImpulse, accumulatedFriction;
-
-        private static readonly f32 PositionCorrectionFactor = (f32)0.2; // Position correction factor
-
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
             this.a = a;
@@ -67,7 +64,6 @@ namespace stupid.Colliders
                 f32 angularMassB = Vector3S.Dot(rbCrossNormal, bodyB.tensor.inertiaWorld * rbCrossNormal);
                 effectiveMass += angularMassB;
             }
-
 
             // Invert to get effective mass
             return effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
@@ -141,7 +137,7 @@ namespace stupid.Colliders
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
             //I think separation is negated like here?
-            f32 baum = -(f32)0.2f * separation / deltaTime;
+            f32 baum = -settings.Baumgartner * separation / deltaTime;
 
             f32 incrementalImpulse = -effectiveMass;
             if (bias) incrementalImpulse *= (vn + baum);
@@ -165,7 +161,7 @@ namespace stupid.Colliders
             // Apply position correction to reduce interpenetration
             if (bias)
             {
-                Vector3S posCorrect = this.normal * separation * PositionCorrectionFactor;
+                Vector3S posCorrect = this.normal * separation * settings.PositionCorrection;
                 bodyA.transform.position += posCorrect;
                 if (bodyB != null) bodyB.transform.position -= posCorrect;
             }
