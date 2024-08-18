@@ -87,19 +87,19 @@ namespace stupid.Maths
             return new QuaternionS(q.x / scalar, q.y / scalar, q.z / scalar, q.w / scalar);
         }
 
-        public f32 SqrMagnitude => (x * x) + (y * y) + (z * z) + (w * w);
+        public f32 sqrMagnitude => (x * x) + (y * y) + (z * z) + (w * w);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
         {
-            f32 magnitudeSquared = SqrMagnitude;
+            f32 magnitudeSquared = sqrMagnitude;
             return magnitudeSquared > f32.zero ? MathS.Sqrt(magnitudeSquared) : f32.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS Inverse(in QuaternionS q)
         {
-            f32 magSq = q.SqrMagnitude;
+            f32 magSq = q.sqrMagnitude;
             if (magSq > f32.epsilon)
             {
                 f32 invMagSq = f32.one / magSq;

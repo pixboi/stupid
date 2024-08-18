@@ -70,40 +70,6 @@ namespace stupid.Colliders
             this.effectiveMass = CalculateEffectiveMass(bodyA, bodyB, this.ra, this.rb, this.normal);
         }
 
-        public void Warmup()
-        {
-            RigidbodyS bodyA = (RigidbodyS)a;
-            RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
-            ApplyWarmStarting(bodyA, bodyB);
-        }
-
-        private void ApplyWarmStarting(RigidbodyS bodyA, RigidbodyS bodyB)
-        {
-            // Apply the accumulated normal impulse
-            Vector3S normalImpulse = normal * accumulatedImpulse;
-            bodyA.velocity += normalImpulse * bodyA.inverseMass;
-            bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
-
-            if (bodyB != null)
-            {
-                bodyB.velocity -= normalImpulse * bodyB.inverseMass;
-                bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
-            }
-
-            // Apply the accumulated friction impulse
-            Vector3S tangent = (bodyA.velocity + Vector3S.Cross(bodyA.angularVelocity, ra) -
-                                (bodyB != null ? (bodyB.velocity + Vector3S.Cross(bodyB.angularVelocity, rb)) : Vector3S.zero)).Normalize();
-            Vector3S frictionImpulse = tangent * accumulatedFriction;
-            bodyA.velocity += frictionImpulse * bodyA.inverseMass;
-            bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
-
-            if (bodyB != null)
-            {
-                bodyB.velocity -= frictionImpulse * bodyB.inverseMass;
-                bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
-            }
-        }
-
         public void ResolveContact(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
             RigidbodyS bodyA = (RigidbodyS)a;
@@ -122,10 +88,12 @@ namespace stupid.Colliders
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
-            f32 baum = -settings.Baumgartner * separation / deltaTime;
-
             f32 incrementalImpulse = -effectiveMass;
-            if (bias) incrementalImpulse *= (vn + baum);
+            if (bias)
+            {
+                f32 baum = -settings.Baumgartner * separation / deltaTime;
+                incrementalImpulse *= (vn + baum);
+            }
             else incrementalImpulse *= vn;
 
             f32 newAccumulatedImpulse = MathS.Max(f32.zero, accumulatedImpulse + incrementalImpulse);

@@ -25,6 +25,9 @@ namespace stupid.Colliders
             if (!TryAxis(relativePosition, b.axes[1], a, b, 4, ref minPen, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, b.axes[2], a, b, 5, ref minPen, ref minAxis, ref best)) return 0;
 
+            f32 minPenVertex = minPen;
+            Vector3S minAxisVertex = minAxis;
+
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
             if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[0]).NormalizeInPlace(), a, b, 6, ref minPen, ref minAxis, ref best)) return 0;
@@ -44,15 +47,15 @@ namespace stupid.Colliders
                 throw new System.Exception("OOBB collision error");
             }
 
-            var normal = minAxis.Normalize();
-            if (Vector3S.Dot(normal, relativePosition) > f32.zero) normal = -normal;
-
-            contact.normal = normal;
-            contact.penetrationDepth = minPen;
-
             if (GetContactPoint(a, b, out var point))
             {
+
                 contact.point = point;
+                var normalV = minAxisVertex.Normalize();
+                if (Vector3S.Dot(normalV, relativePosition) > f32.zero) normalV = -normalV;
+
+                contact.normal = normalV;
+                contact.penetrationDepth = minPenVertex;
                 return 1;
             }
 
@@ -97,6 +100,11 @@ namespace stupid.Colliders
 
             // Average of intersection points
             contact.point = totalIntersectionPoint / (f32)intersectionCount;
+            var normal = minAxis.Normalize();
+            if (Vector3S.Dot(normal, relativePosition) > f32.zero) normal = -normal;
+
+            contact.normal = normal;
+            contact.penetrationDepth = minPen;
 
 
             return 1;
@@ -104,6 +112,7 @@ namespace stupid.Colliders
 
         static (Vector3S, Vector3S, Vector3S)[] edgeCache = new (Vector3S, Vector3S, Vector3S)[12];
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b, out Vector3S averagePoint)
         {
             averagePoint = Vector3S.zero;

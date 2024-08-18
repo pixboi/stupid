@@ -1,10 +1,9 @@
 ﻿using stupid.Maths;
 using System;
-using stupid.GJK;
 
 namespace stupid.Colliders
 {
-    public struct BoxColliderS : IShape, ISupport
+    public struct BoxColliderS : IShape
     {
         public readonly Vector3S size, halfSize, right, up, forward;
         public readonly Vector3S[] localVertices;

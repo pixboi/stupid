@@ -116,8 +116,8 @@ namespace stupid.Colliders
 
         public bool IntersectRay(RayS ray)
         {
-            f32 tmin = (min.x - ray.Origin.x) / ray.Direction.x;
-            f32 tmax = (max.x - ray.Origin.x) / ray.Direction.x;
+            f32 tmin = (min.x - ray.origin.x) / ray.direction.x;
+            f32 tmax = (max.x - ray.origin.x) / ray.direction.x;
 
             if (tmin > tmax)
             {
@@ -126,8 +126,8 @@ namespace stupid.Colliders
                 tmax = temp;
             }
 
-            f32 tymin = (min.y - ray.Origin.y) / ray.Direction.y;
-            f32 tymax = (max.y - ray.Origin.y) / ray.Direction.y;
+            f32 tymin = (min.y - ray.origin.y) / ray.direction.y;
+            f32 tymax = (max.y - ray.origin.y) / ray.direction.y;
 
             if (tymin > tymax)
             {
@@ -151,8 +151,8 @@ namespace stupid.Colliders
                 tmax = tymax;
             }
 
-            f32 tzmin = (min.z - ray.Origin.z) / ray.Direction.z;
-            f32 tzmax = (max.z - ray.Origin.z) / ray.Direction.z;
+            f32 tzmin = (min.z - ray.origin.z) / ray.direction.z;
+            f32 tzmax = (max.z - ray.origin.z) / ray.direction.z;
 
             if (tzmin > tzmax)
             {

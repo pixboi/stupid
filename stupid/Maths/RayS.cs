@@ -5,13 +5,13 @@ namespace stupid.Maths
 {
     public readonly struct RayS
     {
-        public readonly Vector3S Origin;
-        public readonly Vector3S Direction;
+        public readonly Vector3S origin;
+        public readonly Vector3S direction;
 
         public RayS(Vector3S origin, Vector3S direction)
         {
-            Origin = origin;
-            Direction = direction;
+            this.origin = origin;
+            this.direction = direction;
         }
     }
 
@@ -35,14 +35,14 @@ namespace stupid.Maths
     {
         public static bool Intersects(this RayS ray, BoundsS bounds, out f32 distance, out Vector3S point, out Vector3S normal)
         {
-            Vector3S invDir = new Vector3S(f32.one / ray.Direction.x, f32.one / ray.Direction.y, f32.one / ray.Direction.z);
+            Vector3S invDir = new Vector3S(f32.one / ray.direction.x, f32.one / ray.direction.y, f32.one / ray.direction.z);
 
-            f32 t1 = (bounds.min.x - ray.Origin.x) * invDir.x;
-            f32 t2 = (bounds.max.x - ray.Origin.x) * invDir.x;
-            f32 t3 = (bounds.min.y - ray.Origin.y) * invDir.y;
-            f32 t4 = (bounds.max.y - ray.Origin.y) * invDir.y;
-            f32 t5 = (bounds.min.z - ray.Origin.z) * invDir.z;
-            f32 t6 = (bounds.max.z - ray.Origin.z) * invDir.z;
+            f32 t1 = (bounds.min.x - ray.origin.x) * invDir.x;
+            f32 t2 = (bounds.max.x - ray.origin.x) * invDir.x;
+            f32 t3 = (bounds.min.y - ray.origin.y) * invDir.y;
+            f32 t4 = (bounds.max.y - ray.origin.y) * invDir.y;
+            f32 t5 = (bounds.min.z - ray.origin.z) * invDir.z;
+            f32 t6 = (bounds.max.z - ray.origin.z) * invDir.z;
 
             f32 tMin = MathS.Max(MathS.Max(MathS.Min(t1, t2), MathS.Min(t3, t4)), MathS.Min(t5, t6));
             f32 tMax = MathS.Min(MathS.Min(MathS.Max(t1, t2), MathS.Max(t3, t4)), MathS.Max(t5, t6));
@@ -58,7 +58,7 @@ namespace stupid.Maths
             distance = tMin;
 
             // Calculate the intersection point
-            point = ray.Origin + ray.Direction * distance;
+            point = ray.origin + ray.direction * distance;
 
             // Calculate the normal
             if (MathS.Abs(point.x - bounds.min.x) < f32.epsilon) normal = new Vector3S(-f32.one, f32.zero, f32.zero);
