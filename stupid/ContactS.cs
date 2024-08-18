@@ -5,24 +5,13 @@ namespace stupid.Colliders
 {
     public struct ContactS
     {
-        /*
-        static readonly f32 zeta = f32.one; // damping ratio
-        static readonly f32 hertz = (f32)5; // cycles per second
-        static readonly f32 omega = f32.two * f32.pi * hertz; // angular frequency
-        static readonly f32 a1 = f32.two * zeta + omega * (f32)0.02;
-        static readonly f32 a2 = (f32)0.02 * omega * a1;
-        static readonly f32 a3 = f32.one / (f32.one + a2);
-        static readonly f32 biasRate = omega / a1;
-        static readonly f32 massCoeff = a2 * a3;
-        static readonly f32 impulseCoeff = a3;
-        */
-
         public Collidable a, b;
         public Vector3S point, normal, ra, rb;
         public f32 penetrationDepth, effectiveMass, friction, restitution;
 
         // Cached impulses for warm starting
         public f32 accumulatedImpulse, accumulatedFriction;
+
         public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
         {
             this.a = a;
@@ -30,6 +19,7 @@ namespace stupid.Colliders
             this.point = point;
             this.normal = normal;
             this.penetrationDepth = penetrationDepth;
+
             this.friction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
             this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
 
@@ -43,7 +33,6 @@ namespace stupid.Colliders
             this.effectiveMass = f32.zero;
         }
 
-        //Box 2D guide was using an inverse thing... so thats why we can multiply this now
         private static f32 CalculateEffectiveMass(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S normal)
         {
             f32 invMassA = bodyA.inverseMass;
@@ -68,7 +57,6 @@ namespace stupid.Colliders
             // Invert to get effective mass
             return effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
         }
-
 
         // This is per one physics step, this data is reused between substeps
         public void PreStep()
@@ -116,7 +104,6 @@ namespace stupid.Colliders
             }
         }
 
-
         public void ResolveContact(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
             RigidbodyS bodyA = (RigidbodyS)a;
@@ -130,13 +117,11 @@ namespace stupid.Colliders
             if (vn > f32.zero) return;
 
             // Compute the current contact separation for a sub-step
-            //The box2d solver site uses negative pen depth
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
-            //I think separation is negated like here?
             f32 baum = -settings.Baumgartner * separation / deltaTime;
 
             f32 incrementalImpulse = -effectiveMass;
@@ -154,7 +139,6 @@ namespace stupid.Colliders
             bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
 
-
             // Handle friction after resolving normal impulses
             ResolveFriction(bodyA, bodyB);
 
@@ -165,9 +149,7 @@ namespace stupid.Colliders
                 bodyA.transform.position += posCorrect;
                 if (bodyB != null) bodyB.transform.position -= posCorrect;
             }
-
         }
-
 
         private Vector3S CalculateContactVelocity(RigidbodyS a, RigidbodyS b)
         {
@@ -238,8 +220,5 @@ namespace stupid.Colliders
                 bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
             }
         }
-
-
-
     }
 }

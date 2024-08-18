@@ -84,10 +84,13 @@ namespace stupid.Colliders
                 CheckEdgeIntersections(e, b);
             }
 
-            b.GetAllEdges(ref edgeCache);
-            foreach (var e in edgeCache)
+            if (intersectionCount == 0)
             {
-                CheckEdgeIntersections(e, a);
+                b.GetAllEdges(ref edgeCache);
+                foreach (var e in edgeCache)
+                {
+                    CheckEdgeIntersections(e, a);
+                }
             }
 
             if (intersectionCount == 0) return 0;
@@ -116,15 +119,19 @@ namespace stupid.Colliders
                 }
             }
 
-            for (int i = 0; i < 8; i++)
+            if (count == 0)
             {
-                var v = b.vertices[i];
-                if (a.ContainsPoint(v))
+                for (int i = 0; i < 8; i++)
                 {
-                    averagePoint.AddInPlace(v);
-                    count++;
+                    var v = b.vertices[i];
+                    if (a.ContainsPoint(v))
+                    {
+                        averagePoint.AddInPlace(v);
+                        count++;
+                    }
                 }
             }
+
 
             if (count == 0) return false;
 
