@@ -153,13 +153,13 @@ namespace stupid
                 {
                     ResolveAndUpdateContact(pair, DeltaTime, true);
                 }
+            }
 
-                if (Settings.Relaxation)
+            if (Settings.Relaxation)
+            {
+                foreach (var pair in pairs)
                 {
-                    foreach (var pair in pairs)
-                    {
-                        ResolveAndUpdateContact(pair, DeltaTime, false);
-                    }
+                    ResolveAndUpdateContact(pair, DeltaTime, false);
                 }
             }
         }
