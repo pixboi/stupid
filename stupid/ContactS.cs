@@ -6,6 +6,7 @@ namespace stupid.Colliders
     public struct ContactS
     {
         public Collidable a, b;
+        public RigidbodyS bodyA, bodyB;
         public Vector3S point, normal, ra, rb;
         public f32 penetrationDepth, effectiveMass, friction, restitution;
 
@@ -16,6 +17,9 @@ namespace stupid.Colliders
         {
             this.a = a;
             this.b = b;
+            this.bodyA = (RigidbodyS)a;
+            this.bodyB = b.isDynamic ? (RigidbodyS)b : null;
+
             this.point = point;
             this.normal = normal;
             this.penetrationDepth = penetrationDepth;
@@ -33,7 +37,7 @@ namespace stupid.Colliders
             this.effectiveMass = f32.zero;
         }
 
-        private static f32 CalculateEffectiveMass(RigidbodyS bodyA, RigidbodyS bodyB, Vector3S ra, Vector3S rb, Vector3S normal)
+        public f32 CalculateEffectiveMass()
         {
             f32 invMassA = bodyA.inverseMass;
             f32 invMassB = bodyB != null ? bodyB.inverseMass : f32.zero;
@@ -63,20 +67,13 @@ namespace stupid.Colliders
         {
             this.ra = this.point - a.transform.position; // Local offset from body A's position
             this.rb = this.point - b.transform.position; // Local offset from body B's position
-
-            RigidbodyS bodyA = (RigidbodyS)a;
-            RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
-
-            this.effectiveMass = CalculateEffectiveMass(bodyA, bodyB, this.ra, this.rb, this.normal);
+            this.effectiveMass = CalculateEffectiveMass();
         }
 
         public void ResolveContact(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
-            RigidbodyS bodyA = (RigidbodyS)a;
-            RigidbodyS bodyB = b.isDynamic ? (RigidbodyS)b : null;
-
             // Calculate relative velocity at contact point
-            Vector3S contactVelocity = CalculateContactVelocity(bodyA, bodyB);
+            Vector3S contactVelocity = CalculateContactVelocity();
 
             // Calculate velocity along normal
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
@@ -108,7 +105,7 @@ namespace stupid.Colliders
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
 
             // Handle friction after resolving normal impulses
-            ResolveFriction(bodyA, bodyB);
+            ResolveFriction();
 
             // Apply position correction to reduce interpenetration
             if (bias)
@@ -119,20 +116,20 @@ namespace stupid.Colliders
             }
         }
 
-        private Vector3S CalculateContactVelocity(RigidbodyS a, RigidbodyS b)
+        private Vector3S CalculateContactVelocity()
         {
-            Vector3S relativeVelocity = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            if (b != null)
+            Vector3S relativeVelocity = bodyA.velocity + Vector3S.Cross(bodyA.angularVelocity, ra);
+            if (bodyB != null)
             {
-                relativeVelocity -= b.velocity + Vector3S.Cross(b.angularVelocity, rb);
+                relativeVelocity -= bodyB.velocity + Vector3S.Cross(bodyB.angularVelocity, rb);
             }
             return relativeVelocity;
         }
 
-        private void ResolveFriction(RigidbodyS bodyA, RigidbodyS bodyB)
+        private void ResolveFriction()
         {
             // Calculate the relative velocity at the contact point
-            Vector3S relativeVelocityAtContact = CalculateContactVelocity(bodyA, bodyB);
+            Vector3S relativeVelocityAtContact = CalculateContactVelocity();
 
             // Calculate the velocity along the normal
             Vector3S normalVelocity = this.normal * Vector3S.Dot(relativeVelocityAtContact, this.normal);
