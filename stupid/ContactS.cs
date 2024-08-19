@@ -106,12 +106,16 @@ namespace stupid.Colliders
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
             f32 incrementalImpulse = -effectiveMass;
+
             if (bias)
             {
                 f32 baum = -settings.Baumgartner * separation / deltaTime;
                 incrementalImpulse *= (vn + baum);
             }
-            else incrementalImpulse *= vn;
+            else
+            {
+                incrementalImpulse *= vn;
+            }
 
             f32 newAccumulatedImpulse = MathS.Max(f32.zero, accumulatedImpulse + incrementalImpulse);
             f32 appliedImpulse = newAccumulatedImpulse - accumulatedImpulse;
@@ -125,37 +129,33 @@ namespace stupid.Colliders
             if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
 
             // Handle friction after resolving normal impulses
-            ResolveFriction();
+            //contactVelocity = CalculateContactVelocity();
+            //vn = Vector3S.Dot(contactVelocity, this.contact.normal);
+            ResolveFriction(contactVelocity, vn);
 
             // Apply position correction to reduce interpenetration
             if (bias)
             {
                 Vector3S posCorrect = this.contact.normal * separation * settings.PositionCorrection;
-                bodyA.transform.position += posCorrect;
-                if (bodyB != null) bodyB.transform.position -= posCorrect;
+                a.transform.position += posCorrect;
+                if (bodyB != null) b.transform.position -= posCorrect;
             }
         }
 
         private Vector3S CalculateContactVelocity()
         {
             Vector3S relativeVelocity = bodyA.velocity + Vector3S.Cross(bodyA.angularVelocity, ra);
-            if (bodyB != null)
-            {
-                relativeVelocity -= bodyB.velocity + Vector3S.Cross(bodyB.angularVelocity, rb);
-            }
+            if (bodyB != null) relativeVelocity -= bodyB.velocity + Vector3S.Cross(bodyB.angularVelocity, rb);
             return relativeVelocity;
         }
 
-        private void ResolveFriction()
+        private void ResolveFriction(Vector3S contactVelocity, f32 vn)
         {
-            // Calculate the relative velocity at the contact point
-            Vector3S relativeVelocityAtContact = CalculateContactVelocity();
-
             // Calculate the velocity along the normal
-            Vector3S normalVelocity = this.contact.normal * Vector3S.Dot(relativeVelocityAtContact, this.contact.normal);
+            Vector3S normalVelocity = this.contact.normal * vn;
 
             // Calculate the tangential velocity (relative velocity minus the normal component)
-            Vector3S tangentialVelocity = relativeVelocityAtContact - normalVelocity;
+            Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
             // Check if tangential velocity is significant to avoid unnecessary calculations
             if (tangentialVelocity.Magnitude() <= f32.epsilon) return;
@@ -187,23 +187,28 @@ namespace stupid.Colliders
             f32 appliedFrictionImpulse = this.accumulatedFriction - oldAccumulatedFriction;
             Vector3S frictionImpulse = tangent * appliedFrictionImpulse;
 
-            // Apply the linear friction impulse to body A
             bodyA.velocity += frictionImpulse * bodyA.inverseMass;
+            if (bodyB != null) bodyB.velocity -= frictionImpulse * bodyB.inverseMass;
 
-            // Apply the linear friction impulse to body B if dynamic
-            if (bodyB != null)
-            {
-                bodyB.velocity -= frictionImpulse * bodyB.inverseMass;
-            }
-
-            // Apply the angular friction impulse to body A
             bodyA.angularVelocity += bodyA.tensor.inertiaWorld * Vector3S.Cross(ra, frictionImpulse);
+            if (bodyB != null) bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+        }
 
-            // Apply the angular friction impulse to body B if dynamic
+        public void Actuate()
+        {
+            bodyA.velocity += aVelocity;
+            bodyA.angularVelocity += aAngular;
+
             if (bodyB != null)
             {
-                bodyB.angularVelocity -= bodyB.tensor.inertiaWorld * Vector3S.Cross(rb, frictionImpulse);
+                bodyB.velocity += bVelocity;
+                bodyB.angularVelocity += bAngular;
             }
+
+            aVelocity = Vector3S.zero;
+            aAngular = Vector3S.zero;
+            bVelocity = Vector3S.zero;
+            bAngular = Vector3S.zero;
         }
     }
 }

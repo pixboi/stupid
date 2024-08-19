@@ -82,15 +82,14 @@ namespace stupid
         {
             _removeCache.Clear();
 
-            foreach (var key in _contacts.Keys)
-            {
-                if (!pairs.Contains(key)) _removeCache.Add(key);
-            }
-
+            //Remove olds that are not in the new broadphase
+            foreach (var key in _contacts.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
             foreach (var key in _removeCache) _contacts.Remove(key);
 
+            //Update new and check cols
             foreach (var pair in pairs) UpdateManifold(pair);
 
+            //If no narrowphase col, remove
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
 
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
@@ -98,10 +97,25 @@ namespace stupid
                 foreach (var pair in pairs)
                 {
                     var contactList = _contacts[pair];
+ 
                     foreach (var contact in contactList)
                     {
-                        //contact.PreStep();
+                     
                         contact.ResolveContact(DeltaTime, Settings, true);
+                        // contact.Actuate();
+                    }
+                }
+            }
+
+            if (Settings.Relaxation)
+            {
+                foreach (var pair in pairs)
+                {
+                    var contactList = _contacts[pair];
+                    foreach (var contact in contactList)
+                    {
+                        contact.ResolveContact(DeltaTime, Settings, false);
+                        // contact.Actuate();
                     }
                 }
             }

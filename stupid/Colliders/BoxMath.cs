@@ -47,31 +47,27 @@ namespace stupid.Colliders
             var normalV = minAxis.Normalize();
             if (Vector3S.Dot(normalV, relativePosition) > f32.zero) normalV = -normalV;
 
+            int count = 0;
 
+            //A vert on b
             if (GetContactPoint(a, b))
             {
-                //A vertex on b bounds
-                for (int i = 0; i < pointCache.Count; i++)
+                foreach (var p in pointCache)
                 {
-                    contacts[i] = new ContactVectorS(pointCache[i], normalV, minPen);
+                    contacts[count++] = new ContactVectorS(p, normalV, minPen);  
                 }
-
-                return pointCache.Count;
-
             }
 
+            //B vert on a
             if (GetContactPoint(b, a))
             {
-                //A vertex on b bounds
-                for (int i = 0; i < pointCache.Count; i++)
+                foreach (var p in pointCache)
                 {
-                    contacts[i] = new ContactVectorS(pointCache[i], normalV, minPen);
+                    contacts[count++] = new ContactVectorS(p, normalV, minPen);
                 }
-
-                return pointCache.Count;
             }
 
-            return 0;
+            return count;
 
             /*
             var totalIntersectionPoint = Vector3S.zero;
