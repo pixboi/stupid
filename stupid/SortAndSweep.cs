@@ -228,6 +228,38 @@ namespace stupid
         }
     }
 
+    public readonly struct IntPairCount : IEquatable<IntPairCount>
+    {
+        public readonly int aIndex;
+        public readonly int bIndex;
+        public readonly int count;
+
+        public IntPairCount(int aIndex, int bIndex, int count)
+        {
+            bool condition = aIndex < bIndex;
+            this.aIndex = condition ? aIndex : bIndex;
+            this.bIndex = condition ? bIndex : aIndex;
+            this.count = count;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is IntPairCount count && Equals(count);
+        }
+
+        public bool Equals(IntPairCount other)
+        {
+            return aIndex == other.aIndex &&
+                   bIndex == other.bIndex &&
+                   count == other.count;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(aIndex, bIndex, count);
+        }
+    }
+
 
     public class BodyPairComparer : IEqualityComparer<IntPair>
     {

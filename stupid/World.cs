@@ -5,6 +5,7 @@ using stupid.Maths;
 
 namespace stupid
 {
+
     public class World
     {
         public WorldSettings Settings { get; private set; }
@@ -14,7 +15,7 @@ namespace stupid
         public static f32 DeltaTime;
 
         private int _counter;
-        private Dictionary<IntPair, ContactS> _contacts = new Dictionary<IntPair, ContactS>();
+        private Dictionary<IntPair, List<ContactS>> _contacts = new Dictionary<IntPair, List<ContactS>>();
         private List<IntPair> _removeCache = new List<IntPair>();
 
         public event Action<ContactS> OnContact;
@@ -131,8 +132,8 @@ namespace stupid
                 if (_contacts.TryGetValue(pair, out var old))
                 {
                     // On STAY: Update the manifold while preserving warm start data
-                    contact.accumulatedImpulse = old.accumulatedImpulse;
-                    contact.accumulatedFriction = old.accumulatedFriction;
+                    //contact.accumulatedImpulse = old.accumulatedImpulse;
+                    //contact.accumulatedFriction = old.accumulatedFriction;
                 }
 
                 contact.PreStep();
