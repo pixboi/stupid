@@ -7,7 +7,7 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
-        public static int BoxVsBox(in BoxColliderS a, in BoxColliderS b, ref ContactS contact)
+        public static int BoxVsBox(in BoxColliderS a, in BoxColliderS b, ref ContactVectorS[] contacts)
         {
             Vector3S relativePosition = b.collidable.transform.position - a.collidable.transform.position;
 
@@ -24,9 +24,6 @@ namespace stupid.Colliders
             if (!TryAxis(relativePosition, b.axes[0], a, b, 3, ref minPen, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, b.axes[1], a, b, 4, ref minPen, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, b.axes[2], a, b, 5, ref minPen, ref minAxis, ref best)) return 0;
-
-            f32 minPenVertex = minPen;
-            Vector3S minAxisVertex = minAxis;
 
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
@@ -47,18 +44,36 @@ namespace stupid.Colliders
                 throw new System.Exception("OOBB collision error");
             }
 
-            if (GetContactPoint(a, b, out var point))
+            var normalV = minAxis.Normalize();
+            if (Vector3S.Dot(normalV, relativePosition) > f32.zero) normalV = -normalV;
+
+
+            if (GetContactPoint(a, b))
             {
+                //A vertex on b bounds
+                for (int i = 0; i < pointCache.Count; i++)
+                {
+                    contacts[i] = new ContactVectorS(pointCache[i], normalV, minPen);
+                }
 
-                contact.point = point;
-                var normalV = minAxisVertex.Normalize();
-                if (Vector3S.Dot(normalV, relativePosition) > f32.zero) normalV = -normalV;
+                return pointCache.Count;
 
-                contact.normal = normalV;
-                contact.penetrationDepth = minPenVertex;
-                return 1;
             }
 
+            if (GetContactPoint(b, a))
+            {
+                //A vertex on b bounds
+                for (int i = 0; i < pointCache.Count; i++)
+                {
+                    contacts[i] = new ContactVectorS(pointCache[i], normalV, minPen);
+                }
+
+                return pointCache.Count;
+            }
+
+            return 0;
+
+            /*
             var totalIntersectionPoint = Vector3S.zero;
             int intersectionCount = 0;
 
@@ -99,52 +114,36 @@ namespace stupid.Colliders
             if (intersectionCount == 0) return 0;
 
             // Average of intersection points
-            contact.point = totalIntersectionPoint / (f32)intersectionCount;
+            contacts.point = totalIntersectionPoint / (f32)intersectionCount;
             var normal = minAxis.Normalize();
             if (Vector3S.Dot(normal, relativePosition) > f32.zero) normal = -normal;
 
-            contact.normal = normal;
-            contact.penetrationDepth = minPen;
+            contacts.normal = normal;
+            contacts.penetrationDepth = minPen;
 
 
             return 1;
+            */
         }
 
+        static List<Vector3S> pointCache = new List<Vector3S>();
         static (Vector3S, Vector3S, Vector3S)[] edgeCache = new (Vector3S, Vector3S, Vector3S)[12];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b, out Vector3S averagePoint)
+        public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b)
         {
-            averagePoint = Vector3S.zero;
-            int count = 0;
+            pointCache.Clear();
 
             for (int i = 0; i < 8; i++)
             {
                 var v = a.vertices[i];
                 if (b.ContainsPoint(v))
                 {
-                    averagePoint.AddInPlace(v);
-                    count++;
+                    pointCache.Add(v);
                 }
             }
 
-            if (count == 0)
-            {
-                for (int i = 0; i < 8; i++)
-                {
-                    var v = b.vertices[i];
-                    if (a.ContainsPoint(v))
-                    {
-                        averagePoint.AddInPlace(v);
-                        count++;
-                    }
-                }
-            }
-
-
-            if (count == 0) return false;
-
-            averagePoint.DivideInPlace((f32)count);
+            if (pointCache.Count == 0) return false;
             return true;
         }
 

@@ -8,7 +8,7 @@ namespace stupid.Colliders
         Collidable collidable { get; }
         BoundsS CalculateAABB(in Vector3S position, in QuaternionS rotation);
         BoundsS bounds { get; }
-        int Intersects(Collidable other, ref ContactS contact); // Add this method
+        int Intersects(Collidable other, ref ContactVectorS[] contacts); // Add this method
         Matrix3S CalculateInertiaTensor(f32 mass);
         bool NeedsRotationUpdate { get; }
         void OnRotationUpdate();

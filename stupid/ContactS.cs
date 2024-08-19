@@ -3,27 +3,42 @@ using stupid.Maths;
 
 namespace stupid.Colliders
 {
+    public readonly struct ContactVectorS
+    {
+        public readonly Vector3S point, normal;
+        public readonly f32 penetrationDepth;
+
+        public ContactVectorS(Vector3S point, Vector3S normal, f32 penetrationDepth)
+        {
+            this.point = point;
+            this.normal = normal;
+            this.penetrationDepth = penetrationDepth;
+        }
+    }
+
     public struct ContactS
     {
         public Collidable a, b;
         public RigidbodyS bodyA, bodyB;
-        public Vector3S point, normal, ra, rb;
-        public f32 penetrationDepth, effectiveMass, friction, restitution;
+        public ContactVectorS contact;
+        public Vector3S ra, rb;
+        public f32 effectiveMass, friction, restitution;
 
         // Cached impulses for warm starting
         public f32 accumulatedImpulse, accumulatedFriction;
 
-        public ContactS(Collidable a, Collidable b, Vector3S point, Vector3S normal, f32 penetrationDepth)
+        //Correction that are actuacted later, Only first contact should apply position correction?
+        public Vector3S aVelocity, bVelocity, aAngular, bAngular;
+
+
+        public ContactS(Collidable a, Collidable b, ContactVectorS contact)
         {
             this.a = a;
             this.b = b;
             this.bodyA = (RigidbodyS)a;
             this.bodyB = b.isDynamic ? (RigidbodyS)b : null;
 
-            this.point = point;
-            this.normal = normal;
-            this.penetrationDepth = penetrationDepth;
-
+            this.contact = contact;
             this.friction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
             this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
 
@@ -32,9 +47,14 @@ namespace stupid.Colliders
             this.accumulatedFriction = f32.zero;
 
             // Compute initial local offsets, these are invalid if point is not set
-            this.ra = this.point - a.transform.position; // Local offset from body A's position
-            this.rb = this.point - b.transform.position; // Local offset from body B's position
+            this.ra = Vector3S.zero; // Local offset from body A's position
+            this.rb = Vector3S.zero; // Local offset from body B's position
             this.effectiveMass = f32.zero;
+
+            this.aVelocity = Vector3S.zero;
+            this.bVelocity = Vector3S.zero;
+            this.aAngular = Vector3S.zero;
+            this.bAngular = Vector3S.zero;
         }
 
         public f32 CalculateEffectiveMass()
@@ -46,14 +66,14 @@ namespace stupid.Colliders
             f32 effectiveMass = invMassA + invMassB;
 
             // Angular effective mass for body A
-            Vector3S raCrossNormal = Vector3S.Cross(ra, normal);
+            Vector3S raCrossNormal = Vector3S.Cross(ra, this.contact.normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, bodyA.tensor.inertiaWorld * raCrossNormal);
             effectiveMass += angularMassA;
 
             // Angular effective mass for body B
             if (bodyB != null)
             {
-                Vector3S rbCrossNormal = Vector3S.Cross(rb, normal);
+                Vector3S rbCrossNormal = Vector3S.Cross(rb, this.contact.normal);
                 f32 angularMassB = Vector3S.Dot(rbCrossNormal, bodyB.tensor.inertiaWorld * rbCrossNormal);
                 effectiveMass += angularMassB;
             }
@@ -65,8 +85,8 @@ namespace stupid.Colliders
         // This is per one physics step, this data is reused between substeps
         public void PreStep()
         {
-            this.ra = this.point - a.transform.position; // Local offset from body A's position
-            this.rb = this.point - b.transform.position; // Local offset from body B's position
+            this.ra = this.contact.point - a.transform.position; // Local offset from body A's position
+            this.rb = this.contact.point - b.transform.position; // Local offset from body B's position
             this.effectiveMass = CalculateEffectiveMass();
         }
 
@@ -76,13 +96,13 @@ namespace stupid.Colliders
             Vector3S contactVelocity = CalculateContactVelocity();
 
             // Calculate velocity along normal
-            f32 vn = Vector3S.Dot(contactVelocity, this.normal);
+            f32 vn = Vector3S.Dot(contactVelocity, this.contact.normal);
             if (vn > f32.zero) return;
 
             // Compute the current contact separation for a sub-step
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
-            f32 separation = Vector3S.Dot(worldPointB - worldPointA, normal) + this.penetrationDepth;
+            f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.contact.normal) + this.contact.penetrationDepth;
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
             f32 incrementalImpulse = -effectiveMass;
@@ -97,7 +117,7 @@ namespace stupid.Colliders
             f32 appliedImpulse = newAccumulatedImpulse - accumulatedImpulse;
             accumulatedImpulse = newAccumulatedImpulse;
 
-            Vector3S normalImpulse = normal * appliedImpulse;
+            Vector3S normalImpulse = this.contact.normal * appliedImpulse;
             bodyA.velocity += normalImpulse * bodyA.inverseMass;
             if (bodyB != null) bodyB.velocity -= normalImpulse * bodyB.inverseMass;
 
@@ -110,7 +130,7 @@ namespace stupid.Colliders
             // Apply position correction to reduce interpenetration
             if (bias)
             {
-                Vector3S posCorrect = this.normal * separation * settings.PositionCorrection;
+                Vector3S posCorrect = this.contact.normal * separation * settings.PositionCorrection;
                 bodyA.transform.position += posCorrect;
                 if (bodyB != null) bodyB.transform.position -= posCorrect;
             }
@@ -132,7 +152,7 @@ namespace stupid.Colliders
             Vector3S relativeVelocityAtContact = CalculateContactVelocity();
 
             // Calculate the velocity along the normal
-            Vector3S normalVelocity = this.normal * Vector3S.Dot(relativeVelocityAtContact, this.normal);
+            Vector3S normalVelocity = this.contact.normal * Vector3S.Dot(relativeVelocityAtContact, this.contact.normal);
 
             // Calculate the tangential velocity (relative velocity minus the normal component)
             Vector3S tangentialVelocity = relativeVelocityAtContact - normalVelocity;

@@ -73,8 +73,6 @@ namespace stupid.Colliders
             // Transform the point to local space
             var localPoint = _collidable.transform.ToLocalPoint(worldPoint);
 
-            //_collidable.transform.ToLocalPointInPlace(worldPoint, out var localPoint);
-
             localPoint.x.AbsInPlace();
             localPoint.y.AbsInPlace();
             localPoint.z.AbsInPlace();
@@ -103,7 +101,7 @@ namespace stupid.Colliders
             return _bounds;
         }
 
-        public int Intersects(Collidable other, ref ContactS contact)
+        public int Intersects(Collidable other, ref ContactVectorS[] contact)
         {
             if (other.collider is BoxColliderS otherBox)
             {

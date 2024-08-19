@@ -38,7 +38,7 @@ namespace stupid.Colliders
             return _bounds;
         }
 
-        public int Intersects(Collidable other, ref ContactS contact)
+        public int Intersects(Collidable other, ref ContactVectorS[] contact)
         {
             if (other.collider is SphereColliderS otherSphere)
             {
@@ -58,7 +58,7 @@ namespace stupid.Colliders
             return 0;
         }
 
-        static readonly f32 sphereInertia = ((f32)2f / (f32)5f);
+        static readonly f32 sphereInertia = (f32)(2f / 5f);
         public Matrix3S CalculateInertiaTensor(f32 mass)
         {
             // For a solid sphere: I = 2/5 * m * r^2

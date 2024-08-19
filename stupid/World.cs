@@ -80,39 +80,35 @@ namespace stupid
 
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
-            RemoveOldContacts(pairs);
-            UpdateManifolds(pairs);
-            SolveCollisions(pairs);
-        }
-
-        private void RemoveOldContacts(HashSet<IntPair> pairs)
-        {
             _removeCache.Clear();
 
             foreach (var key in _contacts.Keys)
             {
-                if (!pairs.Contains(key))
-                {
-                    _removeCache.Add(key);
-                }
+                if (!pairs.Contains(key)) _removeCache.Add(key);
             }
 
-            foreach (var key in _removeCache)
-            {
-                _contacts.Remove(key);
-            }
-        }
+            foreach (var key in _removeCache) _contacts.Remove(key);
 
-        private void UpdateManifolds(HashSet<IntPair> pairs)
-        {
-            foreach (var pair in pairs)
-            {
-                UpdateManifold(pair);
-            }
+            foreach (var pair in pairs) UpdateManifold(pair);
 
             pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
+
+            for (int i = 0; i < Settings.DefaultSolverIterations; i++)
+            {
+                foreach (var pair in pairs)
+                {
+                    var contactList = _contacts[pair];
+                    foreach (var contact in contactList)
+                    {
+                        //contact.PreStep();
+                        contact.ResolveContact(DeltaTime, Settings, true);
+                    }
+                }
+            }
         }
 
+
+        ContactVectorS[] contactVectorCache = new ContactVectorS[8];
         private void UpdateManifold(IntPair pair)
         {
             var a = Collidables[pair.aIndex];
@@ -124,21 +120,30 @@ namespace stupid
                 (a, b) = (b, a);
             }
 
-            var contact = new ContactS(a, b, Vector3S.zero, Vector3S.zero, f32.zero);
-            var contactCount = a.collider.Intersects(b, ref contact);
+            var count = a.collider.Intersects(b, ref contactVectorCache);
 
-            if (contactCount > 0)
+            if (count > 0)
             {
                 if (_contacts.TryGetValue(pair, out var old))
                 {
                     // On STAY: Update the manifold while preserving warm start data
+                    //if the contacts are similar, put the warm start or smth
                     //contact.accumulatedImpulse = old.accumulatedImpulse;
                     //contact.accumulatedFriction = old.accumulatedFriction;
+                    old.Clear();
+                }
+                else
+                {
+                    _contacts.Add(pair, new List<ContactS>());
                 }
 
-                contact.PreStep();
-                _contacts[pair] = contact;
-                OnContact?.Invoke(contact);
+                for (int i = 0; i < count; i++)
+                {
+                    var contact = new ContactS(a, b, contactVectorCache[i]);
+                    contact.PreStep();
+                    _contacts[pair].Add(contact);
+                    OnContact?.Invoke(contact);
+                }
             }
             else
             {
@@ -146,30 +151,5 @@ namespace stupid
             }
         }
 
-        private void SolveCollisions(HashSet<IntPair> pairs)
-        {
-            for (int i = 0; i < Settings.DefaultSolverIterations; i++)
-            {
-                foreach (var pair in pairs)
-                {
-                    ResolveAndUpdateContact(pair, DeltaTime, true);
-                }
-            }
-
-            if (Settings.Relaxation)
-            {
-                foreach (var pair in pairs)
-                {
-                    ResolveAndUpdateContact(pair, DeltaTime, false);
-                }
-            }
-        }
-
-        private void ResolveAndUpdateContact(IntPair pair, f32 delta, bool warmStart)
-        {
-            var contact = _contacts[pair];
-            contact.ResolveContact(delta, Settings, warmStart);
-            _contacts[pair] = contact;
-        }
     }
 }

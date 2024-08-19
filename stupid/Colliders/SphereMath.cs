@@ -6,7 +6,7 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
-        public static int SphereVSphere(in Vector3S positionA, in Vector3S positionB, in f32 radA, in f32 radB, ref ContactS contact)
+        public static int SphereVSphere(in Vector3S positionA, in Vector3S positionB, in f32 radA, in f32 radB, ref ContactVectorS[] contacts)
         {
             f32 squaredDistance = Vector3S.DistanceSquared(positionA, positionB);
             f32 combinedRadius = radA + radB;
@@ -22,14 +22,12 @@ namespace stupid.Colliders
             Vector3S normal = direction;
             f32 penetrationDepth = combinedRadius - distance;
 
-            contact.point = point;
-            contact.normal = normal;
-            contact.penetrationDepth = penetrationDepth;
+            contacts[0] = new ContactVectorS(point, normal, penetrationDepth);
             return 1;
         }
 
         //Contact point on box, normal pointing towards box
-        public static int BoxVsSphere(in BoxColliderS box, in SphereColliderS sphere, ref ContactS contact)
+        public static int BoxVsSphere(in BoxColliderS box, in SphereColliderS sphere, ref ContactVectorS[] contacts)
         {
             var boxTrans = box.collidable.transform;
             var sphereTrans = sphere.collidable.transform;
@@ -69,16 +67,13 @@ namespace stupid.Colliders
             if (penetrationDepth < f32.zero)
                 penetrationDepth = f32.zero; // Ensure non-negative depth
 
-            contact.point = worldClosestPoint;
-            contact.normal = -worldNormal;
-            contact.penetrationDepth = penetrationDepth;
-
+            contacts[0] = new ContactVectorS(worldClosestPoint, -worldNormal, penetrationDepth);
             return 1;
         }
 
 
         //Contact point on sphere, normal points towards sphere
-        public static int SphereVsBox(in SphereColliderS sphere, in BoxColliderS box, ref ContactS contact)
+        public static int SphereVsBox(in SphereColliderS sphere, in BoxColliderS box, ref ContactVectorS[] contacts)
         {
             var boxTrans = box.collidable.transform;
             var sphereTrans = sphere.collidable.transform;
@@ -118,9 +113,7 @@ namespace stupid.Colliders
             if (penetrationDepth < f32.zero)
                 penetrationDepth = f32.zero; // Ensure non-negative depth
 
-            contact.point = worldContactPoint;
-            contact.normal = worldNormal;
-            contact.penetrationDepth = penetrationDepth;
+            contacts[0] = new ContactVectorS(worldContactPoint, worldNormal, penetrationDepth);
             return 1;
         }
 
