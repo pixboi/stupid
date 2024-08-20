@@ -47,7 +47,7 @@ namespace stupid.Colliders
 
             if (best == -1)
             {
-                throw new System.Exception("OOBB collision error");
+                throw new Exception("OOBB collision error");
             }
 
             var normalV = minAxis.Normalize();

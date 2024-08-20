@@ -38,17 +38,13 @@ namespace stupid.Colliders
             {
                 var c = contacts[i];
 
-
                 Vector3S contactVelocity = CalculateContactVelocity(c);
                 f32 vn = Vector3S.Dot(contactVelocity, c.normal);
                 if (vn > f32.zero) continue;
 
                 SolveImpulse(ref c, vn, deltaTime, settings, bias);
 
-                // Calculate relative velocity at contact point
                 contactVelocity = CalculateContactVelocity(c);
-
-                // Calculate velocity along normal
                 vn = Vector3S.Dot(contactVelocity, c.normal);
                 SolveFriction(ref c, contactVelocity, vn);
 
@@ -83,11 +79,15 @@ namespace stupid.Colliders
             contact.accumulatedImpulse = newAccumulatedImpulse;
 
             Vector3S normalImpulse = contact.normal * appliedImpulse;
-            AB.velocity += normalImpulse * AB.inverseMass;
-            if (BB != null) BB.velocity -= normalImpulse * BB.inverseMass;
 
+            AB.velocity += normalImpulse * AB.inverseMass;
             AB.angularVelocity += AB.tensor.inertiaWorld * Vector3S.Cross(contact.ra, normalImpulse);
-            if (BB != null) BB.angularVelocity -= BB.tensor.inertiaWorld * Vector3S.Cross(contact.rb, normalImpulse);
+
+            if (BB != null)
+            {
+                BB.velocity -= normalImpulse * BB.inverseMass;
+                BB.angularVelocity -= BB.tensor.inertiaWorld * Vector3S.Cross(contact.rb, normalImpulse);
+            }
         }
 
         void SolveFriction(ref ContactS contact, Vector3S contactVelocity, f32 vn)
@@ -129,13 +129,16 @@ namespace stupid.Colliders
             Vector3S frictionImpulse = tangent * appliedFrictionImpulse;
 
             AB.velocity += frictionImpulse * AB.inverseMass;
-            if (BB != null) BB.velocity -= frictionImpulse * BB.inverseMass;
-
             AB.angularVelocity += AB.tensor.inertiaWorld * Vector3S.Cross(contact.ra, frictionImpulse);
-            if (BB != null) BB.angularVelocity -= BB.tensor.inertiaWorld * Vector3S.Cross(contact.rb, frictionImpulse);
+
+            if (BB != null)
+            {
+                BB.velocity -= frictionImpulse * BB.inverseMass;
+                BB.angularVelocity -= BB.tensor.inertiaWorld * Vector3S.Cross(contact.rb, frictionImpulse);
+            }
         }
 
-        public void SolvePosition(ref ContactS contact, WorldSettings settings)
+        public void SolvePosition(ref ContactS contact, in WorldSettings settings)
         {
             // Compute the current contact separation for a sub-step
             Vector3S worldPointA = a.transform.position + contact.ra;
@@ -143,7 +146,7 @@ namespace stupid.Colliders
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, contact.normal) + contact.penetrationDepth;
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
-            Vector3S posCorrect = contact.normal * separation * settings.PositionCorrection;
+            Vector3S posCorrect = contact.normal * separation * (settings.PositionCorrection / (f32)8); //We could divide the position correction as well by iteration count
             a.transform.position += posCorrect;
             if (BB != null) b.transform.position -= posCorrect;
         }

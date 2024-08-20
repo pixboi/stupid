@@ -41,24 +41,15 @@ namespace stupid
         {
             DeltaTime = deltaTime;
 
-            IntegrateRigidbodies();
             UpdateCollidableTransforms();
             var pairs = Broadphase.ComputePairs(Collidables);
             NarrowPhase(pairs);
 
+            IntegrateRigidbodies(DeltaTime);
+
             SimulationFrame++;
         }
 
-        private void IntegrateRigidbodies()
-        {
-            foreach (var c in Collidables)
-            {
-                if (c is RigidbodyS rb)
-                {
-                    rb.Integrate(DeltaTime, Settings);
-                }
-            }
-        }
 
         private void UpdateCollidableTransforms()
         {
@@ -99,20 +90,17 @@ namespace stupid
                 Array.Copy(contactVectorCache, arr, count);
                 var manifold = new ContactManifoldS(a, b, arr);
 
+                // On STAY: Update the manifold while preserving warm start data
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
-                    // On STAY: Update the manifold while preserving warm start data
-
                     for (int i = 0; i < count; i++)
                     {
                         if (i < old.contacts.Length)
                         {
-                            var newContact = manifold.contacts[i];
-
-                            newContact.accumulatedImpulse = old.contacts[i].accumulatedImpulse;
-                            newContact.accumulatedFriction = old.contacts[i].accumulatedFriction;
-
-                            manifold.contacts[i] = newContact;
+                            var c = manifold.contacts[i];
+                            c.accumulatedImpulse = old.contacts[i].accumulatedImpulse;
+                            c.accumulatedFriction = old.contacts[i].accumulatedFriction;
+                            manifold.contacts[i] = c;
                         }
                     }
                 }
@@ -137,6 +125,9 @@ namespace stupid
             //Update new and check cols
             foreach (var pair in pairs) UpdateManifold(pair);
 
+            var subDelta = DeltaTime / (f32)Settings.DefaultSolverIterations;
+            var inverseSubDelta = DeltaTime * (f32)Settings.DefaultSolverIterations;
+
             //If no narrowphase col, remove
             pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
 
@@ -145,7 +136,7 @@ namespace stupid
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.Resolve(DeltaTime, Settings, true);  // Modify the copy
+                    manifold.Resolve(inverseSubDelta, Settings, true);  // Modify the copy
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
             }
@@ -155,8 +146,21 @@ namespace stupid
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.Resolve(DeltaTime, Settings, true);  // Modify the copy
+                    manifold.Resolve(DeltaTime, Settings, false);  // Modify the copy
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                }
+            }
+
+
+        }
+
+        private void IntegrateRigidbodies(f32 delta)
+        {
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb)
+                {
+                    rb.Integrate(delta, Settings);
                 }
             }
         }

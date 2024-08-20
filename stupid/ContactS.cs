@@ -51,7 +51,6 @@ namespace stupid.Colliders
 
             // Invert to get effective mass
             this.effectiveMass = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
-
         }
     }
 }
