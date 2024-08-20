@@ -52,11 +52,10 @@ namespace stupid.Colliders
                 vn = Vector3S.Dot(contactVelocity, c.normal);
                 SolveFriction(ref c, contactVelocity, vn);
 
+                SolvePosition(ref c, settings);
+
                 contacts[i] = c;
             }
-
-            var first = contacts[0];
-            SolvePosition(ref first, settings);
         }
 
         void SolveImpulse(ref ContactS contact, f32 vn, f32 deltaTime, in WorldSettings settings, bool bias = true)

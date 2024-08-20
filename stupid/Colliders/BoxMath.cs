@@ -163,7 +163,6 @@ namespace stupid.Colliders
             }
         }
 
-
         private static AxisPenetrationInfo[] axisPenetrationInfos = new AxisPenetrationInfo[15];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
