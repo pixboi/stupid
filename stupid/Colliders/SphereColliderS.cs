@@ -38,21 +38,16 @@ namespace stupid.Colliders
             return _bounds;
         }
 
-        public int Intersects(Collidable other, ref ContactVectorS[] contact)
+        public int Intersects(Collidable other, ref ContactS[] contacts)
         {
             if (other.collider is SphereColliderS otherSphere)
             {
-                return CollisionMath.SphereVSphere(
-                    this.collidable.transform.position,
-                    otherSphere.collidable.transform.position,
-                    this.radius,
-                    otherSphere.radius,
-                    ref contact);
+                return CollisionMath.SphereVSphere(this, otherSphere, ref contacts);
             }
 
             if (other.collider is BoxColliderS otherBox)
             {
-                return CollisionMath.SphereVsBox(this, otherBox, ref contact);
+                return CollisionMath.SphereVsBox(this, otherBox, ref contacts);
             }
 
             return 0;

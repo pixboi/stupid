@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using stupid.Colliders;
 using stupid.Maths;
 
@@ -15,10 +16,10 @@ namespace stupid
         public static f32 DeltaTime;
 
         private int _counter;
-        private Dictionary<IntPair, List<ContactS>> _contacts = new Dictionary<IntPair, List<ContactS>>();
+        private Dictionary<IntPair, ContactManifoldS> _contacts = new Dictionary<IntPair, ContactManifoldS>();
         private List<IntPair> _removeCache = new List<IntPair>();
 
-        public event Action<ContactS> OnContact;
+        public event Action<ContactManifoldS> OnContact;
 
         public World(WorldSettings worldSettings, int startSize = 1000)
         {
@@ -96,14 +97,8 @@ namespace stupid
             {
                 foreach (var pair in pairs)
                 {
-                    var contactList = _contacts[pair];
- 
-                    foreach (var contact in contactList)
-                    {
-                     
-                        contact.ResolveContact(DeltaTime, Settings, true);
-                        // contact.Actuate();
-                    }
+                    var manifold = _contacts[pair];
+                    manifold.Resolve(DeltaTime, Settings, true);
                 }
             }
 
@@ -111,18 +106,14 @@ namespace stupid
             {
                 foreach (var pair in pairs)
                 {
-                    var contactList = _contacts[pair];
-                    foreach (var contact in contactList)
-                    {
-                        contact.ResolveContact(DeltaTime, Settings, false);
-                        // contact.Actuate();
-                    }
+                    var manifold = _contacts[pair];
+                    manifold.Resolve(DeltaTime, Settings, true);
                 }
             }
         }
 
 
-        ContactVectorS[] contactVectorCache = new ContactVectorS[8];
+        ContactS[] contactVectorCache = new ContactS[8];
         private void UpdateManifold(IntPair pair)
         {
             var a = Collidables[pair.aIndex];
@@ -138,26 +129,16 @@ namespace stupid
 
             if (count > 0)
             {
+                var contact = new ContactManifoldS(a, b, contactVectorCache);
                 if (_contacts.TryGetValue(pair, out var old))
                 {
                     // On STAY: Update the manifold while preserving warm start data
-                    //if the contacts are similar, put the warm start or smth
-                    //contact.accumulatedImpulse = old.accumulatedImpulse;
-                    //contact.accumulatedFriction = old.accumulatedFriction;
-                    old.Clear();
-                }
-                else
-                {
-                    _contacts.Add(pair, new List<ContactS>());
+                    contact.accumulatedImpulse = old.accumulatedImpulse;
+                    contact.accumulatedFriction = old.accumulatedFriction;
                 }
 
-                for (int i = 0; i < count; i++)
-                {
-                    var contact = new ContactS(a, b, contactVectorCache[i]);
-                    contact.PreStep();
-                    _contacts[pair].Add(contact);
-                    OnContact?.Invoke(contact);
-                }
+                _contacts[pair] = contact;
+                OnContact?.Invoke(contact);
             }
             else
             {

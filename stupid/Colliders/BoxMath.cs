@@ -7,7 +7,7 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
-        public static int BoxVsBox(in BoxColliderS a, in BoxColliderS b, ref ContactVectorS[] contacts)
+        public static int BoxVsBox(in BoxColliderS a, in BoxColliderS b, ref ContactS[] contacts)
         {
             Vector3S relativePosition = b.collidable.transform.position - a.collidable.transform.position;
 
@@ -54,7 +54,7 @@ namespace stupid.Colliders
             {
                 foreach (var p in pointCache)
                 {
-                    contacts[count++] = new ContactVectorS(p, normalV, minPen);  
+                    contacts[count++] = new ContactS(p, normalV, minPen, a.collidable, b.collidable);
                 }
             }
 
@@ -63,7 +63,7 @@ namespace stupid.Colliders
             {
                 foreach (var p in pointCache)
                 {
-                    contacts[count++] = new ContactVectorS(p, normalV, minPen);
+                    contacts[count++] = new ContactS(p, normalV, minPen, a.collidable, b.collidable);
                 }
             }
 

@@ -101,7 +101,7 @@ namespace stupid.Colliders
             return _bounds;
         }
 
-        public int Intersects(Collidable other, ref ContactVectorS[] contact)
+        public int Intersects(Collidable other, ref ContactS[] contact)
         {
             if (other.collider is BoxColliderS otherBox)
             {
