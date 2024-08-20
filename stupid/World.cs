@@ -16,7 +16,7 @@ namespace stupid
         public static f32 DeltaTime;
 
         private int _counter;
-        private Dictionary<IntPair, ContactManifoldS> _contacts = new Dictionary<IntPair, ContactManifoldS>();
+        private Dictionary<IntPair, ContactManifoldS> _manifolds = new Dictionary<IntPair, ContactManifoldS>();
         private List<IntPair> _removeCache = new List<IntPair>();
 
         public event Action<ContactManifoldS> OnContact;
@@ -79,40 +79,6 @@ namespace stupid
             }
         }
 
-        private void NarrowPhase(HashSet<IntPair> pairs)
-        {
-            _removeCache.Clear();
-
-            //Remove olds that are not in the new broadphase
-            foreach (var key in _contacts.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
-            foreach (var key in _removeCache) _contacts.Remove(key);
-
-            //Update new and check cols
-            foreach (var pair in pairs) UpdateManifold(pair);
-
-            //If no narrowphase col, remove
-            pairs.RemoveWhere(x => !_contacts.ContainsKey(x));
-
-            for (int i = 0; i < Settings.DefaultSolverIterations; i++)
-            {
-                foreach (var pair in pairs)
-                {
-                    var manifold = _contacts[pair];
-                    manifold.Resolve(DeltaTime, Settings, true);
-                }
-            }
-
-            if (Settings.Relaxation)
-            {
-                foreach (var pair in pairs)
-                {
-                    var manifold = _contacts[pair];
-                    manifold.Resolve(DeltaTime, Settings, true);
-                }
-            }
-        }
-
-
         ContactS[] contactVectorCache = new ContactS[8];
         private void UpdateManifold(IntPair pair)
         {
@@ -129,20 +95,58 @@ namespace stupid
 
             if (count > 0)
             {
-                var contact = new ContactManifoldS(a, b, contactVectorCache);
-                if (_contacts.TryGetValue(pair, out var old))
+                var arr = new ContactS[count];
+                Array.Copy(contactVectorCache, arr, count);
+                var manifold = new ContactManifoldS(a, b, arr);
+
+                if (_manifolds.TryGetValue(pair, out var old))
                 {
                     // On STAY: Update the manifold while preserving warm start data
-                    contact.accumulatedImpulse = old.accumulatedImpulse;
-                    contact.accumulatedFriction = old.accumulatedFriction;
+                    manifold.accumulatedImpulse = old.accumulatedImpulse;
+                    manifold.accumulatedFriction = old.accumulatedFriction;
                 }
 
-                _contacts[pair] = contact;
-                OnContact?.Invoke(contact);
+                _manifolds[pair] = manifold;
+                OnContact?.Invoke(manifold);
             }
             else
             {
-                _contacts.Remove(pair);
+                _manifolds.Remove(pair);
+            }
+        }
+
+        private void NarrowPhase(HashSet<IntPair> pairs)
+        {
+            _removeCache.Clear();
+
+            //Remove olds that are not in the new broadphase
+            foreach (var key in _manifolds.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
+            foreach (var key in _removeCache) _manifolds.Remove(key);
+
+            //Update new and check cols
+            foreach (var pair in pairs) UpdateManifold(pair);
+
+            //If no narrowphase col, remove
+            pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
+
+            for (int i = 0; i < Settings.DefaultSolverIterations; i++)
+            {
+                foreach (var pair in pairs)
+                {
+                    var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                    manifold.Resolve(DeltaTime, Settings, true);  // Modify the copy
+                    _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                }
+            }
+
+            if (Settings.Relaxation)
+            {
+                foreach (var pair in pairs)
+                {
+                    var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                    manifold.Resolve(DeltaTime, Settings, true);  // Modify the copy
+                    _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                }
             }
         }
 

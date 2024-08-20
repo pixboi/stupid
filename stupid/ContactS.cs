@@ -19,7 +19,7 @@ namespace stupid.Colliders
             this.rb = this.point - b.transform.position;
 
             var AB = (RigidbodyS)this.a;
-            var BB = (RigidbodyS)this.b;
+            var BB = b.isDynamic ? (RigidbodyS)this.b : null;
 
             f32 invMassA = AB.inverseMass;
             f32 invMassB = BB != null ? BB.inverseMass : f32.zero;

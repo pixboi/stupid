@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Runtime;
 using stupid.Maths;
 
@@ -38,15 +39,29 @@ namespace stupid.Colliders
             return relativeVelocity;
         }
 
-        public void SolveImpulse(ContactS contact, f32 deltaTime, in WorldSettings settings, bool bias = true)
+        public void Resolve(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
-            // Calculate relative velocity at contact point
-            Vector3S contactVelocity = CalculateContactVelocity(contact);
+            foreach (var c in contacts)
+            {
+                // Calculate relative velocity at contact point
+                Vector3S contactVelocity = CalculateContactVelocity(c);
 
-            // Calculate velocity along normal
-            f32 vn = Vector3S.Dot(contactVelocity, contact.normal);
-            if (vn > f32.zero) return;
+                // Calculate velocity along normal
+                f32 vn = Vector3S.Dot(contactVelocity, c.normal);
+                if (vn > f32.zero) return;
 
+                SolveImpulse(c, contactVelocity, vn, deltaTime, settings, bias);
+                SolveFriction(c, contactVelocity, vn);
+
+
+            }
+
+            if (bias)
+                SolvePosition(contacts[0], settings);
+        }
+
+        void SolveImpulse(ContactS contact, Vector3S contactVelocity, f32 vn, f32 deltaTime, in WorldSettings settings, bool bias = true)
+        {
             // Compute the current contact separation for a sub-step
             Vector3S worldPointA = a.transform.position + contact.ra;
             Vector3S worldPointB = b.transform.position + contact.rb;
@@ -65,9 +80,9 @@ namespace stupid.Colliders
                 incrementalImpulse *= vn;
             }
 
-            f32 newAccumulatedImpulse = MathS.Max(f32.zero, accumulatedImpulse + incrementalImpulse);
-            f32 appliedImpulse = newAccumulatedImpulse - accumulatedImpulse;
-            accumulatedImpulse = newAccumulatedImpulse;
+            f32 newAccumulatedImpulse = MathS.Max(f32.zero, this.accumulatedImpulse + incrementalImpulse);
+            f32 appliedImpulse = newAccumulatedImpulse - this.accumulatedImpulse;
+            this.accumulatedImpulse = newAccumulatedImpulse;
 
             Vector3S normalImpulse = contact.normal * appliedImpulse;
             AB.velocity += normalImpulse * AB.inverseMass;
@@ -77,25 +92,8 @@ namespace stupid.Colliders
             if (BB != null) BB.angularVelocity -= BB.tensor.inertiaWorld * Vector3S.Cross(contact.rb, normalImpulse);
         }
 
-        public void Resolve(f32 deltaTime, in WorldSettings settings, bool bias = true)
+        void SolveFriction(ContactS contact, Vector3S contactVelocity, f32 vn)
         {
-            foreach (var c in contacts)
-            {
-                SolveImpulse(c, deltaTime, settings, bias);
-                SolveFriction(c);
-            }
-
-            if (bias)
-                SolvePosition(contacts[0], settings);
-        }
-
-
-
-        private void SolveFriction(ContactS contact)
-        {
-            // Handle friction after resolving normal impulses
-            var contactVelocity = CalculateContactVelocity(contact);
-            var vn = Vector3S.Dot(contactVelocity, contact.normal);
             // Calculate the velocity along the normal
             Vector3S normalVelocity = contact.normal * vn;
 
