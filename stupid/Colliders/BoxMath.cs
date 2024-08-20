@@ -15,6 +15,12 @@ namespace stupid.Colliders
             Vector3S minAxis = Vector3S.zero;
             int best = -1;
 
+            // Reset axis penetration info
+            for (int i = 0; i < axisPenetrationInfos.Length; i++)
+            {
+                axisPenetrationInfos[i].isValid = false;
+            }
+
             // Check for overlaps on the primary axes of both boxes
             //These are normalized on UpdateBox()
             if (!TryAxis(relativePosition, a.axes[0], a, b, 0, ref minPen, ref minAxis, ref best)) return 0;
@@ -143,24 +149,37 @@ namespace stupid.Colliders
             return true;
         }
 
+        public struct AxisPenetrationInfo
+        {
+            public readonly Vector3S axis;
+            public readonly f32 penetration;
+            public bool isValid; // To track if the axis is valid after the test
+
+            public AxisPenetrationInfo(Vector3S axis, f32 penetration, bool isValid)
+            {
+                this.axis = axis;
+                this.penetration = penetration;
+                this.isValid = isValid;
+            }
+        }
+
+
+        private static AxisPenetrationInfo[] axisPenetrationInfos = new AxisPenetrationInfo[15];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryAxis(in Vector3S relativePosition, in Vector3S axis, in BoxColliderS a, in BoxColliderS b, int index, ref f32 minOverlap, ref Vector3S minAxis, ref int best)
         {
             if (axis.sqrMagnitude < f32.epsilon) return true; // Skip zero-length axes
 
-            //Axis was normalized previously, cross produsct are not guaranteed to be normalized
-
+            // Calculate projection and overlap
             f32 pA = ProjectBox(axis, a);
             f32 pB = ProjectBox(axis, b);
             f32 distance = Vector3S.AbsDot(relativePosition, axis);
 
-            pA.AddInPlace(pB);
-            pA.SubtractInPlace(distance);
-
-            //f32 overlap = pA + pB - distance;
-            f32 overlap = pA;
+            f32 overlap = pA + pB - distance;
             if (overlap < f32.zero) return false;
+
+            axisPenetrationInfos[index] = new AxisPenetrationInfo(axis, overlap, true);
 
             if (overlap < minOverlap)
             {

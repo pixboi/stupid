@@ -102,8 +102,19 @@ namespace stupid
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
                     // On STAY: Update the manifold while preserving warm start data
-                    manifold.accumulatedImpulse = old.accumulatedImpulse;
-                    manifold.accumulatedFriction = old.accumulatedFriction;
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (i < old.contacts.Length)
+                        {
+                            var newContact = manifold.contacts[i];
+
+                            newContact.accumulatedImpulse = old.contacts[i].accumulatedImpulse;
+                            newContact.accumulatedFriction = old.contacts[i].accumulatedFriction;
+
+                            manifold.contacts[i] = newContact;
+                        }
+                    }
                 }
 
                 _manifolds[pair] = manifold;

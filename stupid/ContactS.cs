@@ -2,11 +2,14 @@
 
 namespace stupid.Colliders
 {
-    public readonly struct ContactS
+    public struct ContactS
     {
         public readonly Collidable a, b;
         public readonly Vector3S point, normal, ra, rb;
         public readonly f32 penetrationDepth, effectiveMass;
+
+        // Cached impulses for warm starting
+        public f32 accumulatedImpulse, accumulatedFriction;
 
         public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b)
         {
@@ -18,7 +21,13 @@ namespace stupid.Colliders
             this.ra = this.point - a.transform.position;
             this.rb = this.point - b.transform.position;
 
-            var AB = (RigidbodyS)this.a;
+            this.accumulatedImpulse = f32.zero;
+            this.accumulatedFriction = f32.zero;
+            this.effectiveMass = f32.zero;
+
+            if (!a.isDynamic && !b.isDynamic) return;
+
+            var AB = a.isDynamic ? (RigidbodyS)this.a : null;
             var BB = b.isDynamic ? (RigidbodyS)this.b : null;
 
             f32 invMassA = AB.inverseMass;
@@ -42,6 +51,7 @@ namespace stupid.Colliders
 
             // Invert to get effective mass
             this.effectiveMass = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
+
         }
     }
 }
