@@ -51,10 +51,10 @@ namespace stupid.Colliders
                 if (vn > f32.zero) return;
 
                 SolveImpulse(c, contactVelocity, vn, deltaTime, settings, bias);
-                SolveFriction(c, contactVelocity, vn);
-
 
             }
+
+            SolveFriction(contacts[0]);
 
             if (bias)
                 SolvePosition(contacts[0], settings);
@@ -92,8 +92,14 @@ namespace stupid.Colliders
             if (BB != null) BB.angularVelocity -= BB.tensor.inertiaWorld * Vector3S.Cross(contact.rb, normalImpulse);
         }
 
-        void SolveFriction(ContactS contact, Vector3S contactVelocity, f32 vn)
+        void SolveFriction(ContactS contact)
         {
+            // Calculate relative velocity at contact point
+            Vector3S contactVelocity = CalculateContactVelocity(contact);
+
+            // Calculate velocity along normal
+            f32 vn = Vector3S.Dot(contactVelocity, contact.normal);
+
             // Calculate the velocity along the normal
             Vector3S normalVelocity = contact.normal * vn;
 
