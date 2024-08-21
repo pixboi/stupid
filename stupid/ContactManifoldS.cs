@@ -32,6 +32,7 @@ namespace stupid.Colliders
             return relativeVelocity;
         }
 
+        //I think the changes need to batched here, so that one contact doesnt overpower another
         public void Resolve(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
             for (int i = 0; i < contacts.Length; i++)
@@ -54,6 +55,7 @@ namespace stupid.Colliders
             }
         }
 
+
         void SolveImpulse(ref ContactS contact, f32 vn, f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
             // Compute the current contact separation for a sub-step
@@ -62,18 +64,8 @@ namespace stupid.Colliders
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, contact.normal) + contact.penetrationDepth;
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
-            f32 incrementalImpulse = -contact.effectiveMass;
-
-            if (bias)
-            {
-                f32 baum = -settings.Baumgartner * separation / deltaTime;
-                incrementalImpulse *= (vn + baum);
-            }
-            else
-            {
-                incrementalImpulse *= vn;
-            }
-
+            f32 baum = -settings.Baumgartner * separation / deltaTime;
+            f32 incrementalImpulse = -contact.effectiveMass * (vn + (bias ? baum : f32.zero));
             f32 newAccumulatedImpulse = MathS.Max(f32.zero, contact.accumulatedImpulse + incrementalImpulse);
             f32 appliedImpulse = newAccumulatedImpulse - contact.accumulatedImpulse;
             contact.accumulatedImpulse = newAccumulatedImpulse;
@@ -146,7 +138,7 @@ namespace stupid.Colliders
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, contact.normal) + contact.penetrationDepth;
             separation = MathS.Max(separation - settings.DefaultContactOffset, f32.zero);
 
-            Vector3S posCorrect = contact.normal * separation * (settings.PositionCorrection / (f32)8); //We could divide the position correction as well by iteration count
+            Vector3S posCorrect = contact.normal * separation * (settings.PositionCorrection); //We could divide the position correction as well by iteration count
             a.transform.position += posCorrect;
             if (BB != null) b.transform.position -= posCorrect;
         }

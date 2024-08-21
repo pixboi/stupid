@@ -7,11 +7,12 @@ namespace stupid.Colliders
         public readonly Collidable a, b;
         public readonly Vector3S point, normal, ra, rb;
         public readonly f32 penetrationDepth, effectiveMass;
+        public readonly int featureId;
 
         // Cached impulses for warm starting
         public f32 accumulatedImpulse, accumulatedFriction;
 
-        public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b)
+        public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
         {
             this.a = a;
             this.b = b;
@@ -20,6 +21,7 @@ namespace stupid.Colliders
             this.penetrationDepth = penetrationDepth;
             this.ra = this.point - a.transform.position;
             this.rb = this.point - b.transform.position;
+            this.featureId = featureId;
 
             this.accumulatedImpulse = f32.zero;
             this.accumulatedFriction = f32.zero;

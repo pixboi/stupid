@@ -13,7 +13,7 @@ namespace stupid
             this.restitution = bounciness;
         }
 
-        public static readonly PhysicsMaterialS DEFAULT_MATERIAL = new PhysicsMaterialS(f32.two, f32.two, f32.zero);
-        public static readonly PhysicsMaterialS DEFAULT_MATERIAL1 = new PhysicsMaterialS((f32)0.9, (f32)0.9, f32.zero);
+        public static readonly PhysicsMaterialS DEFAULT_MATERIAL1 = new PhysicsMaterialS(f32.two, f32.two, f32.zero);
+        public static readonly PhysicsMaterialS DEFAULT_MATERIAL = new PhysicsMaterialS((f32)0.9, (f32)0.9, f32.zero);
     }
 }

@@ -45,8 +45,6 @@ namespace stupid
             var pairs = Broadphase.ComputePairs(Collidables);
             NarrowPhase(pairs);
 
-            IntegrateRigidbodies(DeltaTime);
-
             SimulationFrame++;
         }
 
@@ -95,13 +93,20 @@ namespace stupid
                 {
                     for (int i = 0; i < count; i++)
                     {
-                        if (i < old.contacts.Length)
+                        var c1 = manifold.contacts[i];
+
+                        for (int j = 0; j < old.contacts.Length; j++)
                         {
-                            var c = manifold.contacts[i];
-                            c.accumulatedImpulse = old.contacts[i].accumulatedImpulse;
-                            c.accumulatedFriction = old.contacts[i].accumulatedFriction;
-                            manifold.contacts[i] = c;
+                            var c2 = old.contacts[j];
+
+                            if (c1.featureId == c2.featureId)
+                            {
+                                c1.accumulatedFriction = c2.accumulatedFriction;
+                                c1.accumulatedImpulse = c2.accumulatedImpulse;
+                            }
                         }
+
+                        manifold.contacts[i] = c1;
                     }
                 }
 
@@ -124,12 +129,11 @@ namespace stupid
 
             //Update new and check cols
             foreach (var pair in pairs) UpdateManifold(pair);
+            //If no narrowphase col, remove
+            pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
 
             var subDelta = DeltaTime / (f32)Settings.DefaultSolverIterations;
             var inverseSubDelta = DeltaTime * (f32)Settings.DefaultSolverIterations;
-
-            //If no narrowphase col, remove
-            pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
 
             for (int i = 0; i < Settings.DefaultSolverIterations; i++)
             {
@@ -139,19 +143,9 @@ namespace stupid
                     manifold.Resolve(inverseSubDelta, Settings, true);  // Modify the copy
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
+
+                IntegrateRigidbodies(subDelta);
             }
-
-            if (Settings.Relaxation)
-            {
-                foreach (var pair in pairs)
-                {
-                    var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.Resolve(DeltaTime, Settings, false);  // Modify the copy
-                    _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
-                }
-            }
-
-
         }
 
         private void IntegrateRigidbodies(f32 delta)

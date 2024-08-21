@@ -60,7 +60,8 @@ namespace stupid.Colliders
             {
                 foreach (var p in pointCache)
                 {
-                    contacts[count++] = new ContactS(p, normalV, minPen, a.collidable, b.collidable);
+                    contacts[count] = new ContactS(p.Item1, normalV, minPen, a.collidable, b.collidable, p.Item2);
+                    count++;
                 }
             }
 
@@ -69,7 +70,8 @@ namespace stupid.Colliders
             {
                 foreach (var p in pointCache)
                 {
-                    contacts[count++] = new ContactS(p, normalV, minPen, a.collidable, b.collidable);
+                    contacts[count] = new ContactS(p.Item1, normalV, minPen, a.collidable, b.collidable, p.Item2 + 8);
+                    count++;
                 }
             }
 
@@ -128,7 +130,7 @@ namespace stupid.Colliders
             */
         }
 
-        static List<Vector3S> pointCache = new List<Vector3S>();
+        static List<(Vector3S, int)> pointCache = new List<(Vector3S, int)>();
         static (Vector3S, Vector3S, Vector3S)[] edgeCache = new (Vector3S, Vector3S, Vector3S)[12];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -141,7 +143,7 @@ namespace stupid.Colliders
                 var v = a.vertices[i];
                 if (b.ContainsPoint(v))
                 {
-                    pointCache.Add(v);
+                    pointCache.Add((v, i));
                 }
             }
 
