@@ -140,12 +140,16 @@ namespace stupid
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.Resolve(inverseSubDelta, Settings, true);  // Modify the copy
+                    manifold.SolveImpulses(inverseSubDelta, Settings, true);
+                    manifold.ActuateAll();
+                    manifold.SolveFrictions();
+                    manifold.ActuateAll();
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
 
                 IntegrateRigidbodies(subDelta);
-                UpdateCollidableTransforms();
+
+                //UpdateCollidableTransforms();
             }
         }
 
