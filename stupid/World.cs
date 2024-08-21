@@ -145,6 +145,7 @@ namespace stupid
                 }
 
                 IntegrateRigidbodies(subDelta);
+                UpdateCollidableTransforms();
             }
         }
 

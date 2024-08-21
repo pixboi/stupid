@@ -12,6 +12,28 @@ namespace stupid.Colliders
         // Cached impulses for warm starting
         public f32 accumulatedImpulse, accumulatedFriction;
 
+        public Vector3S aVelocity, bVelocity, aAngular, bAngular;
+
+        public void Actuate()
+        {
+            if (a is RigidbodyS ab)
+            {
+                ab.velocity += aVelocity;
+                ab.angularVelocity += aAngular;
+            }
+
+            if (b is RigidbodyS bb)
+            {
+                bb.velocity += bVelocity;
+                bb.angularVelocity += bAngular;
+            }
+
+            aVelocity = Vector3S.zero;
+            aAngular = Vector3S.zero;
+            bVelocity = Vector3S.zero;
+            bAngular = Vector3S.zero;
+        }
+
         public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
         {
             this.a = a;
@@ -26,6 +48,12 @@ namespace stupid.Colliders
             this.accumulatedImpulse = f32.zero;
             this.accumulatedFriction = f32.zero;
             this.effectiveMass = f32.zero;
+
+            aVelocity = Vector3S.zero;
+            aAngular = Vector3S.zero;
+
+            bVelocity = Vector3S.zero;
+            bAngular = Vector3S.zero;
 
             if (!a.isDynamic && !b.isDynamic) return;
 
