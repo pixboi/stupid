@@ -32,7 +32,7 @@ namespace stupid.Colliders
             ActuateAll();
             SolveFrictions();
             ActuateAll();
-            //SolvePositions(deltaTime, settings, bias);
+            SolvePositions(settings);
         }
 
         public void SolveImpulses(in f32 deltaTime, in WorldSettings settings, bool bias = true)

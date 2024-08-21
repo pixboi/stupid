@@ -84,8 +84,6 @@ namespace stupid
             // Update the object's position based on the current velocity.
             transform.position += velocity * deltaTime;
 
-
-
             // Apply accumulated torques to the angular velocity.
             if (torqueBucket != Vector3S.zero)
             {

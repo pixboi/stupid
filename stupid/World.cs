@@ -9,10 +9,11 @@ namespace stupid
 
     public class World
     {
-        public WorldSettings Settings { get; private set; }
+        public WorldSettings WorldSettings { get; private set; }
         public SortAndSweepBroadphase Broadphase { get; set; }
         public DumbList<Collidable> Collidables { get; private set; }
         public uint SimulationFrame { get; private set; }
+
         public static f32 DeltaTime;
 
         private int _counter;
@@ -23,7 +24,7 @@ namespace stupid
 
         public World(WorldSettings worldSettings, int startSize = 1000)
         {
-            Settings = worldSettings;
+            WorldSettings = worldSettings;
             Collidables = new DumbList<Collidable>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
             _counter = 0;
@@ -88,27 +89,31 @@ namespace stupid
                 Array.Copy(contactVectorCache, arr, count);
                 var manifold = new ContactManifoldS(a, b, arr);
 
-                // On STAY: Update the manifold while preserving warm start data
-                if (_manifolds.TryGetValue(pair, out var old))
+                /* Warm starting doesnt seem to do anything
+            // On STAY: Update the manifold while preserving warm start data
+            if (_manifolds.TryGetValue(pair, out var old))
+            {
+
+                for (int i = 0; i < count; i++)
                 {
-                    for (int i = 0; i < count; i++)
+                    var c1 = manifold.contacts[i];
+
+                    for (int j = 0; j < old.contacts.Length; j++)
                     {
-                        var c1 = manifold.contacts[i];
+                        var c2 = old.contacts[j];
 
-                        for (int j = 0; j < old.contacts.Length; j++)
+                        if (c1.featureId == c2.featureId)
                         {
-                            var c2 = old.contacts[j];
-
-                            if (c1.featureId == c2.featureId)
-                            {
-                                c1.accumulatedFriction = c2.accumulatedFriction;
-                                c1.accumulatedImpulse = c2.accumulatedImpulse;
-                            }
+                            //c1.accumulatedFriction = c2.accumulatedFriction;
+                            //c1.accumulatedImpulse = c2.accumulatedImpulse;
                         }
-
-                        manifold.contacts[i] = c1;
                     }
+
+                    manifold.contacts[i] = c1;
                 }
+                
+            }
+                */
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -132,24 +137,20 @@ namespace stupid
             //If no narrowphase col, remove
             pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
 
-            var subDelta = DeltaTime / (f32)Settings.DefaultSolverIterations;
-            var inverseSubDelta = DeltaTime * (f32)Settings.DefaultSolverIterations;
+            var subDelta = DeltaTime / (f32)WorldSettings.DefaultSolverIterations;
+            var inverseSubDelta = DeltaTime * (f32)WorldSettings.DefaultSolverIterations;
 
-            for (int i = 0; i < Settings.DefaultSolverIterations; i++)
+            for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.SolveImpulses(inverseSubDelta, Settings, true);
-                    manifold.ActuateAll();
-                    manifold.SolveFrictions();
-                    manifold.ActuateAll();
+                    manifold.Resolve(inverseSubDelta, WorldSettings, true);
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
 
                 IntegrateRigidbodies(subDelta);
-
-                //UpdateCollidableTransforms();
+                UpdateCollidableTransforms();
             }
         }
 
@@ -159,7 +160,7 @@ namespace stupid
             {
                 if (c is RigidbodyS rb)
                 {
-                    rb.Integrate(delta, Settings);
+                    rb.Integrate(delta, WorldSettings);
                 }
             }
         }
