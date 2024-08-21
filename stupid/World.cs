@@ -89,31 +89,32 @@ namespace stupid
                 Array.Copy(contactVectorCache, arr, count);
                 var manifold = new ContactManifoldS(a, b, arr);
 
-                /* Warm starting doesnt seem to do anything
-            // On STAY: Update the manifold while preserving warm start data
-            if (_manifolds.TryGetValue(pair, out var old))
-            {
 
-                for (int i = 0; i < count; i++)
+                if (_manifolds.TryGetValue(pair, out var old))
                 {
-                    var c1 = manifold.contacts[i];
-
-                    for (int j = 0; j < old.contacts.Length; j++)
+                    if (old.contacts.Length == manifold.contacts.Length)
                     {
-                        var c2 = old.contacts[j];
-
-                        if (c1.featureId == c2.featureId)
+                        //Same amount, so the collision is somewhat similar, get the accumulated impulse
+                        for (int i = 0; i < count; i++)
                         {
-                            //c1.accumulatedFriction = c2.accumulatedFriction;
-                            //c1.accumulatedImpulse = c2.accumulatedImpulse;
+                            var c1 = manifold.contacts[i];
+
+                            for (int j = 0; j < old.contacts.Length; j++)
+                            {
+                                var c2 = old.contacts[j];
+
+                                if (c1.featureId == c2.featureId)
+                                {
+                                    c1.accumulatedFriction = c2.accumulatedFriction;
+                                    c1.accumulatedImpulse = c2.accumulatedImpulse;
+                                }
+                            }
+
+                            manifold.contacts[i] = c1;
                         }
                     }
-
-                    manifold.contacts[i] = c1;
                 }
-                
-            }
-                */
+
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -139,6 +140,14 @@ namespace stupid
 
             var subDelta = DeltaTime / (f32)WorldSettings.DefaultSolverIterations;
             var inverseSubDelta = DeltaTime * (f32)WorldSettings.DefaultSolverIterations;
+
+            //Warm start
+            foreach (var pair in pairs)
+            {
+                var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                manifold.Resolve(inverseSubDelta, WorldSettings, true);
+                _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+            }
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {

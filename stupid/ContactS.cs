@@ -12,7 +12,6 @@ namespace stupid.Colliders
 
         // Cached impulses for warm starting
         public f32 accumulatedImpulse, accumulatedFriction;
-        public Vector3S aVelocity, bVelocity, aAngular, bAngular;
         public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
         {
             this.a = a;
