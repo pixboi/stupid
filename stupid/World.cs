@@ -14,7 +14,7 @@ namespace stupid
         public DumbList<Collidable> Collidables { get; private set; }
         public uint SimulationFrame { get; private set; }
 
-        public static f32 DeltaTime;
+        public static f32 DeltaTime, SubDelta, InverseSubDelta;
 
         private int _counter;
         private Dictionary<IntPair, ContactManifoldS> _manifolds = new Dictionary<IntPair, ContactManifoldS>();
@@ -40,7 +40,12 @@ namespace stupid
 
         public void Simulate(f32 deltaTime)
         {
-            DeltaTime = deltaTime;
+            if (deltaTime != DeltaTime)
+            {
+                DeltaTime = deltaTime;
+                SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
+                InverseSubDelta = deltaTime * (f32)WorldSettings.DefaultSolverIterations;
+            }
 
             UpdateCollidableTransforms();
             var pairs = Broadphase.ComputePairs(Collidables);
@@ -65,6 +70,25 @@ namespace stupid
                 if (c is RigidbodyS rb)
                 {
                     rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
+                }
+            }
+        }
+
+        private void SubstepUpdate()
+        {
+            foreach (var c in Collidables)
+            {
+
+                if (c is RigidbodyS rb)
+                {
+                    if (c.collider.NeedsRotationUpdate)
+                    {
+                        c.transform.UpdateRotationMatrix();
+                        c.collider.OnRotationUpdate();
+                    }
+
+                    rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
+
                 }
             }
         }
@@ -129,15 +153,12 @@ namespace stupid
             foreach (var pair in pairs) UpdateManifold(pair);
             pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
 
-            var subDelta = DeltaTime / (f32)WorldSettings.DefaultSolverIterations;
-            var inverseSubDelta = DeltaTime * (f32)WorldSettings.DefaultSolverIterations;
-
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.Resolve(inverseSubDelta, WorldSettings, true);
+                    manifold.Resolve(InverseSubDelta, WorldSettings, true);
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
 
@@ -147,20 +168,19 @@ namespace stupid
                     manifold.SolvePositions(WorldSettings);
                 }
 
-                IntegrateRigidbodies(subDelta);
+                IntegrateRigidbodies(SubDelta);
 
                 if (WorldSettings.Relaxation)
                 {
                     foreach (var pair in pairs)
                     {
                         var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                        manifold.Resolve(inverseSubDelta, WorldSettings, false);
+                        manifold.Resolve(InverseSubDelta, WorldSettings, false);
                         _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                     }
                 }
 
-                UpdateCollidableTransforms();
-
+                SubstepUpdate();
             }
         }
 

@@ -45,6 +45,9 @@ namespace stupid.Colliders
             this.ab = a.isDynamic ? (RigidbodyS)this.a : null;
             this.bb = b.isDynamic ? (RigidbodyS)this.b : null;
 
+            //This effective mass could be updated, if we intend to use substepping with the contact point update. the tensor is affected by the 
+            //integration, also the localPoint should come now from a matrix calc, since we have rotated bit
+
             f32 invMassA = ab.inverseMass;
             f32 invMassB = bb != null ? bb.inverseMass : f32.zero;
 
@@ -93,8 +96,17 @@ namespace stupid.Colliders
             var separation = CalculateSeparation(settings.DefaultContactOffset);
 
             //Accumulate
-            f32 baum = -settings.Baumgartner * separation / deltaTime;
-            f32 incrementalImpulse = -this.effectiveMass * (vn + (bias ? baum : f32.zero));
+            f32 incrementalImpulse = -this.effectiveMass;
+            if (bias)
+            {
+                f32 baum = -settings.Baumgartner * separation / deltaTime;
+                incrementalImpulse *= (vn + baum);
+            }
+            else
+            {
+                incrementalImpulse *= vn;
+            }
+
             f32 newAccumulatedImpulse = MathS.Max(f32.zero, this.accumulatedImpulse + incrementalImpulse);
             f32 appliedImpulse = newAccumulatedImpulse - this.accumulatedImpulse;
             this.accumulatedImpulse = newAccumulatedImpulse;
@@ -116,6 +128,7 @@ namespace stupid.Colliders
             Vector3S contactVelocity = CalculateRelativeContactVelocity();
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
             if (vn > f32.zero) return;
+
             // Calculate the velocity along the normal
             Vector3S normalVelocity = this.normal * vn;
 

@@ -58,16 +58,21 @@ namespace stupid
             this.isKinematic = isKinematic;
         }
 
-        public void Integrate(f32 deltaTime, WorldSettings settings)
+        public void AddGravity(f32 deltaTime, WorldSettings settings)
         {
-            // Exit early if the object is kinematic, as no integration is needed.
-            if (isKinematic) return;
-
             // Apply gravity to the velocity if gravity is enabled.
             if (useGravity)
             {
                 velocity += settings.Gravity * deltaTime;
             }
+        }
+
+        public void Integrate(f32 deltaTime, WorldSettings settings)
+        {
+            // Exit early if the object is kinematic, as no integration is needed.
+            if (isKinematic) return;
+
+            AddGravity(deltaTime, settings);
 
             // Apply accumulated forces to the velocity.
             if (forceBucket != Vector3S.zero)
@@ -95,7 +100,7 @@ namespace stupid
             if (angularVelocity.sqrMagnitude > maxAngularSpeedSq) angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
             // Update the object's rotation based on the angular velocity.
-            if (angularVelocity.sqrMagnitude > f32.epsilon)
+            if (angularVelocity.sqrMagnitude > f32.zero)
             {
                 var halfAngle = angularVelocity * deltaTime * f32.half;
                 var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
