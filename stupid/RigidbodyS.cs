@@ -75,14 +75,14 @@ namespace stupid
                 velocity += (forceBucket / mass) * deltaTime;
             }
 
+            // Update the object's position based on the current velocity.
+            transform.position += velocity * deltaTime;
+
             // Apply linear drag, ensuring it doesn't invert the velocity direction.
             if (drag > f32.zero)
             {
                 velocity *= MathS.Clamp(f32.one - (drag * deltaTime), f32.zero, f32.one);
             }
-
-            // Update the object's position based on the current velocity.
-            transform.position += velocity * deltaTime;
 
             // Apply accumulated torques to the angular velocity.
             if (torqueBucket != Vector3S.zero)
@@ -94,18 +94,18 @@ namespace stupid
             var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
             if (angularVelocity.sqrMagnitude > maxAngularSpeedSq) angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
+            // Update the object's rotation based on the angular velocity.
+            if (angularVelocity.sqrMagnitude > f32.epsilon)
+            {
+                var halfAngle = angularVelocity * deltaTime * f32.half;
+                var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
+                transform.rotation = (dq * transform.rotation).Normalize();
+            }
+
             // Apply angular drag, ensuring it doesn't invert the angular velocity direction.
             if (angularDrag > f32.zero)
             {
                 angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
-            }
-
-            // Update the object's rotation based on the angular velocity.
-            if (angularVelocity.sqrMagnitude > f32.zero)
-            {
-                var angDelta = angularVelocity * deltaTime * f32.half;
-                var dq = new QuaternionS(angDelta.x, angDelta.y, angDelta.z, f32.one);
-                transform.rotation = (dq * transform.rotation).Normalize();
             }
 
             // Clear the accumulated forces and torques after applying them.

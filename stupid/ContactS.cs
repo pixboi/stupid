@@ -12,6 +12,8 @@ namespace stupid.Colliders
 
         // Cached impulses for warm starting
         public f32 accumulatedImpulse, accumulatedFriction;
+
+        public Vector3S aVelocity, aAngular, bVelocity, bAngular;
         public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
         {
             this.a = a;
@@ -113,7 +115,7 @@ namespace stupid.Colliders
         {
             Vector3S contactVelocity = CalculateRelativeContactVelocity();
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
-
+            if (vn > f32.zero) return;
             // Calculate the velocity along the normal
             Vector3S normalVelocity = this.normal * vn;
 
@@ -130,8 +132,8 @@ namespace stupid.Colliders
             f32 invMassA = ab.inverseMass;
             f32 invMassB = bb != null ? bb.inverseMass : f32.zero;
             f32 frictionDenominator = invMassA + Vector3S.Dot(Vector3S.Cross(ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
-            if (bb != null)
-                frictionDenominator += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
+            if (bb != null) frictionDenominator += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
+
 
             // Calculate the friction impulse scalar
             f32 frictionImpulseScalar = Vector3S.Dot(tangentialVelocity, tangent) / frictionDenominator;
@@ -183,11 +185,6 @@ namespace stupid.Colliders
                 bb.angularVelocity += bAngular;
             }
 
-            Clear();
-        }
-
-        public void Clear()
-        {
             aVelocity = Vector3S.zero;
             aAngular = Vector3S.zero;
             bVelocity = Vector3S.zero;

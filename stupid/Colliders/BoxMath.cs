@@ -65,15 +65,19 @@ namespace stupid.Colliders
                 }
             }
 
-            //B vert on a
-            if (GetContactPoint(b, a))
+            if (count == 0)
             {
-                foreach (var p in pointCache)
+                //B vert on a
+                if (GetContactPoint(b, a))
                 {
-                    contacts[count] = new ContactS(p.Item1, normalV, minPen, a.collidable, b.collidable, p.Item2 + 8);
-                    count++;
+                    foreach (var p in pointCache)
+                    {
+                        contacts[count] = new ContactS(p.Item1, normalV, minPen, a.collidable, b.collidable, p.Item2 + 8);
+                        count++;
+                    }
                 }
             }
+
 
             return count;
 

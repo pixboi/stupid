@@ -92,29 +92,24 @@ namespace stupid
 
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
-                    if (old.contacts.Length == manifold.contacts.Length)
+                    for (int i = 0; i < count; i++)
                     {
-                        //Same amount, so the collision is somewhat similar, get the accumulated impulse
-                        for (int i = 0; i < count; i++)
+                        var c1 = manifold.contacts[i];
+
+                        for (int j = 0; j < old.contacts.Length; j++)
                         {
-                            var c1 = manifold.contacts[i];
+                            var c2 = old.contacts[j];
 
-                            for (int j = 0; j < old.contacts.Length; j++)
+                            if (c1.featureId == c2.featureId)
                             {
-                                var c2 = old.contacts[j];
-
-                                if (c1.featureId == c2.featureId)
-                                {
-                                    c1.accumulatedFriction = c2.accumulatedFriction;
-                                    c1.accumulatedImpulse = c2.accumulatedImpulse;
-                                }
+                                c1.accumulatedImpulse = c2.accumulatedImpulse;
+                                c1.accumulatedFriction = c2.accumulatedFriction;
                             }
-
-                            manifold.contacts[i] = c1;
                         }
+
+                        manifold.contacts[i] = c1;
                     }
                 }
-
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -128,26 +123,14 @@ namespace stupid
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();
-
-            //Remove olds that are not in the new broadphase
             foreach (var key in _manifolds.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
             foreach (var key in _removeCache) _manifolds.Remove(key);
 
-            //Update new and check cols
             foreach (var pair in pairs) UpdateManifold(pair);
-            //If no narrowphase col, remove
             pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
 
             var subDelta = DeltaTime / (f32)WorldSettings.DefaultSolverIterations;
             var inverseSubDelta = DeltaTime * (f32)WorldSettings.DefaultSolverIterations;
-
-            //Warm start
-            foreach (var pair in pairs)
-            {
-                var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                manifold.Resolve(inverseSubDelta, WorldSettings, true);
-                _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
-            }
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
@@ -158,8 +141,26 @@ namespace stupid
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
 
+                foreach (var pair in pairs)
+                {
+                    var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                    manifold.SolvePositions(WorldSettings);
+                }
+
                 IntegrateRigidbodies(subDelta);
+
+                if (WorldSettings.Relaxation)
+                {
+                    foreach (var pair in pairs)
+                    {
+                        var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                        manifold.Resolve(inverseSubDelta, WorldSettings, false);
+                        _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                    }
+                }
+
                 UpdateCollidableTransforms();
+
             }
         }
 
