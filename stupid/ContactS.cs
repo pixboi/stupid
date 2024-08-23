@@ -7,7 +7,8 @@ namespace stupid.Colliders
         public readonly Collidable a, b;
         public readonly RigidbodyS ab, bb;
         public readonly Vector3S point, normal, ra, rb;
-        public readonly f32 penetrationDepth, effectiveMass;
+        public f32 effectiveMass;
+        public readonly f32 penetrationDepth;
         public readonly int featureId;
 
         // Cached impulses for warm starting

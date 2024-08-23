@@ -25,7 +25,6 @@ namespace stupid.Colliders
             this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
         }
 
-        //I think the changes need to batched here, so that one contact doesnt overpower another
         //This is now pgs style
         public void Resolve(in f32 deltaTime, in WorldSettings settings, bool bias = true)
         {

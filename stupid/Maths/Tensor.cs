@@ -34,6 +34,12 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CalculateInverseInertiaTensor(in TransformS t)
+        {
+            inertiaWorld = MultiplyTransposed(t.rotationMatrix, inertiaInverse);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Matrix3S MultiplyTransposed(in Matrix3S rotationMatrix, in Matrix3S inertiaTensorLocal)
         {
             // Decompose rotation matrix elements for optimization

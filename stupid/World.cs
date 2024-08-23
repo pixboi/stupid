@@ -70,6 +70,7 @@ namespace stupid
         {
             foreach (var c in Collidables)
             {
+
                 if (c.collider.NeedsRotationUpdate)
                 {
                     c.transform.UpdateRotationMatrix();
@@ -78,9 +79,10 @@ namespace stupid
 
                 c.CalculateBounds();
 
+
                 if (c is RigidbodyS rb)
                 {
-                    rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
+                    rb.tensor.CalculateInverseInertiaTensor(c.transform);
                 }
             }
         }
@@ -182,10 +184,10 @@ namespace stupid
                     if (c.collider.NeedsRotationUpdate)
                     {
                         c.transform.UpdateRotationMatrix();
-                        c.collider.OnRotationUpdate();
+                       // c.collider.OnRotationUpdate();
                     }
 
-                    rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
+                    rb.tensor.CalculateInverseInertiaTensor(c.transform);
 
                 }
             }

@@ -34,15 +34,6 @@ namespace stupid
             return rotationMatrix.Transpose() * (worldPoint - position); // Assuming rotationMatrix is orthogonal
         }
 
-        //After this, the worldpoint should in be local
-        public void ToLocalPointInPlace(in Vector3S worldPoint, out Vector3S localPoint)
-        {
-            //Use constructor once
-            localPoint = new Vector3S(worldPoint.x, worldPoint.y, worldPoint.z);
-            localPoint.SubtractInPlace(position);
-            localPoint.MultiplyInPlace(rotationMatrix.Transpose());
-        }
-
         // Converts local point to world point
         public Vector3S ToWorldPoint(in Vector3S localPoint)
         {
