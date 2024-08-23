@@ -166,14 +166,6 @@ namespace stupid
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
 
-                foreach (var pair in pairs)
-                {
-                    var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.ActuateAll();
-                    _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
-                }
-
-
                 IntegrateRigidbodies(SubDelta);
 
                 if (WorldSettings.Relaxation)

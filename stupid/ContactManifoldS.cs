@@ -29,7 +29,7 @@ namespace stupid.Colliders
         public void Resolve(in f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
             SolveImpulses(deltaTime, settings, bias);
-            SolveFrictions();
+            //SolveFrictions();
             // ActuateAll();
         }
 
@@ -39,7 +39,28 @@ namespace stupid.Colliders
             {
                 var c = contacts[i];
                 c.SolveImpulse(deltaTime, settings, bias);
-                //c.Actuate();
+                contacts[i] = c;
+            }
+
+            for (int i = 0; i < contacts.Length; i++)
+            {
+                var c = contacts[i];
+                c.Actuate();
+                contacts[i] = c;
+            }
+
+            for (int i = 0; i < contacts.Length; i++)
+            {
+                var c = contacts[i];
+                c.SolveFriction(friction);
+                c.Actuate();
+
+                contacts[i] = c;
+            }
+
+            for (int i = 0; i < contacts.Length; i++)
+            {
+                var c = contacts[i];
                 contacts[i] = c;
             }
         }
