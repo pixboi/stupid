@@ -84,7 +84,7 @@ namespace stupid.Colliders
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
-            return separation;
+            //return separation;
             return MathS.Max(separation - slop, f32.zero);
         }
 

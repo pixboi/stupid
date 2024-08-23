@@ -162,7 +162,7 @@ namespace stupid.Colliders
             return _collidable.transform.ToWorldPoint(localSupportPoint);
         }
 
-        public bool RayTest(Vector3S origin, Vector3S direction, f32 maxDistance, out Vector3S point)
+        public bool RayTest(in Vector3S origin, in Vector3S direction, in f32 maxDistance, out Vector3S point)
         {
             point = Vector3S.zero;
 
