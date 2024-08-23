@@ -2,26 +2,21 @@
 
 namespace stupid.Maths
 {
-    public struct Tensor
+    public class Tensor
     {
         public readonly Matrix3S inertia; // Precalculated local inertia tensor
         public readonly Matrix3S inertiaInverse; // Precalculated local inverse inertia tensor
+        public Matrix3S inertiaWorld { get; private set; }
 
-        public Tensor(Matrix3S inertia, QuaternionS initialRotation = default)
+        public Tensor(Matrix3S inertia, QuaternionS initialRotation)
         {
             this.inertia = inertia;
             this.inertiaInverse = inertia.Inverse();
 
-            if (initialRotation == default)
-            {
-                initialRotation = QuaternionS.identity;
-            }
-
-            this.inertiaWorld = inertiaInverse; // This will be updated below
+            this.inertiaWorld = Matrix3S.Identity; // This will be updated below
             CalculateInverseInertiaTensor(initialRotation);
         }
 
-        public Matrix3S inertiaWorld { get; private set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculateInverseInertiaTensor(in QuaternionS rotation)

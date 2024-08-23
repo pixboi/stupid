@@ -2,7 +2,7 @@
 
 namespace stupid
 {
-    public struct TransformS
+    public class TransformS
     {
         // Transform properties
         public Vector3S position;
@@ -14,11 +14,11 @@ namespace stupid
         public Matrix3S rotationMatrix;
 
         // Constructor
-        public TransformS(Vector3S position = default, QuaternionS rotation = default, Vector3S localScale = default)
+        public TransformS(Vector3S position, QuaternionS rotation, Vector3S localScale)
         {
             this.position = position;
-            this.rotation = rotation == QuaternionS.zero ? QuaternionS.identity : rotation;
-            this.localScale = localScale == Vector3S.zero ? Vector3S.one : localScale;
+            this.rotation = rotation;
+            this.localScale = localScale;
             this.rotationMatrix = Matrix3S.Rotate(this.rotation);
         }
 

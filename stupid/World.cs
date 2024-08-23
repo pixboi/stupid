@@ -166,7 +166,7 @@ namespace stupid
 
                 IntegrateRigidbodies(SubDelta);
 
-                //SubstepUpdate();
+                SubstepUpdate();
             }
         }
 

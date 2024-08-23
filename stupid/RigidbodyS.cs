@@ -48,7 +48,7 @@ namespace stupid
             if (collider != null)
             {
                 var inertia = collider.CalculateInertiaTensor(this.mass);
-                this.tensor = new Tensor(inertia);
+                this.tensor = new Tensor(inertia, transform.rotation);
             }
 
             this.velocity = velocity;

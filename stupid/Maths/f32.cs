@@ -56,7 +56,13 @@ namespace stupid.Maths
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator *(in f32 a, in f32 b) => new f32((a.rawValue * b.rawValue) >> FractionalBits);
+        public static f32 operator *(in f32 a, in f32 b)
+        {
+            if (a.rawValue == 0) return f32.zero;
+            if (b.rawValue == 0) return f32.zero;
+
+            return new f32((a.rawValue * b.rawValue) >> FractionalBits);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void MultiplyInPlace(in f32 b) { rawValue = (rawValue * b.rawValue) >> FractionalBits; }
@@ -64,6 +70,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator /(in f32 a, in f32 b)
         {
+            if (a.rawValue == 0) return zero;
+
             if (b.rawValue == 0)
             {
                 throw new DivideByZeroException("Cannot divide by zero.");
@@ -76,6 +84,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void DivideInPlace(in f32 b)
         {
+
             if (b.rawValue == 0)
             {
                 throw new DivideByZeroException("Cannot divide by zero.");

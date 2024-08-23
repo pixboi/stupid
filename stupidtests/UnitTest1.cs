@@ -23,14 +23,14 @@ namespace stupidtests
             var world = new World(settings, iterations);
 
             var ground = new BoxColliderS(new Vector3S(256, 2, 256));
-            var groundTransform = new TransformS(new Vector3S(0, -2, 0), QuaternionS.identity);
+            var groundTransform = new TransformS(new Vector3S(0, -2, 0), QuaternionS.identity, new Vector3S(256, 1, 256));
             var g = new Collidable(-1, ground, false, groundTransform);
             world.AddCollidable(g);
 
             for (int i = 0; i < iterations; i++)
             {
                 var randomVector = new Vector3S((f32)random.NextSingle(), (f32)random.NextSingle(), (f32)random.NextSingle());
-                var transform = new TransformS();
+                var transform = new TransformS(randomVector, QuaternionS.identity, Vector3S.one);
                 transform.position = randomVector;
                 var box = new BoxColliderS(Vector3S.one);
                 var body = new RigidbodyS(-1, box, true, transform);
