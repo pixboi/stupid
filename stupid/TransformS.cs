@@ -2,7 +2,7 @@
 
 namespace stupid
 {
-    public class TransformS
+    public struct TransformS
     {
         // Transform properties
         public Vector3S position;
@@ -62,38 +62,6 @@ namespace stupid
         public Vector3S TransformVector(in Vector3S localVector)
         {
             return rotationMatrix * localVector;
-        }
-
-        // Translates the transform by a given vector
-        public void Translate(in Vector3S translation)
-        {
-            position += translation;
-        }
-
-        // Rotates the transform by a given quaternion
-        public void Rotate(in QuaternionS deltaRotation)
-        {
-            rotation = (deltaRotation * rotation).Normalize();
-            UpdateRotationMatrix();
-        }
-
-        // Sets the position of the transform
-        public void SetPosition(in Vector3S newPosition)
-        {
-            position = newPosition;
-        }
-
-        // Sets the rotation of the transform
-        public void SetRotation(in QuaternionS newRotation)
-        {
-            rotation = newRotation;
-            UpdateRotationMatrix();
-        }
-
-        // Sets the local scale of the transform
-        public void SetLocalScale(in Vector3S newScale)
-        {
-            localScale = newScale;
         }
 
     }

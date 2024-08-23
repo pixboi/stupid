@@ -24,7 +24,7 @@ namespace stupidtests
 
             var ground = new BoxColliderS(new Vector3S(256, 2, 256));
             var groundTransform = new TransformS(new Vector3S(0, -2, 0), QuaternionS.identity, new Vector3S(256, 1, 256));
-            var g = new Collidable(-1, ground, false, groundTransform);
+            var g = new Collidable(-1, ground, groundTransform, false);
             world.AddCollidable(g);
 
             for (int i = 0; i < iterations; i++)

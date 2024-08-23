@@ -51,7 +51,6 @@ namespace stupid
 
             //Integrate forces, gravity etc.
             foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(DeltaTime, WorldSettings);
-            //IntegrateRigidbodies(DeltaTime);
 
             //Broadphase
             UpdateCollidableTransforms();
@@ -102,12 +101,14 @@ namespace stupid
 
             var count = a.collider.Intersects(b, ref contactVectorCache);
 
+
             if (count > 0)
             {
                 var arr = new ContactS[count];
                 Array.Copy(contactVectorCache, arr, count);
                 var manifold = new ContactManifoldS(a, b, arr);
 
+                
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
                     for (int i = 0; i < count; i++)
@@ -128,6 +129,7 @@ namespace stupid
                         manifold.contacts[i] = c1;
                     }
                 }
+                
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -165,27 +167,6 @@ namespace stupid
                 }
 
                 IntegrateRigidbodies(SubDelta);
-
-                SubstepUpdate();
-            }
-        }
-
-        private void SubstepUpdate()
-        {
-            foreach (var c in Collidables)
-            {
-
-                if (c is RigidbodyS rb)
-                {
-                    if (c.collider.NeedsRotationUpdate)
-                    {
-                        c.transform.UpdateRotationMatrix();
-                        // c.collider.OnRotationUpdate();
-                    }
-
-                    rb.tensor.CalculateInverseInertiaTensor(c.transform);
-
-                }
             }
         }
 

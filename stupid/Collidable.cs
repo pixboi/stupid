@@ -12,10 +12,11 @@ namespace stupid
         public bool isDynamic = false;
         public IShape collider { get; private set; }
 
-        public TransformS transform = new TransformS(Vector3S.zero, QuaternionS.zero, Vector3S.one);
+        public TransformS transform = new TransformS(Vector3S.zero, QuaternionS.identity, Vector3S.one);
+
         public PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL;
 
-        public Collidable(int index, IShape collider, bool isDynamic = false, TransformS transform = default, PhysicsMaterialS material = default)
+        public Collidable(int index, IShape collider, TransformS transform, bool isDynamic = false)
         {
             this.index = index;
             this.isDynamic = isDynamic;

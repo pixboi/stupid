@@ -94,7 +94,6 @@ namespace stupid.Colliders
         {
             Vector3S contactVelocity = CalculateRelativeContactVelocity();
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
-
             if (vn > f32.zero) return;
 
             var separation = CalculateSeparation(settings.DefaultContactOffset);
@@ -138,7 +137,6 @@ namespace stupid.Colliders
 
             // Calculate the tangential velocity (relative velocity minus the normal component)
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-
             if (tangentialVelocity.sqrMagnitude < f32.epsilon) return;
 
             // Normalize the tangential velocity to get the friction direction (tangent)
@@ -173,17 +171,6 @@ namespace stupid.Colliders
                 this.bVelocity -= frictionImpulse * bb.inverseMass;
                 this.bAngular -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, frictionImpulse);
             }
-        }
-
-        //The position solve is immediate
-        public void SolvePosition(in f32 slop, in f32 positionCorrect)
-        {
-            f32 separation = CalculateSeparation(slop);
-
-            //We could divide the position correction as well by iteration count
-            Vector3S posCorrect = this.normal * separation * positionCorrect;
-            a.transform.position += posCorrect;
-            if (bb != null) b.transform.position -= posCorrect;
         }
 
         public void Actuate()

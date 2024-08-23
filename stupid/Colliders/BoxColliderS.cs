@@ -136,8 +136,6 @@ namespace stupid.Colliders
             );
         }
 
-
-
         public static readonly EdgeS[] BOX_EDGES = new EdgeS[]
         {
             new EdgeS(0, 1), new EdgeS(0, 2), new EdgeS(0, 4),

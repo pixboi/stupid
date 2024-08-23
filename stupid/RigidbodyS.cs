@@ -22,7 +22,7 @@ namespace stupid
         //Runtime
         public Vector3S forceBucket { get; private set; }
         public Vector3S torqueBucket { get; private set; }
-        public readonly Tensor tensor;
+        public Tensor tensor;
 
         // Settings
         public f32 mass = f32.one;
@@ -38,7 +38,7 @@ namespace stupid
             Vector3S angularVelocity = default,
             f32 mass = default,
             bool useGravity = true,
-            bool isKinematic = false) : base(index, collider, isDynamic, transform)
+            bool isKinematic = false) : base(index, collider, transform, isDynamic)
         {
 
             this.mass = mass;

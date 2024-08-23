@@ -2,7 +2,7 @@
 
 namespace stupid.Maths
 {
-    public class Tensor
+    public struct Tensor
     {
         public readonly Matrix3S inertia; // Precalculated local inertia tensor
         public readonly Matrix3S inertiaInverse; // Precalculated local inverse inertia tensor
