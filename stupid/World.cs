@@ -49,12 +49,13 @@ namespace stupid
                 InverseSubDelta = deltaTime * (f32)WorldSettings.DefaultSolverIterations;
             }
 
+            //Integrate forces, gravity etc.
+            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(DeltaTime, WorldSettings);
+            //IntegrateRigidbodies(DeltaTime);
+
             //Broadphase
             UpdateCollidableTransforms();
             var pairs = Broadphase.ComputePairs(Collidables);
-
-            //Integrate forces, gravity etc.
-            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(DeltaTime, WorldSettings);
 
             //Prepare contacts
             PrepareContacts(pairs);
@@ -87,8 +88,6 @@ namespace stupid
             }
         }
 
-
-
         ContactS[] contactVectorCache = new ContactS[8];
         private void UpdateManifold(IntPair pair)
         {
@@ -109,7 +108,6 @@ namespace stupid
                 Array.Copy(contactVectorCache, arr, count);
                 var manifold = new ContactManifoldS(a, b, arr);
 
-                /*
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
                     for (int i = 0; i < count; i++)
@@ -130,8 +128,6 @@ namespace stupid
                         manifold.contacts[i] = c1;
                     }
                 }
-                */
-
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -170,7 +166,7 @@ namespace stupid
 
                 IntegrateRigidbodies(SubDelta);
 
-                SubstepUpdate();
+                //SubstepUpdate();
             }
         }
 
@@ -184,7 +180,7 @@ namespace stupid
                     if (c.collider.NeedsRotationUpdate)
                     {
                         c.transform.UpdateRotationMatrix();
-                       // c.collider.OnRotationUpdate();
+                        // c.collider.OnRotationUpdate();
                     }
 
                     rb.tensor.CalculateInverseInertiaTensor(c.transform);

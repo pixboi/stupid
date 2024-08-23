@@ -32,8 +32,26 @@ namespace stupid.Colliders
             {
                 var c = contacts[i];
                 c.SolveImpulse(deltaTime, settings, bias);
+                contacts[i] = c;
+            }
+
+            for (int i = 0; i < contacts.Length; i++)
+            {
+                var c = contacts[i];
                 c.Actuate();
+                contacts[i] = c;
+            }
+
+            for (int i = 0; i < contacts.Length; i++)
+            {
+                var c = contacts[i];
                 c.SolveFriction(friction);
+                contacts[i] = c;
+            }
+
+            for (int i = 0; i < contacts.Length; i++)
+            {
+                var c = contacts[i];
                 c.Actuate();
                 contacts[i] = c;
             }

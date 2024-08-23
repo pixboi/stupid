@@ -84,6 +84,7 @@ namespace stupid.Colliders
             // Compute the current contact separation for a sub-step
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
+
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
             //return separation;
             return MathS.Max(separation - slop, f32.zero);
@@ -93,6 +94,8 @@ namespace stupid.Colliders
         {
             Vector3S contactVelocity = CalculateRelativeContactVelocity();
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
+
+            if (vn > f32.zero) return;
 
             var separation = CalculateSeparation(settings.DefaultContactOffset);
 
@@ -135,6 +138,8 @@ namespace stupid.Colliders
 
             // Calculate the tangential velocity (relative velocity minus the normal component)
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
+
+            if (tangentialVelocity.sqrMagnitude < f32.epsilon) return;
 
             // Normalize the tangential velocity to get the friction direction (tangent)
             Vector3S tangent = tangentialVelocity.Normalize();

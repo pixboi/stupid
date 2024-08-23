@@ -121,6 +121,12 @@ namespace stupid
             }
         }
 
+        public void IntegrateAll(f32 deltaTime, WorldSettings settings)
+        {
+            IntegrateForces(deltaTime, settings);
+            IntegrateVelocity(deltaTime, settings);
+        }
+
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {
