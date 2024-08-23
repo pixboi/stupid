@@ -90,7 +90,6 @@ namespace stupid.Colliders
 
         public void SolveImpulse(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
-
             Vector3S contactVelocity = CalculateRelativeContactVelocity();
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
 
@@ -136,8 +135,6 @@ namespace stupid.Colliders
             // Calculate the tangential velocity (relative velocity minus the normal component)
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
-            if (tangentialVelocity.sqrMagnitude < f32.epsilon) return;
-
             // Normalize the tangential velocity to get the friction direction (tangent)
             Vector3S tangent = tangentialVelocity.Normalize();
 
@@ -152,14 +149,14 @@ namespace stupid.Colliders
             frictionImpulseScalar = -frictionImpulseScalar;
 
             // Compute the maximum friction impulse (Coulomb's law)
-            f32 maxFrictionImpulse = this.accumulatedImpulse * friction;
+            f32 coulombMax = this.accumulatedImpulse * friction;
 
             // Calculate the new friction impulse with clamping
-            f32 oldAccumulatedFriction = this.accumulatedFriction;
-            this.accumulatedFriction = MathS.Clamp(this.accumulatedFriction + frictionImpulseScalar, -maxFrictionImpulse, maxFrictionImpulse);
+            f32 oldFriction = this.accumulatedFriction;
+            this.accumulatedFriction = MathS.Clamp(oldFriction + frictionImpulseScalar, -coulombMax, coulombMax);
 
             // Calculate the actual friction impulse to apply
-            f32 appliedFrictionImpulse = this.accumulatedFriction - oldAccumulatedFriction;
+            f32 appliedFrictionImpulse = this.accumulatedFriction - oldFriction;
             Vector3S frictionImpulse = tangent * appliedFrictionImpulse;
 
             this.aVelocity += frictionImpulse * ab.inverseMass;

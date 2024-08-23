@@ -168,16 +168,6 @@ namespace stupid
 
                 IntegrateRigidbodies(SubDelta);
 
-                if (WorldSettings.Relaxation)
-                {
-                    foreach (var pair in pairs)
-                    {
-                        var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                        manifold.Resolve(InverseSubDelta, WorldSettings, false);
-                        _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
-                    }
-                }
-
                 SubstepUpdate();
             }
         }

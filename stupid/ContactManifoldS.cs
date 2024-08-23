@@ -26,71 +26,15 @@ namespace stupid.Colliders
         }
 
         //I think the changes need to batched here, so that one contact doesnt overpower another
+        //This is now pgs style
         public void Resolve(in f32 deltaTime, in WorldSettings settings, bool bias = true)
-        {
-            SolveImpulses(deltaTime, settings, bias);
-            //SolveFrictions();
-            // ActuateAll();
-        }
-
-        public void SolveImpulses(in f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
             for (int i = 0; i < contacts.Length; i++)
             {
                 var c = contacts[i];
                 c.SolveImpulse(deltaTime, settings, bias);
-                contacts[i] = c;
-            }
-
-            for (int i = 0; i < contacts.Length; i++)
-            {
-                var c = contacts[i];
                 c.Actuate();
-                contacts[i] = c;
-            }
-
-            for (int i = 0; i < contacts.Length; i++)
-            {
-                var c = contacts[i];
                 c.SolveFriction(friction);
-                c.Actuate();
-
-                contacts[i] = c;
-            }
-
-            for (int i = 0; i < contacts.Length; i++)
-            {
-                var c = contacts[i];
-                contacts[i] = c;
-            }
-        }
-
-        public void SolveFrictions()
-        {
-            for (int i = 0; i < contacts.Length; i++)
-            {
-                var c = contacts[i];
-                c.SolveFriction(this.friction);
-                //c.Actuate();
-                contacts[i] = c;
-            }
-        }
-
-        public void SolvePositions(in WorldSettings settings)
-        {
-            for (int i = 0; i < contacts.Length; i++)
-            {
-                var c = contacts[i];
-                c.SolvePosition(settings.DefaultContactOffset, settings.PositionCorrection);
-                contacts[i] = c;
-            }
-        }
-
-        public void ActuateAll()
-        {
-            for (int i = 0; i < contacts.Length; i++)
-            {
-                var c = contacts[i];
                 c.Actuate();
                 contacts[i] = c;
             }
