@@ -14,11 +14,11 @@ namespace stupid
         public DumbList<Collidable> Collidables { get; private set; }
         public uint SimulationFrame { get; private set; }
 
-        public static f32 DeltaTime, SubDelta, InverseSubDelta;
+        public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
 
-        private int _counter;
-        private Dictionary<IntPair, ContactManifoldS> _manifolds = new Dictionary<IntPair, ContactManifoldS>();
-        private List<IntPair> _removeCache = new List<IntPair>();
+        int _counter;
+        Dictionary<IntPair, ContactManifoldS> _manifolds = new Dictionary<IntPair, ContactManifoldS>();
+        List<IntPair> _removeCache = new List<IntPair>();
 
         public event Action<ContactManifoldS> OnContact;
 
@@ -40,15 +40,26 @@ namespace stupid
 
         public void Simulate(f32 deltaTime)
         {
+            //Update delta time
             if (deltaTime != DeltaTime)
             {
                 DeltaTime = deltaTime;
+                InverseDeltaTime = f32.one / deltaTime;
                 SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
                 InverseSubDelta = deltaTime * (f32)WorldSettings.DefaultSolverIterations;
             }
 
+            //Broadphase
             UpdateCollidableTransforms();
             var pairs = Broadphase.ComputePairs(Collidables);
+
+            //Integrate forces, gravity etc.
+            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(DeltaTime, WorldSettings);
+
+            //Prepare contacts
+            PrepareContacts(pairs);
+
+            //Solve contacts + iterate?
             NarrowPhase(pairs);
 
             SimulationFrame++;
@@ -74,24 +85,7 @@ namespace stupid
             }
         }
 
-        private void SubstepUpdate()
-        {
-            foreach (var c in Collidables)
-            {
 
-                if (c is RigidbodyS rb)
-                {
-                    if (c.collider.NeedsRotationUpdate)
-                    {
-                        c.transform.UpdateRotationMatrix();
-                        c.collider.OnRotationUpdate();
-                    }
-
-                    rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
-
-                }
-            }
-        }
 
         ContactS[] contactVectorCache = new ContactS[8];
         private void UpdateManifold(IntPair pair)
@@ -113,7 +107,7 @@ namespace stupid
                 Array.Copy(contactVectorCache, arr, count);
                 var manifold = new ContactManifoldS(a, b, arr);
 
-
+                /*
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
                     for (int i = 0; i < count; i++)
@@ -134,6 +128,8 @@ namespace stupid
                         manifold.contacts[i] = c1;
                     }
                 }
+                */
+
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -144,15 +140,23 @@ namespace stupid
             }
         }
 
-        private void NarrowPhase(HashSet<IntPair> pairs)
+        void PrepareContacts(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();
+            //If there are current manifolds that are not in the new broadphase, remove
             foreach (var key in _manifolds.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
             foreach (var key in _removeCache) _manifolds.Remove(key);
 
-            foreach (var pair in pairs) UpdateManifold(pair);
-            pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
 
+            //Go through pairs and test collisions, share data, etc.
+            foreach (var pair in pairs) UpdateManifold(pair);
+
+            //Remove pairs that didnt survive the collision test
+            pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
+        }
+
+        private void NarrowPhase(HashSet<IntPair> pairs)
+        {
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
                 foreach (var pair in pairs)
@@ -160,12 +164,6 @@ namespace stupid
                     var manifold = _manifolds[pair];  // Retrieve the struct (copy)
                     manifold.Resolve(InverseSubDelta, WorldSettings, true);
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
-                }
-
-                foreach (var pair in pairs)
-                {
-                    var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.SolvePositions(WorldSettings);
                 }
 
                 IntegrateRigidbodies(SubDelta);
@@ -180,7 +178,26 @@ namespace stupid
                     }
                 }
 
-                SubstepUpdate();
+                //SubstepUpdate();
+            }
+        }
+
+        private void SubstepUpdate()
+        {
+            foreach (var c in Collidables)
+            {
+
+                if (c is RigidbodyS rb)
+                {
+                    if (c.collider.NeedsRotationUpdate)
+                    {
+                        c.transform.UpdateRotationMatrix();
+                        c.collider.OnRotationUpdate();
+                    }
+
+                    rb.tensor.CalculateInverseInertiaTensor(rb.transform.rotation);
+
+                }
             }
         }
 
@@ -190,7 +207,7 @@ namespace stupid
             {
                 if (c is RigidbodyS rb)
                 {
-                    rb.Integrate(delta, WorldSettings);
+                    rb.IntegrateVelocity(delta, WorldSettings);
                 }
             }
         }

@@ -105,12 +105,5 @@ namespace stupid
             localScale = newScale;
         }
 
-        // Looks at a target point
-        public void LookAt(in Vector3S target)
-        {
-            Vector3S direction = (target - position).Normalize();
-            rotation = QuaternionS.LookRotation(direction);
-            UpdateRotationMatrix();
-        }
     }
 }

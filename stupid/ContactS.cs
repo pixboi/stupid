@@ -84,14 +84,15 @@ namespace stupid.Colliders
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
             f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
+            return separation;
             return MathS.Max(separation - slop, f32.zero);
         }
 
         public void SolveImpulse(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
+
             Vector3S contactVelocity = CalculateRelativeContactVelocity();
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
-            if (vn > f32.zero) return;
 
             var separation = CalculateSeparation(settings.DefaultContactOffset);
 
@@ -121,13 +122,13 @@ namespace stupid.Colliders
                 this.bVelocity -= normalImpulse * bb.inverseMass;
                 this.bAngular -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, normalImpulse);
             }
+
         }
 
         public void SolveFriction(f32 friction)
         {
             Vector3S contactVelocity = CalculateRelativeContactVelocity();
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
-            if (vn > f32.zero) return;
 
             // Calculate the velocity along the normal
             Vector3S normalVelocity = this.normal * vn;
@@ -135,8 +136,7 @@ namespace stupid.Colliders
             // Calculate the tangential velocity (relative velocity minus the normal component)
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
-            // Check if tangential velocity is significant to avoid unnecessary calculations
-            if (tangentialVelocity.Magnitude() <= f32.epsilon) return;
+            if (tangentialVelocity.sqrMagnitude < f32.epsilon) return;
 
             // Normalize the tangential velocity to get the friction direction (tangent)
             Vector3S tangent = tangentialVelocity.Normalize();
@@ -146,7 +146,6 @@ namespace stupid.Colliders
             f32 invMassB = bb != null ? bb.inverseMass : f32.zero;
             f32 frictionDenominator = invMassA + Vector3S.Dot(Vector3S.Cross(ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
             if (bb != null) frictionDenominator += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
-
 
             // Calculate the friction impulse scalar
             f32 frictionImpulseScalar = Vector3S.Dot(tangentialVelocity, tangent) / frictionDenominator;

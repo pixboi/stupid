@@ -6,7 +6,7 @@ namespace stupid.Colliders
     public struct BoxColliderS : IShape
     {
         public readonly Vector3S size, halfSize;
-        public Vector3S[] vertices, axes;
+        public Vector3S[] localVertices, vertices, axes;
         private Collidable _collidable;
         public Collidable collidable => _collidable;
 
@@ -18,7 +18,10 @@ namespace stupid.Colliders
             this.size = size;
             this.halfSize = size * f32.half;
 
-            // Initialize vertices array
+            // Initialize local vertices array
+            this.localVertices = new Vector3S[8];
+
+            // Initialize world vertices array
             this.vertices = new Vector3S[8];
 
             // Initialize axes array
@@ -27,6 +30,16 @@ namespace stupid.Colliders
             // Initialize other fields
             this._collidable = null;
             this._bounds = new BoundsS();
+
+            // Define the local vertices (fixed, relative to the box center)
+            this.localVertices[0] = new Vector3S(halfSize.x, halfSize.y, halfSize.z);
+            this.localVertices[1] = new Vector3S(halfSize.x, halfSize.y, -halfSize.z);
+            this.localVertices[2] = new Vector3S(halfSize.x, -halfSize.y, halfSize.z);
+            this.localVertices[3] = new Vector3S(halfSize.x, -halfSize.y, -halfSize.z);
+            this.localVertices[4] = new Vector3S(-halfSize.x, halfSize.y, halfSize.z);
+            this.localVertices[5] = new Vector3S(-halfSize.x, halfSize.y, -halfSize.z);
+            this.localVertices[6] = new Vector3S(-halfSize.x, -halfSize.y, halfSize.z);
+            this.localVertices[7] = new Vector3S(-halfSize.x, -halfSize.y, -halfSize.z);
         }
 
         public void Attach(Collidable body)
@@ -46,25 +59,16 @@ namespace stupid.Colliders
             var rotMat = this._collidable.transform.rotationMatrix;
             var position = this._collidable.transform.position;
 
-            // Define the half-size along each axis
-            var right = rotMat.GetColumn(0) * halfSize.x;
-            var up = rotMat.GetColumn(1) * halfSize.y;
-            var forward = rotMat.GetColumn(2) * halfSize.z;
-
             // Update vertex positions based on rotation and translation
-            vertices[0] = position + right + up + forward;
-            vertices[1] = position + right + up - forward;
-            vertices[2] = position + right - up + forward;
-            vertices[3] = position + right - up - forward;
-            vertices[4] = position - right + up + forward;
-            vertices[5] = position - right + up - forward;
-            vertices[6] = position - right - up + forward;
-            vertices[7] = position - right - up - forward;
+            for (int i = 0; i < 8; i++)
+            {
+                vertices[i] = position + rotMat * localVertices[i];
+            }
 
-            // Update axes
-            axes[0] = right.Normalize();  // Local X axis
-            axes[1] = up.Normalize();     // Local Y axis
-            axes[2] = forward.Normalize(); // Local Z axis
+            // Update axes (rotated local axes)
+            axes[0] = rotMat.GetColumn(0).Normalize();  // Local X axis
+            axes[1] = rotMat.GetColumn(1).Normalize();  // Local Y axis
+            axes[2] = rotMat.GetColumn(2).Normalize();  // Local Z axis
         }
 
         public bool ContainsPoint(in Vector3S worldPoint)
@@ -109,14 +113,21 @@ namespace stupid.Colliders
             return 0;
         }
 
+
+        static f32 boxConst = (f32)(1f / 12f);
         public Matrix3S CalculateInertiaTensor(f32 mass)
         {
-            var h = size.x;
-            var d = size.y;
-            var w = size.z;
-            var inertiaX = f32.FromFloat(1f / 12f) * mass * (d * d + w * w);
-            var inertiaY = f32.FromFloat(1f / 12f) * mass * (h * h + w * w);
-            var inertiaZ = f32.FromFloat(1f / 12f) * mass * (h * h + d * d);
+            // Precompute constants and squares to minimize redundant calculations
+            var massConst = boxConst * mass;
+
+            var h2 = size.x * size.x; // h squared
+            var d2 = size.y * size.y; // d squared
+            var w2 = size.z * size.z; // w squared
+
+            // Calculate inertia tensor components
+            var inertiaX = massConst * (d2 + w2);
+            var inertiaY = massConst * (h2 + w2);
+            var inertiaZ = massConst * (h2 + d2);
 
             return new Matrix3S(
                 new Vector3S(inertiaX, f32.zero, f32.zero),
@@ -124,6 +135,8 @@ namespace stupid.Colliders
                 new Vector3S(f32.zero, f32.zero, inertiaZ)
             );
         }
+
+
 
         public static readonly EdgeS[] BOX_EDGES = new EdgeS[]
         {
