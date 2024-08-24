@@ -14,7 +14,7 @@ namespace stupid.Colliders
         // Cached impulses for warm starting
         public f32 accumulatedImpulse, accumulatedFriction;
 
-        public Vector3S aVelocity, aAngular, bVelocity, bAngular;
+        public Vector3S warmNormalImpulse, warmFrictionImpulse;
         public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
         {
             this.a = a;
@@ -28,13 +28,9 @@ namespace stupid.Colliders
 
             this.accumulatedImpulse = f32.zero;
             this.accumulatedFriction = f32.zero;
+            this.warmNormalImpulse = Vector3S.zero;
+            this.warmFrictionImpulse = Vector3S.zero;
             this.effectiveMass = f32.zero;
-
-            this.aVelocity = Vector3S.zero;
-            this.aAngular = Vector3S.zero;
-
-            this.bVelocity = Vector3S.zero;
-            this.bAngular = Vector3S.zero;
 
             if (!a.isDynamic && !b.isDynamic)
             {
@@ -84,15 +80,15 @@ namespace stupid.Colliders
             // Compute the current contact separation for a sub-step
             Vector3S worldPointA = a.transform.position + this.ra;
             Vector3S worldPointB = b.transform.position + this.rb;
-
-            f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
-            //return separation;
-            return MathS.Max(separation - slop, f32.zero);
+            f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) - this.penetrationDepth;
+            return separation;
+            //return MathS.Min(separation + slop, f32.zero);
         }
 
         public void SolveImpulse(f32 deltaTime, in WorldSettings settings, bool bias = true)
         {
             Vector3S contactVelocity = CalculateRelativeContactVelocity();
+
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
             if (vn > f32.zero) return;
 
@@ -102,7 +98,7 @@ namespace stupid.Colliders
             f32 incrementalImpulse = -this.effectiveMass;
             if (bias)
             {
-                f32 baum = -settings.Baumgartner * separation / deltaTime;
+                f32 baum = settings.Baumgartner * separation / deltaTime;
                 incrementalImpulse *= (vn + baum);
             }
             else
@@ -115,16 +111,16 @@ namespace stupid.Colliders
             this.accumulatedImpulse = newAccumulatedImpulse;
 
             Vector3S normalImpulse = this.normal * appliedImpulse;
+            this.warmNormalImpulse = normalImpulse; //Save for warm start
 
-            this.aVelocity += normalImpulse * ab.inverseMass;
-            this.aAngular += ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, normalImpulse);
+            ab.velocity += normalImpulse * ab.inverseMass;
+            ab.angularVelocity += ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, normalImpulse);
 
             if (bb != null)
             {
-                this.bVelocity -= normalImpulse * bb.inverseMass;
-                this.bAngular -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, normalImpulse);
+                bb.velocity -= normalImpulse * bb.inverseMass;
+                bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, normalImpulse);
             }
-
         }
 
         public void SolveFriction(f32 friction)
@@ -163,34 +159,32 @@ namespace stupid.Colliders
             f32 appliedFrictionImpulse = this.accumulatedFriction - oldFriction;
             Vector3S frictionImpulse = tangent * appliedFrictionImpulse;
 
-            this.aVelocity += frictionImpulse * ab.inverseMass;
-            this.aAngular += ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, frictionImpulse);
+            //Save for warm start
+            this.warmFrictionImpulse = frictionImpulse;
+
+            ab.velocity += frictionImpulse * ab.inverseMass;
+            ab.angularVelocity += ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, frictionImpulse);
 
             if (bb != null)
             {
-                this.bVelocity -= frictionImpulse * bb.inverseMass;
-                this.bAngular -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, frictionImpulse);
+                bb.velocity -= frictionImpulse * bb.inverseMass;
+                bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, frictionImpulse);
             }
         }
 
-        public void Actuate()
+        public void Warmup()
         {
             if (ab != null)
             {
-                ab.velocity += aVelocity;
-                ab.angularVelocity += aAngular;
+                ab.velocity += (warmNormalImpulse * ab.inverseMass) + (warmFrictionImpulse * ab.inverseMass);
+                ab.angularVelocity += ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, warmNormalImpulse) + ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, warmFrictionImpulse);
             }
 
             if (bb != null)
             {
-                bb.velocity += bVelocity;
-                bb.angularVelocity += bAngular;
+                bb.velocity -= (warmNormalImpulse * bb.inverseMass) + (warmFrictionImpulse * bb.inverseMass);
+                bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, warmNormalImpulse) + bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, warmFrictionImpulse);
             }
-
-            aVelocity = Vector3S.zero;
-            aAngular = Vector3S.zero;
-            bVelocity = Vector3S.zero;
-            bAngular = Vector3S.zero;
         }
     }
 }

@@ -104,9 +104,7 @@ namespace stupid
             if (isKinematic) return;
 
             // Update the object's position based on the current velocity.
-
-            var disp = velocity * deltaTime;
-            transform.position += disp;
+            transform.position += velocity * deltaTime;
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
@@ -120,13 +118,6 @@ namespace stupid
                 transform.rotation = (dq * transform.rotation).Normalize();
             }
         }
-
-        public void IntegrateAll(f32 deltaTime, WorldSettings settings)
-        {
-            IntegrateForces(deltaTime, settings);
-            IntegrateVelocity(deltaTime, settings);
-        }
-
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {

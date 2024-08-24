@@ -74,9 +74,10 @@ namespace stupid.Colliders
                 }
             }
 
+
+            //B vert on a
             if (count == 0)
             {
-                //B vert on a
                 if (GetContactPoint(b, a))
                 {
                     foreach (var p in pointCache)

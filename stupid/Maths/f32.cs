@@ -58,8 +58,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator *(in f32 a, in f32 b)
         {
-            if (a.rawValue == 0) return f32.zero;
-            if (b.rawValue == 0) return f32.zero;
+            if (a.rawValue == 0L) return f32.zero;
+            if (b.rawValue == 0L) return f32.zero;
 
             return new f32((a.rawValue * b.rawValue) >> FractionalBits);
         }
@@ -70,7 +70,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator /(in f32 a, in f32 b)
         {
-            if (a.rawValue == 0) return zero;
+            if (a.rawValue == 0L) return zero;
 
             if (b.rawValue == 0)
             {

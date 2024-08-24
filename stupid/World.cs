@@ -108,7 +108,7 @@ namespace stupid
                 Array.Copy(contactVectorCache, arr, count);
                 var manifold = new ContactManifoldS(a, b, arr);
 
-                
+                /*
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
                     for (int i = 0; i < count; i++)
@@ -123,13 +123,16 @@ namespace stupid
                             {
                                 c1.accumulatedImpulse = c2.accumulatedImpulse;
                                 c1.accumulatedFriction = c2.accumulatedFriction;
+
+                                c1.warmNormalImpulse = c2.warmNormalImpulse;
+                                c1.warmFrictionImpulse = c2.warmFrictionImpulse;
                             }
                         }
 
                         manifold.contacts[i] = c1;
                     }
                 }
-                
+                */
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -166,20 +169,16 @@ namespace stupid
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
 
-                IntegrateRigidbodies(SubDelta);
-            }
-        }
-
-        private void IntegrateRigidbodies(f32 delta)
-        {
-            foreach (var c in Collidables)
-            {
-                if (c is RigidbodyS rb)
+                foreach (var c in Collidables)
                 {
-                    rb.IntegrateVelocity(delta, WorldSettings);
+                    if (c is RigidbodyS rb)
+                    {
+                        rb.IntegrateVelocity(SubDelta, WorldSettings);
+                    }
                 }
             }
         }
+
 
     }
 }
