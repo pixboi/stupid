@@ -106,12 +106,10 @@ namespace stupid
                 var arr = new ContactS[count];
                 Array.Copy(contactVectorCache, arr, count);
                 var manifold = new ContactManifoldS(a, b, arr);
-
                 /*
-
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
-                    
+
                     for (int i = 0; i < count; i++)
                     {
                         var c = manifold.contacts[i];
@@ -129,17 +127,15 @@ namespace stupid
 
                         manifold.contacts[i] = c;
                     }
-                    
                 }
                 */
 
 
                 //This adds stability, we solve them immeaditly, so we get sequentially more and more information
-                //Only now it doesnt modify position?
+                //Only now it doesnt modify position? Maybe solve only position with 0.5?
                 if (WorldSettings.Presolve)
                 {
                     manifold.Resolve(DeltaTime, WorldSettings, true);
-
                 }
 
                 _manifolds[pair] = manifold;
@@ -166,7 +162,6 @@ namespace stupid
             pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
         }
 
-        bool TGS = false;
 
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
@@ -190,13 +185,13 @@ namespace stupid
                         _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                     }
                 }
-
-
             }
 
             foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
 
         }
+
+        bool TGS = false;
 
         private void NarrowPhaseTGS(HashSet<IntPair> pairs)
         {

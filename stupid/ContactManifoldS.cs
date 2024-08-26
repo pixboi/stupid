@@ -37,13 +37,13 @@ namespace stupid.Colliders
 
 
         // PGS style resolution
-        public void Resolve(in f32 deltaTime, in WorldSettings settings, bool bias = true)
+        public void Resolve(in f32 inverseDt, in WorldSettings settings, bool bias = true)
         {
             //Solving like this, the player can jump on thing, and it wont like "roll" under due to friction
             for (int i = 0; i < contacts.Length; i++)
             {
                 var c = contacts[i];
-                c.SolveImpulse(deltaTime, settings, bias);
+                c.SolveImpulse(inverseDt, settings, bias);
                 contacts[i] = c;
             }
 
@@ -53,12 +53,6 @@ namespace stupid.Colliders
                 c.SolveFriction(settings, friction);
                 contacts[i] = c;
             }
-        }
-
-        public void SolvePosition(in WorldSettings settings)
-        {
-            contacts[0].SolvePosition(settings);
-            //foreach(var contact in contacts) contact.SolvePosition(settings);
         }
 
 

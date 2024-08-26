@@ -11,7 +11,7 @@ namespace stupid.Colliders
         //Some seem to use 2 points, point on a, and point on b, this could improve stability?
         //Some use max 4 contacts per manifold, and solve them like 1 = biggest pen, 2 = furthest from 1, 3 = furthest to a line segment between 1-2
         public readonly Vector3S point, normal, ra, rb;
-        public f32 effectiveMass;
+        public f32 massNormal, massTangent;
         public readonly f32 penetrationDepth;
         public readonly int featureId;
 
@@ -30,7 +30,8 @@ namespace stupid.Colliders
 
             this.accumulatedImpulse = f32.zero;
             this.accumulatedFriction = f32.zero;
-            this.effectiveMass = f32.zero;
+            this.massNormal = f32.zero;
+            this.massTangent = f32.zero;
 
             if (!a.isDynamic && !b.isDynamic)
             {
@@ -65,14 +66,7 @@ namespace stupid.Colliders
             }
 
             // Invert to get effective mass
-            this.effectiveMass = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
-        }
-
-        Vector3S CalculateRelativeContactVelocity()
-        {
-            Vector3S relativeVelocity = ab.velocity + Vector3S.Cross(ab.angularVelocity, this.ra);
-            if (bb != null) relativeVelocity -= bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb);
-            return relativeVelocity;
+            this.massNormal = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
         }
 
         f32 CalculateSeparation(f32 slop)
@@ -86,23 +80,24 @@ namespace stupid.Colliders
 
         public void SolveImpulse(f32 inverseDt, in WorldSettings settings, bool bias = true)
         {
-            Vector3S contactVelocity = CalculateRelativeContactVelocity();
+            Vector3S contactVelocity = ab.velocity + Vector3S.Cross(ab.angularVelocity, this.ra);
+            if (bb != null) contactVelocity -= bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb);
 
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
             if (vn > f32.zero) return;
 
             f32 baum = f32.zero;
-            var separation = CalculateSeparation(settings.DefaultContactOffset);
 
             // bias = S2_MAX(s2_baumgarte * inv_h * S2_MIN(0.0f, cp->separation + s2_linearSlop), -s2_maxBaumgarteVelocity);
             if (bias)
             {
+                var separation = CalculateSeparation(settings.DefaultContactOffset);
                 baum = settings.Baumgartner * separation * inverseDt;
             }
 
             //Accumulate
-            f32 impulse = -this.effectiveMass * (vn + baum);
-            f32 newImpulse = MathS.Max(impulse + this.accumulatedImpulse , f32.zero);
+            f32 impulse = -this.massNormal * (vn + baum);
+            f32 newImpulse = MathS.Max(impulse + this.accumulatedImpulse, f32.zero);
             impulse = newImpulse - this.accumulatedImpulse;
             this.accumulatedImpulse = newImpulse;
 
@@ -120,37 +115,32 @@ namespace stupid.Colliders
 
         public void SolveFriction(in WorldSettings settings, f32 friction)
         {
-            Vector3S contactVelocity = CalculateRelativeContactVelocity();
+            Vector3S contactVelocity = ab.velocity + Vector3S.Cross(ab.angularVelocity, this.ra);
+            if (bb != null) contactVelocity -= bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb);
+
             f32 vn = Vector3S.Dot(contactVelocity, this.normal);
 
             // Calculate the velocity along the normal
             Vector3S normalVelocity = this.normal * vn;
-
-            // Calculate the tangential velocity (relative velocity minus the normal component)
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-            if (tangentialVelocity.sqrMagnitude < f32.epsilon) return;
-
-            // Normalize the tangential velocity to get the friction direction (tangent)
             Vector3S tangent = tangentialVelocity.Normalize();
+
+            if (tangentialVelocity.sqrMagnitude == f32.zero) return;
 
             // Calculate the friction denominator
             f32 invMassA = ab.inverseMass;
             f32 invMassB = bb != null ? bb.inverseMass : f32.zero;
-            f32 frictionDenominator = invMassA + Vector3S.Dot(Vector3S.Cross(ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
-            if (bb != null) frictionDenominator += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
+            f32 tangentMass = invMassA + Vector3S.Dot(Vector3S.Cross(ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
+            if (bb != null) tangentMass += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
 
             // Calculate the friction impulse scalar
-            f32 frictionImpulseScalar = Vector3S.Dot(tangentialVelocity, tangent) / frictionDenominator;
+            f32 frictionImpulseScalar = Vector3S.Dot(tangentialVelocity, tangent) / tangentMass;
             frictionImpulseScalar = -frictionImpulseScalar;
 
             // Compute the maximum friction impulse (Coulomb's law)
             f32 coulombMax = this.accumulatedImpulse * friction;
-
-            // Calculate the new friction impulse with clamping
             f32 oldFriction = this.accumulatedFriction;
             this.accumulatedFriction = MathS.Clamp(oldFriction + frictionImpulseScalar, -coulombMax, coulombMax);
-
-            // Calculate the actual friction impulse to apply
             f32 appliedFrictionImpulse = this.accumulatedFriction - oldFriction;
 
             Vector3S frictionImpulse = tangent * appliedFrictionImpulse;
@@ -165,31 +155,5 @@ namespace stupid.Colliders
             }
         }
 
-        public void SolvePosition(in WorldSettings settings)
-        {
-            var separation = CalculateSeparation(settings.DefaultContactOffset);
-
-            var positionCorrect = this.normal * separation * -settings.PositionCorrection;
-            a.transform.position += positionCorrect;
-            if (bb != null) b.transform.position -= positionCorrect;
-
-
-
-        }
-
-        public void Warmup()
-        {
-            if (ab != null)
-            {
-                ab.velocity += this.normal * this.accumulatedImpulse;
-                // ab.angularVelocity += ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, warmNormalImpulse) + ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, warmFrictionImpulse);
-            }
-
-            if (bb != null)
-            {
-                bb.velocity -= this.normal * this.accumulatedImpulse;
-                // bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, warmNormalImpulse) + bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, warmFrictionImpulse);
-            }
-        }
     }
 }
