@@ -79,7 +79,6 @@ namespace stupid
 
                 c.CalculateBounds();
 
-
                 if (c is RigidbodyS rb)
                 {
                     rb.tensor.CalculateInverseInertiaTensor(c.transform);
@@ -109,30 +108,39 @@ namespace stupid
                 var manifold = new ContactManifoldS(a, b, arr);
 
                 /*
+
                 if (_manifolds.TryGetValue(pair, out var old))
                 {
+                    
                     for (int i = 0; i < count; i++)
                     {
-                        var c1 = manifold.contacts[i];
+                        var c = manifold.contacts[i];
 
                         for (int j = 0; j < old.contacts.Length; j++)
                         {
-                            var c2 = old.contacts[j];
+                            var oldContact = old.contacts[j];
 
-                            if (c1.featureId == c2.featureId)
+                            if (c.featureId == oldContact.featureId)
                             {
-                                c1.accumulatedImpulse = c2.accumulatedImpulse;
-                                c1.accumulatedFriction = c2.accumulatedFriction;
-
-                                c1.warmNormalImpulse = c2.warmNormalImpulse;
-                                c1.warmFrictionImpulse = c2.warmFrictionImpulse;
+                                c.accumulatedImpulse = oldContact.accumulatedImpulse;
+                                c.accumulatedFriction = oldContact.accumulatedFriction;
                             }
                         }
 
-                        manifold.contacts[i] = c1;
+                        manifold.contacts[i] = c;
                     }
+                    
                 }
                 */
+
+
+                //This adds stability, we solve them immeaditly, so we get sequentially more and more information
+                //Only now it doesnt modify position?
+                if (WorldSettings.Presolve)
+                {
+                    manifold.Resolve(DeltaTime, WorldSettings, true);
+
+                }
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -158,16 +166,51 @@ namespace stupid
             pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
         }
 
+        bool TGS = false;
+
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
+            var dt = DeltaTime;
+
+            for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
+            {
+                foreach (var pair in pairs)
+                {
+                    var manifold = _manifolds[pair];
+                    manifold.Resolve(InverseDeltaTime, WorldSettings, true);
+                    _manifolds[pair] = manifold;
+                }
+
+                if (WorldSettings.Relaxation)
+                {
+                    foreach (var pair in pairs)
+                    {
+                        var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                        manifold.Resolve(InverseDeltaTime, WorldSettings, false);
+                        _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                    }
+                }
+
+
+            }
+
+            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
+
+        }
+
+        private void NarrowPhaseTGS(HashSet<IntPair> pairs)
+        {
+            var dt = InverseSubDelta;
+
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.Resolve(InverseSubDelta, WorldSettings, true);
+                    manifold.Resolve(dt, WorldSettings, true);
                     _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                 }
+
 
                 foreach (var c in Collidables)
                 {
@@ -176,7 +219,20 @@ namespace stupid
                         rb.IntegrateVelocity(SubDelta, WorldSettings);
                     }
                 }
+
+
+                if (WorldSettings.Relaxation)
+                {
+                    foreach (var pair in pairs)
+                    {
+                        var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                        manifold.Resolve(dt, WorldSettings, false);
+                        _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                    }
+                }
+
             }
+
         }
 
 

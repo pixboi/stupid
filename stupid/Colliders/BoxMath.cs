@@ -63,13 +63,13 @@ namespace stupid.Colliders
                     var vertex = p.Item1;
                     var feature = p.Item2;
                     var pen = minPen;
-
+                    
                     if (b.RayTest(vertex, normalV, minPen, out var pointInBox))
                     {
                         pen = Vector3S.Distance(vertex, pointInBox);
                     }
 
-                    contacts[count] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
+                    contacts[count] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
                     count++;
                 }
             }
@@ -91,7 +91,7 @@ namespace stupid.Colliders
                             pen = Vector3S.Distance(vertex, pointInBox);
                         }
 
-                        contacts[count] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
+                        contacts[count] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
                         count++;
                     }
                 }

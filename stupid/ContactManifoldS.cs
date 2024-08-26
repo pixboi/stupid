@@ -7,6 +7,7 @@ namespace stupid.Colliders
     {
         public Collidable a, b;
         public RigidbodyS AB, BB;
+        //Some people sort these by penetration
         public ContactS[] contacts;
         public readonly f32 friction, restitution;
         public readonly Vector3S averagePoint, averageNormal;
@@ -34,27 +35,6 @@ namespace stupid.Colliders
             this.averagePoint = avg / (f32)contacts.Length;
         }
 
-        public void ResolveImpulse(in f32 deltaTime, in WorldSettings settings, bool bias = true)
-        {
-            //Solving like this, the player can jump on thing, and it wont like "roll" under due to friction
-            for (int i = 0; i < contacts.Length; i++)
-            {
-                var c = contacts[i];
-                c.SolveImpulse(deltaTime, settings, bias);
-                contacts[i] = c;
-            }
-        }
-
-        public void ResolveFriction(in f32 deltaTime, in WorldSettings settings, bool bias = true)
-        {
-            for (int i = 0; i < contacts.Length; i++)
-            {
-                var c = contacts[i];
-                c.SolveFriction(friction);
-                contacts[i] = c;
-            }
-        }
-
 
         // PGS style resolution
         public void Resolve(in f32 deltaTime, in WorldSettings settings, bool bias = true)
@@ -67,13 +47,20 @@ namespace stupid.Colliders
                 contacts[i] = c;
             }
 
-
             for (int i = 0; i < contacts.Length; i++)
             {
                 var c = contacts[i];
-                c.SolveFriction(friction);
+                c.SolveFriction(settings, friction);
                 contacts[i] = c;
             }
         }
+
+        public void SolvePosition(in WorldSettings settings)
+        {
+            contacts[0].SolvePosition(settings);
+            //foreach(var contact in contacts) contact.SolvePosition(settings);
+        }
+
+
     }
 }

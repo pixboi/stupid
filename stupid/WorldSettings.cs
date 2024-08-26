@@ -16,7 +16,7 @@ namespace stupid
         public int DefaultSolverVelocityIterations;
         public BoundsS WorldBounds;
         public f32 DefaultMaxAngularSpeed;
-        public bool Relaxation;
+        public bool Presolve, Relaxation;
         public f32 PositionCorrection;
         public f32 Baumgartner;
 
@@ -34,6 +34,7 @@ namespace stupid
                 DefaultSolverVelocityIterations = 1,
                 WorldBounds = new BoundsS(new Vector3S(0, 0, 0), new Vector3S(32, 32, 32)),
                 DefaultMaxAngularSpeed = (f32)14,
+                Presolve = true,
                 Relaxation = true,
                 PositionCorrection = (f32)0.2,
                 Baumgartner = (f32)0.2,
