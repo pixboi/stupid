@@ -102,7 +102,6 @@ namespace stupid.Colliders
             this.accumulatedImpulse = newImpulse;
 
             Vector3S normalImpulse = this.normal * impulse;
-
             ab.velocity += normalImpulse * ab.inverseMass;
             ab.angularVelocity += ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, normalImpulse);
 
@@ -123,9 +122,10 @@ namespace stupid.Colliders
             // Calculate the velocity along the normal
             Vector3S normalVelocity = this.normal * vn;
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-            Vector3S tangent = tangentialVelocity.Normalize();
-
             if (tangentialVelocity.sqrMagnitude == f32.zero) return;
+
+
+            Vector3S tangent = tangentialVelocity.Normalize();
 
             // Calculate the friction denominator
             f32 invMassA = ab.inverseMass;
@@ -144,7 +144,6 @@ namespace stupid.Colliders
             f32 appliedFrictionImpulse = this.accumulatedFriction - oldFriction;
 
             Vector3S frictionImpulse = tangent * appliedFrictionImpulse;
-
             ab.velocity += frictionImpulse * ab.inverseMass;
             ab.angularVelocity += ab.tensor.inertiaWorld * Vector3S.Cross(this.ra, frictionImpulse);
 

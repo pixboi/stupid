@@ -74,9 +74,8 @@ namespace stupid.Colliders
         public bool ContainsPoint(in Vector3S worldPoint)
         {
             var localPoint = _collidable.transform.ToLocalPoint(worldPoint);
-            localPoint.x.AbsInPlace();
-            localPoint.y.AbsInPlace();
-            localPoint.z.AbsInPlace();
+            localPoint = Vector3S.Abs(localPoint);
+
             return localPoint.x <= halfSize.x &&
                    localPoint.y <= halfSize.y &&
                    localPoint.z <= halfSize.z;
