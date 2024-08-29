@@ -98,38 +98,22 @@ namespace stupid
                 (a, b) = (b, a);
             }
 
-            var count = a.collider.Intersects(b, ref contactVectorCache);
+            //Ugly hack now
+            if (a.isDynamic && b.isDynamic)
+            {
+                if (b.collider is SphereColliderS && a.collider is BoxColliderS)
+                {
+                    (a, b) = (b, a);
+                }
+            }
 
+
+            Array.Clear(contactVectorCache, 0, contactVectorCache.Length);
+            var count = a.collider.Intersects(b, ref contactVectorCache);
 
             if (count > 0)
             {
-                var arr = new ContactS[count];
-                Array.Copy(contactVectorCache, arr, count);
-                var manifold = new ContactManifoldS(a, b, arr);
-                /*
-                if (_manifolds.TryGetValue(pair, out var old))
-                {
-
-                    for (int i = 0; i < count; i++)
-                    {
-                        var c = manifold.contacts[i];
-
-                        for (int j = 0; j < old.contacts.Length; j++)
-                        {
-                            var oldContact = old.contacts[j];
-
-                            if (c.featureId == oldContact.featureId)
-                            {
-                                c.accumulatedImpulse = oldContact.accumulatedImpulse;
-                                c.accumulatedFriction = oldContact.accumulatedFriction;
-                            }
-                        }
-
-                        manifold.contacts[i] = c;
-                    }
-                }
-                */
-
+                var manifold = new ContactManifoldS(a, b, count, contactVectorCache);
 
                 //This adds stability, we solve them immeaditly, so we get sequentially more and more information
                 //Only now it doesnt modify position? Maybe solve only position with 0.5?
@@ -187,8 +171,14 @@ namespace stupid
                 }
             }
 
-            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
-
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb)
+                {
+                    rb.IntegrateVelocity(dt, WorldSettings);
+                    rb.FinalizePosition();
+                }
+            }
         }
 
         bool TGS = false;
@@ -196,6 +186,7 @@ namespace stupid
         private void NarrowPhaseTGS(HashSet<IntPair> pairs)
         {
             var dt = InverseSubDelta;
+
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {

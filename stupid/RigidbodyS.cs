@@ -65,34 +65,19 @@ namespace stupid
             if (isKinematic) return;
 
             // Apply gravity to the velocity if gravity is enabled.
-            if (useGravity)
-            {
-                velocity += settings.Gravity * deltaTime;
-            }
+            if (useGravity) velocity += settings.Gravity * deltaTime;
 
             // Apply accumulated forces to the velocity.
-            if (forceBucket != Vector3S.zero)
-            {
-                velocity += (forceBucket / mass) * deltaTime;
-            }
+            if (forceBucket != Vector3S.zero) velocity += (forceBucket / mass) * deltaTime;
 
             // Apply linear drag, ensuring it doesn't invert the velocity direction.
-            if (drag > f32.zero)
-            {
-                velocity *= MathS.Clamp(f32.one - (drag * deltaTime), f32.zero, f32.one);
-            }
+            if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - (drag * deltaTime), f32.zero, f32.one);
 
             // Apply accumulated torques to the angular velocity.
-            if (torqueBucket != Vector3S.zero)
-            {
-                angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * deltaTime;
-            }
+            if (torqueBucket != Vector3S.zero) angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * deltaTime;
 
             // Apply angular drag, ensuring it doesn't invert the angular velocity direction.
-            if (angularDrag > f32.zero)
-            {
-                angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
-            }
+            if (angularDrag > f32.zero) angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
 
             // Clear the accumulated forces and torques after applying them.
             ClearBuckets();
@@ -104,7 +89,7 @@ namespace stupid
             if (isKinematic) return;
 
             // Update the object's position based on the current velocity.
-            transform.position += velocity * deltaTime;
+            transform.deltaPosition += velocity * deltaTime;
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
@@ -116,6 +101,15 @@ namespace stupid
                 var halfAngle = angularVelocity * deltaTime * f32.half;
                 var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
                 transform.rotation = (dq * transform.rotation).Normalize();
+            }
+        }
+
+        public void FinalizePosition()
+        {
+            if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
+            {
+                this.transform.position += this.transform.deltaPosition;
+                this.transform.deltaPosition = Vector3S.zero;
             }
         }
 

@@ -1,12 +1,15 @@
 ﻿using stupid.Maths;
 using System;
+using System.Numerics;
 
 namespace stupid.Colliders
 {
     public struct BoxColliderS : IShape
     {
         public readonly Vector3S size, halfSize;
-        public Vector3S[] localVertices, vertices, axes;
+        public readonly Vector3S[] localVertices;
+        public Vector3S[] vertices, axes;
+
         private Collidable _collidable;
         public Collidable collidable => _collidable;
 
@@ -73,8 +76,13 @@ namespace stupid.Colliders
 
         public bool ContainsPoint(in Vector3S worldPoint)
         {
-            var localPoint = _collidable.transform.ToLocalPoint(worldPoint);
-            localPoint = Vector3S.Abs(localPoint);
+            var localPoint = worldPoint;
+            _collidable.transform.ToLocalPointFast(ref localPoint);
+
+            localPoint.x.AbsInPlace();
+            localPoint.y.AbsInPlace();
+            localPoint.z.AbsInPlace();
+            //localPoint = Vector3S.Abs(localPoint);
 
             return localPoint.x <= halfSize.x &&
                    localPoint.y <= halfSize.y &&
@@ -159,9 +167,10 @@ namespace stupid.Colliders
             return _collidable.transform.ToWorldPoint(localSupportPoint);
         }
 
-        public bool RayTest(in Vector3S origin, in Vector3S direction, in f32 maxDistance, out Vector3S point)
+        public bool RayTest(in Vector3S origin, in Vector3S direction, in f32 maxDistance, out Vector3S point, out f32 distance)
         {
             point = Vector3S.zero;
+            distance = f32.maxValue; // Start with max value
 
             Vector3S localDirection = _collidable.transform.InverseTransformDirection(direction).Normalize();
             Vector3S localOrigin = _collidable.transform.ToLocalPoint(origin);
@@ -173,10 +182,19 @@ namespace stupid.Colliders
             {
                 if (localDirComponent != f32.zero)
                 {
-                    f32 t1 = (halfSizeComponent - localOriginComponent) / localDirComponent;
+                    f32 t1 = (halfSizeComponent - localOriginComponent);
+                    t1.DivideInPlace(localDirComponent);
+
                     f32 t2 = (-halfSizeComponent - localOriginComponent) / localDirComponent;
-                    tMin = MathS.Max(tMin, MathS.Min(t1, t2));
-                    tMax = MathS.Min(tMax, MathS.Max(t1, t2));
+                    t2.DivideInPlace(localDirComponent);
+                    if (t1 > t2)
+                    {
+                        var temp = t1;
+                        t1 = t2;
+                        t2 = temp;
+                    }
+                    tMin = MathS.Max(tMin, t1);
+                    tMax = MathS.Min(tMax, t2);
                 }
                 else if (localOriginComponent < -halfSizeComponent || localOriginComponent > halfSizeComponent)
                 {
@@ -195,15 +213,18 @@ namespace stupid.Colliders
             }
 
             f32 t = tMin >= f32.zero ? tMin : tMax;
-            if (t > maxDistance)
+            if (t > maxDistance || t < f32.zero)
             {
                 return false;
             }
 
             Vector3S localIntersectionPoint = localOrigin + localDirection * t;
             point = _collidable.transform.ToWorldPoint(localIntersectionPoint);
+            distance = t; // The distance from the ray's origin to the intersection point
 
             return true;
         }
+
+
     }
 }

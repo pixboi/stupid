@@ -37,7 +37,7 @@ namespace stupid.Maths
             m22 = row3.z;
         }
 
-        public static  Matrix3S Identity => new Matrix3S(new Vector3S(1,0,0), new Vector3S(0,1,0), new Vector3S(0,0,1));
+        public static Matrix3S Identity => new Matrix3S(new Vector3S(1, 0, 0), new Vector3S(0, 1, 0), new Vector3S(0, 0, 1));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S GetColumn(int index)
@@ -59,6 +59,18 @@ namespace stupid.Maths
             long z = ((m.m20.rawValue * v.x.rawValue) + (m.m21.rawValue * v.y.rawValue) + (m.m22.rawValue * v.z.rawValue)) >> f32.FractionalBits;
 
             return new Vector3S(new f32(x), new f32(y), new f32(z));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void MultiplyInPlace(in Matrix3S m, ref Vector3S v)
+        {
+            long x = ((m.m00.rawValue * v.x.rawValue) + (m.m01.rawValue * v.y.rawValue) + (m.m02.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+            long y = ((m.m10.rawValue * v.x.rawValue) + (m.m11.rawValue * v.y.rawValue) + (m.m12.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+            long z = ((m.m20.rawValue * v.x.rawValue) + (m.m21.rawValue * v.y.rawValue) + (m.m22.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+
+            v.x.rawValue = x;
+            v.y.rawValue = y;
+            v.z.rawValue = z;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

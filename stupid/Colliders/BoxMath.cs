@@ -58,13 +58,12 @@ namespace stupid.Colliders
                     var feature = p.Item2;
                     var pen = minPen;
 
-                    if (b.RayTest(vertex, normalV, minPen, out var pointInBox))
+                    if (b.RayTest(vertex, normalV, minPen, out var pointInBox, out var distance))
                     {
-                        pen = Vector3S.Distance(vertex, pointInBox);
+                        pen = distance;
                     }
 
-                    contacts[count] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
-                    count++;
+                    contacts[count++] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
                 }
             }
 
@@ -80,13 +79,12 @@ namespace stupid.Colliders
                         var feature = p.Item2;
                         var pen = minPen;
 
-                        if (a.RayTest(vertex, normalV, minPen, out var pointInBox))
+                        if (a.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance))
                         {
-                            pen = Vector3S.Distance(vertex, pointInBox);
+                            pen = distance;
                         }
 
-                        contacts[count] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
-                        count++;
+                        contacts[count++] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
                     }
                 }
             }
@@ -149,6 +147,8 @@ namespace stupid.Colliders
 
         static List<(Vector3S, int)> pointCache = new List<(Vector3S, int)>();
 
+
+        //A vertex on B
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b)
         {
@@ -178,7 +178,10 @@ namespace stupid.Colliders
             f32 pB = ProjectBox(axis, b);
             f32 distance = Vector3S.AbsDot(relativePosition, axis);
 
-            f32 overlap = pA + pB - distance;
+            pA.AddInPlace(pB);
+            pA.SubtractInPlace(distance);
+
+            f32 overlap = pA;
             if (overlap < f32.zero) return false;
 
             if (overlap < minOverlap)
@@ -197,7 +200,6 @@ namespace stupid.Colliders
             long absDot0 = Vector3S.RawAbsDot(axis, box.axes[0]);
             long absDot1 = Vector3S.RawAbsDot(axis, box.axes[1]);
             long absDot2 = Vector3S.RawAbsDot(axis, box.axes[2]);
-
             var projection = ((box.halfSize.x.rawValue * absDot0) + (box.halfSize.y.rawValue * absDot1) + (box.halfSize.z.rawValue * absDot2));
 
             return new f32(projection >> f32.FractionalBits);

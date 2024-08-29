@@ -165,7 +165,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 AbsDot(in Vector3S a, in Vector3S b)
         {
-            return MathS.Abs(Dot(a, b));    
+            var f = RawAbsDot(a, b);
+            return new f32(f);    
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -189,19 +190,32 @@ namespace stupid.Maths
             return point - planeNormal * distance;
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S Cross(in Vector3S a, in Vector3S b)
         {
-            long crossX = (a.y.rawValue * b.z.rawValue - a.z.rawValue * b.y.rawValue) >> f32.FractionalBits;
-            long crossY = (a.z.rawValue * b.x.rawValue - a.x.rawValue * b.z.rawValue) >> f32.FractionalBits;
-            long crossZ = (a.x.rawValue * b.y.rawValue - a.y.rawValue * b.x.rawValue) >> f32.FractionalBits;
-
             return new Vector3S
             (
-                new f32(crossX),
-                new f32(crossY),
-                new f32(crossZ)
+                new f32(((a.y.rawValue * b.z.rawValue - a.z.rawValue * b.y.rawValue)) >> f32.FractionalBits),
+                new f32(((a.z.rawValue * b.x.rawValue - a.x.rawValue * b.z.rawValue)) >> f32.FractionalBits),
+                new f32(((a.x.rawValue * b.y.rawValue - a.y.rawValue * b.x.rawValue)) >> f32.FractionalBits)
             );
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CrossInPlace(in Vector3S b)
+        {
+            this.x.rawValue = (this.y.rawValue * b.z.rawValue - this.z.rawValue * b.y.rawValue) >> f32.FractionalBits;
+            this.y.rawValue = (this.z.rawValue * b.x.rawValue - this.x.rawValue * b.z.rawValue) >> f32.FractionalBits;
+            this.z.rawValue = (this.x.rawValue * b.y.rawValue - this.y.rawValue * b.x.rawValue) >> f32.FractionalBits;
+        }
+
+        public void Reset()
+        {
+            this.x.rawValue = 0;
+            this.y.rawValue = 0;
+            this.z.rawValue = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -251,10 +265,9 @@ namespace stupid.Maths
             if (mag > f32.zero)
             {
                 this.DivideInPlace(mag);
-                return this;
             }
 
-            return zero;
+            return this;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

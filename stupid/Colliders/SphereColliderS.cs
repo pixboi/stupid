@@ -4,14 +4,13 @@ namespace stupid.Colliders
 {
     public struct SphereColliderS : IShape
     {
-        public f32 radius { get; private set; }
+        public readonly f32 radius;
 
         Collidable _collidable;
         public Collidable collidable => _collidable;
 
         BoundsS _bounds;
         public BoundsS bounds => _bounds;
-
         public bool NeedsRotationUpdate => false;
 
         public SphereColliderS(f32 radius)

@@ -34,6 +34,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long ToRaw() => rawValue;
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 FromFloat(float value) => new f32((long)(value * One));
 
@@ -92,6 +93,16 @@ namespace stupid.Maths
             long dividend = (this.rawValue << FractionalBits);
             this.rawValue = dividend / b.rawValue;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AbsInPlace()
+        {
+            long mask = rawValue >> 63;  // This creates a mask that is 0xFFFFFFFFFFFFFFFF if rawValue is negative, or 0x0000000000000000 if positive.
+            rawValue = (rawValue + mask) ^ mask;
+        }
+
+        public void Reset() { rawValue = 0; }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(in f32 value) => new f32(-value.rawValue);
