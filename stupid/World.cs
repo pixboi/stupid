@@ -115,6 +115,11 @@ namespace stupid
             {
                 var manifold = new ContactManifoldS(a, b, count, contactVectorCache);
 
+                if (_manifolds.TryGetValue(pair, out var oldM))
+                {
+                    manifold.PrepareWarmup(oldM);
+                }
+
                 //This adds stability, we solve them immeaditly, so we get sequentially more and more information
                 //Only now it doesnt modify position? Maybe solve only position with 0.5?
                 if (WorldSettings.Presolve)
@@ -150,6 +155,13 @@ namespace stupid
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
+
+            foreach (var pair in pairs)
+            {
+                var manifold = _manifolds[pair];
+                manifold.Warmup();
+                _manifolds[pair] = manifold;
+            }
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {

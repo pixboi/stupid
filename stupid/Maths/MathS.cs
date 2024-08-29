@@ -91,7 +91,7 @@ namespace stupid.Maths
 
             long rawValue = value.rawValue;
             long xRaw = rawValue > f32.one.rawValue ? rawValue : f32.one.rawValue; // Initial guess in raw form
-            const int iterations = 16; // Number of iterations can be adjusted
+            const int iterations = 8; // Number of iterations can be adjusted
 
             for (int i = 0; i < iterations; i++)
             {
