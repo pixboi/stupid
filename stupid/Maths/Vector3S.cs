@@ -172,13 +172,13 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long RawAbsDot(in Vector3S a, in Vector3S b)
         {
-            long dotX = a.x.rawValue * b.x.rawValue;
-            long dotY = a.y.rawValue * b.y.rawValue;
-            long dotZ = a.z.rawValue * b.z.rawValue;
-            long dotProduct = (dotX + dotY + dotZ) >> f32.FractionalBits;
+            long dotProduct = ((a.x.rawValue * b.x.rawValue) +
+                               (a.y.rawValue * b.y.rawValue) +
+                               (a.z.rawValue * b.z.rawValue)) >> f32.FractionalBits;
 
-            // Ensure the result is non-negative by taking the absolute value
-            return dotProduct < 0 ? -dotProduct : dotProduct;
+            // Use bitwise operation to get the absolute value
+            long mask = dotProduct >> 63; // Create a mask based on the sign of dotProduct
+            return (dotProduct + mask) ^ mask;
         }
 
 
@@ -223,6 +223,19 @@ namespace stupid.Maths
         {
             f32 ms = sqrMagnitude;
             return ms > f32.zero ? MathS.Sqrt(ms) : f32.zero;
+        }
+
+        //Useful for like, to see if more than zero
+        public long rawSqrMagnitude
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                long xx = (x.rawValue * x.rawValue);
+                long yy = (y.rawValue * y.rawValue);
+                long zz = (z.rawValue * z.rawValue);
+                return xx + yy + zz;
+            }
         }
 
         public f32 sqrMagnitude
