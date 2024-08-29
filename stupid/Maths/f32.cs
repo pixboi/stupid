@@ -85,7 +85,6 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void DivideInPlace(in f32 b)
         {
-
             if (b.rawValue == 0)
             {
                 throw new DivideByZeroException("Cannot divide by zero.");

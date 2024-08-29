@@ -203,13 +203,19 @@ namespace stupid.Maths
         }
 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CrossInPlace(in Vector3S b)
+        public Vector3S CrossInPlace(in Vector3S other)
         {
-            this.x.rawValue = (this.y.rawValue * b.z.rawValue - this.z.rawValue * b.y.rawValue) >> f32.FractionalBits;
-            this.y.rawValue = (this.z.rawValue * b.x.rawValue - this.x.rawValue * b.z.rawValue) >> f32.FractionalBits;
-            this.z.rawValue = (this.x.rawValue * b.y.rawValue - this.y.rawValue * b.x.rawValue) >> f32.FractionalBits;
+            long crossX = (y.rawValue * other.z.rawValue - z.rawValue * other.y.rawValue) >> f32.FractionalBits;
+            long crossY = (z.rawValue * other.x.rawValue - x.rawValue * other.z.rawValue) >> f32.FractionalBits;
+            long crossZ = (x.rawValue * other.y.rawValue - y.rawValue * other.x.rawValue) >> f32.FractionalBits;
+
+            x.rawValue = crossX;
+            y.rawValue = crossY;
+            z.rawValue = crossZ;
+
+            return this;
         }
+
 
         public void Reset()
         {
