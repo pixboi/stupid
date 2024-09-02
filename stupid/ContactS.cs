@@ -77,7 +77,7 @@ public struct ContactS
         {
             if (this.penetrationDepth > f32.zero)
             {
-                baum = this.penetrationDepth * inverseDt;
+                //baum = this.penetrationDepth * inverseDt;
             }
             else
             {
@@ -89,6 +89,8 @@ public struct ContactS
 
         var contactVelocity = CalculateContactVelocity(a, bb);
         var vn = Vector3S.Dot(contactVelocity, this.normal);
+
+        //if (vn > f32.zero) return;
 
         var impulse = -this.massNormal * (vn + baum);
         var newImpulse = MathS.Max(impulse + this.accumulatedImpulse, f32.zero);
@@ -113,6 +115,13 @@ public struct ContactS
 
         var finalImpulse = tangent * lambda;
         ApplyImpulse(a, bb, finalImpulse);
+    }
+
+    public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
+    {
+        var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
+        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
+        return bv - av;
     }
 
     private Vector3S CalculateTangent(in RigidbodyS a, in RigidbodyS bb)
@@ -141,13 +150,6 @@ public struct ContactS
         }
 
         scalar = -Vector3S.Dot(tangentialVelocity, tangent) / tangentMass;
-    }
-
-    public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
-    {
-        var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
-        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
-        return bv - av;
     }
 
     public void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
