@@ -98,7 +98,7 @@ namespace stupid
                 (a, b) = (b, a);
             }
 
-            Array.Clear(contactVectorCache, 0, contactVectorCache.Length);
+            //Array.Clear(contactVectorCache, 0, contactVectorCache.Length);
             var count = a.collider.Intersects(b, ref contactVectorCache);
 
             if (count > 0)
@@ -112,15 +112,6 @@ namespace stupid
                         manifold.PrepareWarmup(oldM);
                     }
                 }
-
-                //This adds stability, we solve them immeaditly, so we get sequentially more and more information
-                //Only now it doesnt modify position? Maybe solve only position with 0.5?
-                /*
-                if (WorldSettings.Presolve)
-                {
-                    manifold.Resolve(DeltaTime, WorldSettings, true);
-                }
-                */
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);

@@ -82,7 +82,6 @@ namespace stupid.Colliders
             localPoint.x.AbsInPlace();
             localPoint.y.AbsInPlace();
             localPoint.z.AbsInPlace();
-            //localPoint = Vector3S.Abs(localPoint);
 
             return localPoint.x <= halfSize.x &&
                    localPoint.y <= halfSize.y &&

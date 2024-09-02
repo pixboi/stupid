@@ -72,10 +72,19 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
         var baum = f32.zero;
+
         if (bias)
         {
-            var separation = CalculateSeparation(a.transform.position, b.transform.position, settings.DefaultContactOffset);
-            baum = MathS.Max(settings.Baumgartner * separation * inverseDt, (f32)(-4f));
+            if (this.penetrationDepth > f32.zero)
+            {
+                baum = this.penetrationDepth * inverseDt;
+            }
+            else
+            {
+                var separation = CalculateSeparation(a.transform.position, b.transform.position, settings.DefaultContactOffset);
+                baum = MathS.Max(settings.Baumgartner * separation * inverseDt, (f32)(-4f));
+            }
+
         }
 
         var contactVelocity = CalculateContactVelocity(a, bb);
@@ -97,8 +106,8 @@ public struct ContactS
         // Calculate tangential velocity and the corresponding impulse
         CalculateTangentialImpulse(a, bb, out var tangent, out var lambda);
 
-        var maxFriction = this.accumulatedImpulse * friction;
-        var newImpulse = MathS.Clamp(this.accumulatedFriction + lambda, -maxFriction, maxFriction);
+        var maxFric = this.accumulatedImpulse * friction;
+        var newImpulse = MathS.Clamp(this.accumulatedFriction + lambda, -maxFric, maxFric);
         lambda = newImpulse - this.accumulatedFriction;
         this.accumulatedFriction = newImpulse;
 
@@ -131,14 +140,14 @@ public struct ContactS
             tangentMass += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
         }
 
-        scalar = Vector3S.Dot(tangentialVelocity, tangent) / tangentMass;
+        scalar = -Vector3S.Dot(tangentialVelocity, tangent) / tangentMass;
     }
 
     public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
     {
         var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
         var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
-        return bv - av; // Correct order: bv - av
+        return bv - av;
     }
 
     public void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
