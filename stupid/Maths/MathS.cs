@@ -15,7 +15,12 @@ namespace stupid.Maths
         public static f32 Avg(in f32 a, in f32 b) => (a + b) * f32.half;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Clamp(in f32 value, in f32 min, f32 max) => Max(min, Min(max, value));
+        public static f32 Clamp(in f32 value, in f32 min, in f32 max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Sign(in f32 value) => value < f32.zero ? f32.negativeOne : f32.one;

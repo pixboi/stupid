@@ -98,16 +98,6 @@ namespace stupid
                 (a, b) = (b, a);
             }
 
-            //Ugly hack now
-            if (a.isDynamic && b.isDynamic)
-            {
-                if (b.collider is SphereColliderS && a.collider is BoxColliderS)
-                {
-                    (a, b) = (b, a);
-                }
-            }
-
-
             Array.Clear(contactVectorCache, 0, contactVectorCache.Length);
             var count = a.collider.Intersects(b, ref contactVectorCache);
 
@@ -115,17 +105,22 @@ namespace stupid
             {
                 var manifold = new ContactManifoldS(a, b, count, contactVectorCache);
 
-                if (_manifolds.TryGetValue(pair, out var oldM))
+                if (WorldSettings.Warmup)
                 {
-                    manifold.PrepareWarmup(oldM);
+                    if (_manifolds.TryGetValue(pair, out var oldM))
+                    {
+                        manifold.PrepareWarmup(oldM);
+                    }
                 }
 
                 //This adds stability, we solve them immeaditly, so we get sequentially more and more information
                 //Only now it doesnt modify position? Maybe solve only position with 0.5?
+                /*
                 if (WorldSettings.Presolve)
                 {
                     manifold.Resolve(DeltaTime, WorldSettings, true);
                 }
+                */
 
                 _manifolds[pair] = manifold;
                 OnContact?.Invoke(manifold);
@@ -156,12 +151,16 @@ namespace stupid
         {
             var dt = DeltaTime;
 
-            foreach (var pair in pairs)
+            if (WorldSettings.Warmup)
             {
-                var manifold = _manifolds[pair];
-                manifold.Warmup();
-                _manifolds[pair] = manifold;
+                foreach (var pair in pairs)
+                {
+                    var manifold = _manifolds[pair];
+                    manifold.Warmup();
+                    _manifolds[pair] = manifold;
+                }
             }
+
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
@@ -192,47 +191,5 @@ namespace stupid
                 }
             }
         }
-
-        bool TGS = false;
-
-        private void NarrowPhaseTGS(HashSet<IntPair> pairs)
-        {
-            var dt = InverseSubDelta;
-
-
-            for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
-            {
-                foreach (var pair in pairs)
-                {
-                    var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                    manifold.Resolve(dt, WorldSettings, true);
-                    _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
-                }
-
-
-                foreach (var c in Collidables)
-                {
-                    if (c is RigidbodyS rb)
-                    {
-                        rb.IntegrateVelocity(SubDelta, WorldSettings);
-                    }
-                }
-
-
-                if (WorldSettings.Relaxation)
-                {
-                    foreach (var pair in pairs)
-                    {
-                        var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                        manifold.Resolve(dt, WorldSettings, false);
-                        _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
-                    }
-                }
-
-            }
-
-        }
-
-
     }
 }

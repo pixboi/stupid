@@ -12,6 +12,7 @@ public struct ContactS
 
     public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
     {
+        // Contact point on A, normal points towards B
         this.point = point;
         this.normal = normal;
         this.penetrationDepth = penetrationDepth;
@@ -55,116 +56,100 @@ public struct ContactS
 
     public void WarmStart(in RigidbodyS a, in Collidable b)
     {
-        if (this.accumulatedImpulse == f32.zero) return;
-        if (this.accumulatedFriction == f32.zero) return;
-
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-        // Apply accumulated normal impulse
-        Vector3S normalImpulse = this.normal * this.accumulatedImpulse;
-        a.velocity += normalImpulse * a.inverseMass;
-        a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(this.ra, normalImpulse);
+        // Reapply the accumulated impulses
+        var normalImpulse = (this.normal * this.accumulatedImpulse);
+        var tangentImpulse = CalculateTangent(a, bb) * this.accumulatedFriction;
 
-        if (bb != null)
-        {
-            bb.velocity -= normalImpulse * bb.inverseMass;
-            bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, normalImpulse);
-        }
+        Vector3S warmImpulse = normalImpulse + tangentImpulse;
 
-        // Apply accumulated friction impulse (correctly tangent to the contact normal)
-        Vector3S frictionImpulse = this.accumulatedFriction * this.CalculateTangent(a, bb);
-        a.velocity += frictionImpulse * a.inverseMass;
-        a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(this.ra, frictionImpulse);
-
-        if (bb != null)
-        {
-            bb.velocity -= frictionImpulse * bb.inverseMass;
-            bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, frictionImpulse);
-        }
-    }
-
-    private Vector3S CalculateTangent(in RigidbodyS a, in RigidbodyS bb)
-    {
-        Vector3S contactVelocity = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
-
-        if (bb != null)
-        {
-            contactVelocity -= bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb);
-        }
-
-        Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
-        Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-
-        if (tangentialVelocity.sqrMagnitude < f32.epsilon)
-            return Vector3S.zero;
-
-        return tangentialVelocity.Normalize();
+        ApplyImpulse(a, bb, warmImpulse);
     }
 
     public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool bias = true)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-        Vector3S contactVelocity = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
-        if (bb != null) contactVelocity -= bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb);
-
-        f32 vn = Vector3S.Dot(contactVelocity, this.normal);
-        f32 baum = f32.zero;
-
+        var baum = f32.zero;
         if (bias)
         {
             var separation = CalculateSeparation(a.transform.position, b.transform.position, settings.DefaultContactOffset);
-            baum = settings.Baumgartner * separation * inverseDt;
+            baum = MathS.Max(settings.Baumgartner * separation * inverseDt, (f32)(-4f));
         }
 
-        f32 impulse = -this.massNormal * (vn + baum);
-        f32 newImpulse = MathS.Max(impulse + this.accumulatedImpulse, f32.zero);
+        var contactVelocity = CalculateContactVelocity(a, bb);
+        var vn = Vector3S.Dot(contactVelocity, this.normal);
+
+        var impulse = -this.massNormal * (vn + baum);
+        var newImpulse = MathS.Max(impulse + this.accumulatedImpulse, f32.zero);
         impulse = newImpulse - this.accumulatedImpulse;
-        this.accumulatedImpulse = newImpulse; //Not sure, if this is saved during relaxation?
+        this.accumulatedImpulse = newImpulse;
 
-        Vector3S normalImpulse = this.normal * impulse;
-        a.velocity += normalImpulse * a.inverseMass;
-        a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(this.ra, normalImpulse);
-
-        if (bb != null)
-        {
-            bb.velocity -= normalImpulse * bb.inverseMass;
-            bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, normalImpulse);
-        }
+        var normalImpulse = this.normal * impulse;
+        ApplyImpulse(a, bb, normalImpulse);
     }
 
-    public void SolveFriction(in RigidbodyS a, in Collidable b, f32 friction)
+    public void SolveFriction(in RigidbodyS a, in Collidable b, in f32 friction)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-        Vector3S tangent = CalculateTangent(a, bb);
-        //if (tangent.sqrMagnitude < f32.epsilon) return;
+        // Calculate tangential velocity and the corresponding impulse
+        CalculateTangentialImpulse(a, bb, out var tangent, out var lambda);
 
-        f32 invMassA = a.inverseMass;
-        f32 tangentMass = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
+        var maxFriction = this.accumulatedImpulse * friction;
+        var newImpulse = MathS.Clamp(this.accumulatedFriction + lambda, -maxFriction, maxFriction);
+        lambda = newImpulse - this.accumulatedFriction;
+        this.accumulatedFriction = newImpulse;
+
+        var finalImpulse = tangent * lambda;
+        ApplyImpulse(a, bb, finalImpulse);
+    }
+
+    private Vector3S CalculateTangent(in RigidbodyS a, in RigidbodyS bb)
+    {
+        var contactVelocity = CalculateContactVelocity(a, bb);
+        Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
+        Vector3S tangentialVelocity = contactVelocity - normalVelocity;
+        var tangent = tangentialVelocity.Normalize();
+        return tangent;
+    }
+
+    private void CalculateTangentialImpulse(in RigidbodyS a, in RigidbodyS bb, out Vector3S tangent, out f32 scalar)
+    {
+        var contactVelocity = CalculateContactVelocity(a, bb);
+        Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
+        Vector3S tangentialVelocity = contactVelocity - normalVelocity;
+        tangent = tangentialVelocity.Normalize();
+
+        var invMassA = a.inverseMass;
+        var tangentMass = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
 
         if (bb != null)
         {
-            f32 invMassB = bb.inverseMass;
+            var invMassB = bb.inverseMass;
             tangentMass += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
         }
 
-        f32 frictionImpulseScalar = Vector3S.Dot(tangent, tangent) / tangentMass;
-        frictionImpulseScalar = -frictionImpulseScalar;
+        scalar = Vector3S.Dot(tangentialVelocity, tangent) / tangentMass;
+    }
 
-        f32 coulombMax = this.accumulatedImpulse * friction;
-        f32 oldFriction = this.accumulatedFriction;
-        this.accumulatedFriction = MathS.Clamp(oldFriction + frictionImpulseScalar, -coulombMax, coulombMax);
-        f32 appliedFriction = this.accumulatedFriction - oldFriction;
+    public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
+    {
+        var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
+        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
+        return bv - av; // Correct order: bv - av
+    }
 
-        Vector3S frictionImpulse = tangent * appliedFriction;
-        a.velocity += frictionImpulse * a.inverseMass;
-        a.angularVelocity += a.tensor.inertiaWorld * Vector3S.Cross(this.ra, frictionImpulse);
+    public void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
+    {
+        a.velocity -= impulse * a.inverseMass; // A moves away
+        a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(this.ra, impulse);
 
         if (bb != null)
         {
-            bb.velocity -= frictionImpulse * bb.inverseMass;
-            bb.angularVelocity -= bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, frictionImpulse);
+            bb.velocity += impulse * bb.inverseMass; // B moves along normal
+            bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, impulse);
         }
     }
 
