@@ -45,6 +45,11 @@ namespace stupid.Colliders
                 c.accumulatedFriction = old.accumulatedFriction;
                 c.accumulatedImpulse = old.accumulatedImpulse;
             }
+            else
+            {
+                c.accumulatedFriction = f32.zero;
+                c.accumulatedImpulse = f32.zero;
+            }
         }
 
         public void PrepareWarmup(in ContactManifoldS old)
