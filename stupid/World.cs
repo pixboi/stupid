@@ -206,8 +206,19 @@ namespace stupid
                     manifold.Resolve(inverseDt, WorldSettings, true);
                     _manifolds[pair] = manifold;
                 }
+            }
 
-                if (WorldSettings.Relaxation)
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb)
+                {
+                    rb.IntegrateVelocity(dt, WorldSettings);
+                }
+            }
+
+            if (WorldSettings.Relaxation)
+            {
+                for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
                 {
                     foreach (var pair in pairs)
                     {
@@ -222,7 +233,6 @@ namespace stupid
             {
                 if (c is RigidbodyS rb)
                 {
-                    rb.IntegrateVelocity(dt, WorldSettings);
                     rb.FinalizePosition();
                 }
             }
