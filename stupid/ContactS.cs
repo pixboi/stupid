@@ -3,7 +3,7 @@ using stupid;
 
 public struct ContactS
 {
-    public readonly Vector3S point, normal, ra, rb;
+    public readonly Vector3S point, normal, localAnchorA, localAnchorB;
     public readonly f32 massNormal;
     public readonly f32 penetrationDepth;
     public readonly int featureId;
@@ -16,8 +16,8 @@ public struct ContactS
         this.point = point;
         this.normal = normal;
         this.penetrationDepth = penetrationDepth;
-        this.ra = this.point - a.transform.position;
-        this.rb = this.point - b.transform.position;
+        this.localAnchorA = this.point - a.transform.position;
+        this.localAnchorB = this.point - b.transform.position;
         this.featureId = featureId;
 
         this.massNormal = f32.zero;
@@ -40,13 +40,13 @@ public struct ContactS
 
         f32 effectiveMass = invMassA + invMassB;
 
-        Vector3S raCrossNormal = Vector3S.Cross(this.ra, this.normal);
+        Vector3S raCrossNormal = Vector3S.Cross(this.localAnchorA, this.normal);
         f32 angularMassA = Vector3S.Dot(raCrossNormal, ab.tensor.inertiaWorld * raCrossNormal);
         effectiveMass += angularMassA;
 
         if (bb != null)
         {
-            Vector3S rbCrossNormal = Vector3S.Cross(this.rb, this.normal);
+            Vector3S rbCrossNormal = Vector3S.Cross(this.localAnchorB, this.normal);
             f32 angularMassB = Vector3S.Dot(rbCrossNormal, bb.tensor.inertiaWorld * rbCrossNormal);
             effectiveMass += angularMassB;
         }
@@ -73,21 +73,20 @@ public struct ContactS
 
         var contactVelocity = CalculateContactVelocity(a, bb);
         var vn = Vector3S.Dot(contactVelocity, this.normal);
-        //if (vn > f32.zero) return;
+        if (vn > f32.zero) return;
 
         var baum = f32.zero;
-        if (bias)
+
+        if (this.penetrationDepth > f32.zero)
         {
-            if (this.penetrationDepth > f32.zero)
-            {
-                baum = this.penetrationDepth * inverseDt;
-            }
-            else
-            {
-                var separation = CalculateSeparation(a.transform.position, b.transform.position, settings.DefaultContactOffset);
-                baum = MathS.Max(settings.Baumgartner * separation * inverseDt, (f32)(-4f));
-            }
+            baum = this.penetrationDepth * inverseDt;
         }
+        else if (bias)
+        {
+            var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+            baum = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
+        }
+
 
         var impulse = -this.massNormal * (vn + baum);
         var newImpulse = MathS.Max(impulse + this.accumulatedImpulse, f32.zero);
@@ -115,8 +114,8 @@ public struct ContactS
 
     public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
     {
-        var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
-        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
+        var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.localAnchorA);
+        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.localAnchorB) : Vector3S.zero;
         return bv - av;
     }
 
@@ -137,12 +136,12 @@ public struct ContactS
         tangent = tangentialVelocity.Normalize();
 
         var invMassA = a.inverseMass;
-        var tangentMass = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
+        var tangentMass = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, tangent), this.localAnchorA), tangent);
 
         if (bb != null)
         {
             var invMassB = bb.inverseMass;
-            tangentMass += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
+            tangentMass += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, tangent), this.localAnchorB), tangent);
         }
 
         // Compute tangent force
@@ -153,19 +152,19 @@ public struct ContactS
     public void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
     {
         a.velocity -= impulse * a.inverseMass; // A moves away
-        a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(this.ra, impulse);
+        a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, impulse);
 
         if (bb != null)
         {
             bb.velocity += impulse * bb.inverseMass; // B moves along normal
-            bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, impulse);
+            bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, impulse);
         }
     }
 
-    private f32 CalculateSeparation(in Vector3S aPosition, in Vector3S bPosition, in f32 slop)
+    private f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        Vector3S worldPointA = aPosition + this.ra;
-        Vector3S worldPointB = bPosition + this.rb;
+        Vector3S worldPointA = (a.position + a.deltaPosition) + this.localAnchorA;
+        Vector3S worldPointB = (b.position + b.deltaPosition) + this.localAnchorB;
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
         return MathS.Min(f32.zero, separation + slop);
     }

@@ -89,7 +89,10 @@ namespace stupid
             if (isKinematic) return;
 
             // Update the object's position based on the current velocity.
-            transform.deltaPosition += velocity * deltaTime;
+            if (velocity.sqrMagnitude > f32.zero)
+            {
+                transform.deltaPosition += velocity * deltaTime;
+            }
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
@@ -106,11 +109,11 @@ namespace stupid
 
         public void FinalizePosition()
         {
-            if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
-            {
-                this.transform.position += this.transform.deltaPosition;
-                this.transform.deltaPosition = Vector3S.zero;
-            }
+            //This helped on jitter
+            //
+
+            this.transform.position += this.transform.deltaPosition;
+            this.transform.deltaPosition = Vector3S.zero;
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)

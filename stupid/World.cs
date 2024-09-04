@@ -46,11 +46,11 @@ namespace stupid
                 DeltaTime = deltaTime;
                 InverseDeltaTime = f32.one / deltaTime;
                 SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
-                InverseSubDelta = deltaTime * (f32)WorldSettings.DefaultSolverIterations;
+                InverseSubDelta = InverseDeltaTime * (f32)WorldSettings.DefaultSolverIterations;
             }
 
             //Integrate forces, gravity etc.
-            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(DeltaTime, WorldSettings);
+            // foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(DeltaTime, WorldSettings);
 
             //Broadphase
             UpdateCollidableTransforms();
@@ -59,8 +59,20 @@ namespace stupid
             //Prepare contacts
             PrepareContacts(pairs);
 
+            if (WorldSettings.Warmup)
+            {
+                foreach (var pair in pairs)
+                {
+                    var manifold = _manifolds[pair];
+                    manifold.Warmup();
+                    _manifolds[pair] = manifold;
+                }
+            }
+
+
             //Solve contacts + iterate?
-            NarrowPhase(pairs);
+            //NarrowPhase(pairs);
+            NarrowPhaseTGS(pairs);
 
             SimulationFrame++;
         }
@@ -138,23 +150,61 @@ namespace stupid
         }
 
 
+        private void NarrowPhaseTGS(HashSet<IntPair> pairs)
+        {
+            var dt = SubDelta;
+            var inverseDt = InverseSubDelta;
+
+            for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
+            {
+                foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(dt, WorldSettings);
+
+                foreach (var pair in pairs)
+                {
+                    var manifold = _manifolds[pair];
+                    manifold.Resolve(inverseDt, WorldSettings, true);
+                    _manifolds[pair] = manifold;
+                }
+
+                if (WorldSettings.Relaxation)
+                {
+                    foreach (var pair in pairs)
+                    {
+                        var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                        manifold.Resolve(inverseDt, WorldSettings, false);
+                        //Dont save the contact data on relax?
+
+                        _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                    }
+                }
+
+                foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
+
+            }
+
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb)
+                {
+                    rb.FinalizePosition();
+                }
+            }
+        }
+
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
 
-            if (WorldSettings.Warmup)
-            {
-                foreach (var pair in pairs)
-                {
-                    var manifold = _manifolds[pair];
-                    manifold.Warmup();
-                    _manifolds[pair] = manifold;
-                }
-            }
-
-
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
+                foreach (var c in Collidables)
+                {
+                    if (c is RigidbodyS rb)
+                    {
+                        rb.IntegrateForces(dt, WorldSettings);
+                    }
+                }
+
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];

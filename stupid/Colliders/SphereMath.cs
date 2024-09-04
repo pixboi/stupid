@@ -74,7 +74,11 @@ namespace stupid.Colliders
 
             // Transform the closest point and normal back to world space
             var worldClosestPoint = boxTrans.position + (boxTrans.rotationMatrix * closestPoint);
+
             var worldNormal = (boxTrans.rotationMatrix * normal).Normalize();
+            //This makes boxes slippy
+            // worldClosestPoint = sphereTrans.position + sphere.radius * worldNormal;
+
             var penetrationDepth = sphere.radius - distance;
 
             // Ensure the normal follows the convention: Point on A, NORMAL TOWARDS B
