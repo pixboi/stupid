@@ -46,11 +46,8 @@ namespace stupid
                 DeltaTime = deltaTime;
                 InverseDeltaTime = f32.one / deltaTime;
                 SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
-                InverseSubDelta = InverseDeltaTime * (f32)WorldSettings.DefaultSolverIterations;
+                InverseSubDelta = InverseDeltaTime / (f32)WorldSettings.DefaultSolverIterations;
             }
-
-            //Integrate forces, gravity etc.
-            // foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(DeltaTime, WorldSettings);
 
             //Broadphase
             UpdateCollidableTransforms();
@@ -166,6 +163,8 @@ namespace stupid
                     _manifolds[pair] = manifold;
                 }
 
+                foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
+
                 if (WorldSettings.Relaxation)
                 {
                     foreach (var pair in pairs)
@@ -177,9 +176,6 @@ namespace stupid
                         _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                     }
                 }
-
-                foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
-
             }
 
             foreach (var c in Collidables)

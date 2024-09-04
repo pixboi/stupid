@@ -3,8 +3,8 @@ using stupid;
 
 public struct ContactS
 {
-    public readonly Vector3S point, normal, localAnchorA, localAnchorB;
-    public readonly f32 massNormal;
+    public readonly Vector3S point, normal, tangent, localAnchorA, localAnchorB;
+    public readonly f32 normalMass, tangentMass;
     public readonly f32 penetrationDepth;
     public readonly int featureId;
 
@@ -16,11 +16,14 @@ public struct ContactS
         this.point = point;
         this.normal = normal;
         this.penetrationDepth = penetrationDepth;
-        this.localAnchorA = this.point - a.transform.position;
-        this.localAnchorB = this.point - b.transform.position;
         this.featureId = featureId;
 
-        this.massNormal = f32.zero;
+        this.localAnchorA = this.point - a.transform.position;
+        this.localAnchorB = this.point - b.transform.position;
+
+        this.tangent = Vector3S.zero;
+        this.normalMass = f32.zero;
+        this.tangentMass = f32.zero;
         this.accumulatedFriction = f32.zero;
         this.accumulatedImpulse = f32.zero;
 
@@ -29,7 +32,11 @@ public struct ContactS
             var ab = (RigidbodyS)a;
             var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-            this.massNormal = CalculateMassNormal(ab, bb);
+            this.normalMass = CalculateMassNormal(ab, bb);
+            CalculateTangentAndMass(ab, bb, out var tangent, out var tmass);
+
+            this.tangent = tangent;
+            this.tangentMass = tmass;
         }
     }
 
@@ -54,13 +61,32 @@ public struct ContactS
         return effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
     }
 
+    public void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S tangent, out f32 mass)
+    {
+        var contactVelocity = CalculateContactVelocity(a, b);
+        Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
+        Vector3S tangentialVelocity = contactVelocity - normalVelocity;
+        tangent = tangentialVelocity.Normalize();
+
+        mass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, tangent), this.localAnchorA), tangent);
+
+        if (b != null)
+        {
+            mass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, tangent), this.localAnchorB), tangent);
+        }
+
+        mass = f32.one / mass;
+
+    }
+
+
     public void WarmStart(in RigidbodyS a, in Collidable b)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
         // Reapply the accumulated impulses
         var normalImpulse = (this.normal * this.accumulatedImpulse);
-        var tangentImpulse = CalculateTangent(a, bb) * this.accumulatedFriction;
+        var tangentImpulse = (this.tangent * this.accumulatedFriction);
 
         Vector3S warmImpulse = normalImpulse + tangentImpulse;
 
@@ -70,10 +96,6 @@ public struct ContactS
     public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool bias = true)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
-
-        var contactVelocity = CalculateContactVelocity(a, bb);
-        var vn = Vector3S.Dot(contactVelocity, this.normal);
-        if (vn > f32.zero) return;
 
         var baum = f32.zero;
 
@@ -87,8 +109,11 @@ public struct ContactS
             baum = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 
+        var contactVelocity = CalculateContactVelocity(a, bb);
+        var vn = Vector3S.Dot(contactVelocity, this.normal);
+        //if (vn > f32.zero) return;
 
-        var impulse = -this.massNormal * (vn + baum);
+        var impulse = -this.normalMass * (vn + baum);
         var newImpulse = MathS.Max(impulse + this.accumulatedImpulse, f32.zero);
         impulse = newImpulse - this.accumulatedImpulse;
         this.accumulatedImpulse = newImpulse;
@@ -101,15 +126,20 @@ public struct ContactS
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
+        var contactVelocity = CalculateContactVelocity(a, bb);
+
         // Calculate tangential velocity and the corresponding impulse
-        CalculateTangentialImpulse(a, bb, out var tangent, out var lambda);
+        //CalculateTangentialImpulse(a, bb, out var tangent, out var lambda);
+
+        var vt = Vector3S.Dot(contactVelocity, this.tangent);
+        var incrementalFriction = -this.tangentMass * vt;
 
         var maxFric = this.accumulatedImpulse * friction;
-        var newImpulse = MathS.Clamp(this.accumulatedFriction + lambda, -maxFric, maxFric);
-        lambda = newImpulse - this.accumulatedFriction;
+        var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -maxFric, maxFric);
+        incrementalFriction = newImpulse - this.accumulatedFriction;
         this.accumulatedFriction = newImpulse;
 
-        ApplyImpulse(a, bb, tangent * lambda);
+        ApplyImpulse(a, bb, this.tangent * incrementalFriction);
     }
 
     public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
@@ -117,36 +147,6 @@ public struct ContactS
         var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.localAnchorA);
         var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.localAnchorB) : Vector3S.zero;
         return bv - av;
-    }
-
-    private Vector3S CalculateTangent(in RigidbodyS a, in RigidbodyS bb)
-    {
-        var contactVelocity = CalculateContactVelocity(a, bb);
-        Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
-        Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-        var tangent = tangentialVelocity.Normalize();
-        return tangent;
-    }
-
-    private void CalculateTangentialImpulse(in RigidbodyS a, in RigidbodyS bb, out Vector3S tangent, out f32 lambda)
-    {
-        var contactVelocity = CalculateContactVelocity(a, bb);
-        Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
-        Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-        tangent = tangentialVelocity.Normalize();
-
-        var invMassA = a.inverseMass;
-        var tangentMass = invMassA + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, tangent), this.localAnchorA), tangent);
-
-        if (bb != null)
-        {
-            var invMassB = bb.inverseMass;
-            tangentMass += invMassB + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, tangent), this.localAnchorB), tangent);
-        }
-
-        // Compute tangent force
-        var vt = Vector3S.Dot(contactVelocity, tangent);
-        lambda = -vt / tangentMass;
     }
 
     public void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
