@@ -45,11 +45,6 @@ namespace stupid.Colliders
                 c.accumulatedFriction = old.accumulatedFriction;
                 c.accumulatedImpulse = old.accumulatedImpulse;
             }
-            else
-            {
-                c.accumulatedFriction = f32.zero;
-                c.accumulatedImpulse = f32.zero;
-            }
         }
 
         public void PrepareWarmup(in ContactManifoldS old)
@@ -91,9 +86,12 @@ namespace stupid.Colliders
         }
 
         // PGS style resolution
-        public void Resolve(in f32 inverseDt, in WorldSettings settings, in bool bias = true)
+        public void Resolve(in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
-            if (contactCount == 0) return;
+            if (contactCount == 0)
+            {
+                return;
+            }
 
             SolvePair(inverseDt, settings, bias);
         }

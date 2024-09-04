@@ -109,11 +109,10 @@ namespace stupid
 
         public void FinalizePosition()
         {
-            //This helped on jitter
-            //
-
             this.transform.position += this.transform.deltaPosition;
             this.transform.deltaPosition = Vector3S.zero;
+
+            //This helped on jitter
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)

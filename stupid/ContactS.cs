@@ -69,14 +69,9 @@ public struct ContactS
         tangent = tangentialVelocity.Normalize();
 
         mass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, tangent), this.localAnchorA), tangent);
-
-        if (b != null)
-        {
-            mass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, tangent), this.localAnchorB), tangent);
-        }
+        if (b != null) mass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, tangent), this.localAnchorB), tangent);
 
         mass = f32.one / mass;
-
     }
 
 
@@ -128,8 +123,6 @@ public struct ContactS
 
         var contactVelocity = CalculateContactVelocity(a, bb);
 
-        // Calculate tangential velocity and the corresponding impulse
-        //CalculateTangentialImpulse(a, bb, out var tangent, out var lambda);
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent);
         var incrementalFriction = -this.tangentMass * vt;
@@ -142,15 +135,37 @@ public struct ContactS
         ApplyImpulse(a, bb, this.tangent * incrementalFriction);
     }
 
-    public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
+    Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
     {
         var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.localAnchorA);
         var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.localAnchorB) : Vector3S.zero;
         return bv - av;
+
+        /*
+
+        var cv = Vector3S.zero;
+
+        if (bb != null)
+        {
+            var ba = bb.angularVelocity;
+            ba.CrossInPlace(this.localAnchorB);
+            cv.AddInPlace(bb.velocity);
+            cv.AddInPlace(ba);
+        }
+
+        var ca = a.angularVelocity;
+        ca.CrossInPlace(this.localAnchorA);
+
+        cv.SubtractInPlace(a.velocity);
+        cv.SubtractInPlace(ca);
+
+        return cv;
+        */
     }
 
-    public void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
+    void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
     {
+
         a.velocity -= impulse * a.inverseMass; // A moves away
         a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, impulse);
 
@@ -159,13 +174,57 @@ public struct ContactS
             bb.velocity += impulse * bb.inverseMass; // B moves along normal
             bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, impulse);
         }
+
+        /*
+        var ai = impulse;
+        ai.MultiplyInPlace(a.inverseMass);
+        a.velocity.SubtractInPlace(ai); // A moves away
+
+        var ca = this.localAnchorA;
+        ca.CrossInPlace(impulse);
+
+        Matrix3S.MultiplyInPlace(a.tensor.inertiaWorld, ref ca);
+        a.angularVelocity.SubtractInPlace(ca);
+
+        if (bb != null)
+        {
+            var bi = impulse;
+            bi.MultiplyInPlace(bb.inverseMass);
+            bb.velocity.AddInPlace(bi); // B moves along normal
+
+            var cb = this.localAnchorB;
+            cb.CrossInPlace(impulse);
+            Matrix3S.MultiplyInPlace(bb.tensor.inertiaWorld, ref cb);
+            bb.angularVelocity.AddInPlace(cb);
+        }
+        */
     }
 
-    private f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
+    f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
+
         Vector3S worldPointA = (a.position + a.deltaPosition) + this.localAnchorA;
         Vector3S worldPointB = (b.position + b.deltaPosition) + this.localAnchorB;
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
         return MathS.Min(f32.zero, separation + slop);
+
+        /*
+        Vector3S worldPointA = a.position;
+        worldPointA.AddInPlace(a.deltaPosition);
+        worldPointA.AddInPlace(this.localAnchorA);
+
+        Vector3S worldPointB = b.position;
+        worldPointB.AddInPlace(b.deltaPosition);
+        worldPointB.AddInPlace(this.localAnchorB);
+
+        var separationVector = worldPointB;
+        separationVector.SubtractInPlace(worldPointA);
+
+        var separation = Vector3S.Dot(separationVector, this.normal);
+        separation.AddInPlace(this.penetrationDepth);
+        separation.AddInPlace(slop);
+
+        return MathS.Min(f32.zero, separation);
+        */
     }
 }

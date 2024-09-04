@@ -56,6 +56,15 @@ namespace stupid
             //Prepare contacts
             PrepareContacts(pairs);
 
+            //Solve contacts + iterate?
+            NarrowPhase(pairs);
+            //NarrowPhaseTGS(pairs);
+
+            SimulationFrame++;
+        }
+
+        public void Warmup(HashSet<IntPair> pairs)
+        {
             if (WorldSettings.Warmup)
             {
                 foreach (var pair in pairs)
@@ -65,13 +74,6 @@ namespace stupid
                     _manifolds[pair] = manifold;
                 }
             }
-
-
-            //Solve contacts + iterate?
-            //NarrowPhase(pairs);
-            NarrowPhaseTGS(pairs);
-
-            SimulationFrame++;
         }
 
 
@@ -156,6 +158,8 @@ namespace stupid
             {
                 foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(dt, WorldSettings);
 
+                Warmup(pairs);
+
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];
@@ -171,8 +175,6 @@ namespace stupid
                     {
                         var manifold = _manifolds[pair];  // Retrieve the struct (copy)
                         manifold.Resolve(inverseDt, WorldSettings, false);
-                        //Dont save the contact data on relax?
-
                         _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                     }
                 }
@@ -190,21 +192,18 @@ namespace stupid
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
+            var inverseDt = InverseDeltaTime;
+
+            Warmup(pairs);
+
+            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(dt, WorldSettings);
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
-                foreach (var c in Collidables)
-                {
-                    if (c is RigidbodyS rb)
-                    {
-                        rb.IntegrateForces(dt, WorldSettings);
-                    }
-                }
-
                 foreach (var pair in pairs)
                 {
                     var manifold = _manifolds[pair];
-                    manifold.Resolve(InverseDeltaTime, WorldSettings, true);
+                    manifold.Resolve(inverseDt, WorldSettings, true);
                     _manifolds[pair] = manifold;
                 }
 
@@ -213,7 +212,7 @@ namespace stupid
                     foreach (var pair in pairs)
                     {
                         var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                        manifold.Resolve(InverseDeltaTime, WorldSettings, false);
+                        manifold.Resolve(inverseDt, WorldSettings, false);
                         _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
                     }
                 }
