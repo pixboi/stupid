@@ -208,13 +208,7 @@ namespace stupid
                 }
             }
 
-            foreach (var c in Collidables)
-            {
-                if (c is RigidbodyS rb)
-                {
-                    rb.IntegrateVelocity(dt, WorldSettings);
-                }
-            }
+            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
 
             if (WorldSettings.Relaxation)
             {
@@ -229,13 +223,7 @@ namespace stupid
                 }
             }
 
-            foreach (var c in Collidables)
-            {
-                if (c is RigidbodyS rb)
-                {
-                    rb.FinalizePosition();
-                }
-            }
+            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.FinalizePosition();
         }
     }
 }
