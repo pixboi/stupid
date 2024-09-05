@@ -26,6 +26,7 @@ namespace stupid
         {
             WorldSettings = worldSettings;
             Collidables = new DumbList<Collidable>(startSize);
+            Rigidbodies = new DumbList<RigidbodyS>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
             _counter = 0;
             SimulationFrame = 0;
