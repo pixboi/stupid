@@ -21,8 +21,8 @@ public struct ContactS
         this.localAnchorA = this.point - a.transform.position;
         this.localAnchorB = this.point - b.transform.position;
 
-        this.tangent = Vector3S.zero;
         this.normalMass = f32.zero;
+        this.tangent = Vector3S.zero;
         this.tangentMass = f32.zero;
         this.accumulatedFriction = f32.zero;
         this.accumulatedImpulse = f32.zero;
@@ -40,7 +40,7 @@ public struct ContactS
         }
     }
 
-    private f32 CalculateMassNormal(RigidbodyS ab, RigidbodyS bb)
+    f32 CalculateMassNormal(RigidbodyS ab, RigidbodyS bb)
     {
         f32 invMassA = ab.inverseMass;
         f32 invMassB = bb != null ? bb.inverseMass : f32.zero;
@@ -61,7 +61,7 @@ public struct ContactS
         return effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
     }
 
-    public void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S tangent, out f32 mass)
+    void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S tangent, out f32 mass)
     {
         var contactVelocity = CalculateContactVelocity(a, b);
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
@@ -106,7 +106,6 @@ public struct ContactS
 
         var contactVelocity = CalculateContactVelocity(a, bb);
         var vn = Vector3S.Dot(contactVelocity, this.normal);
-        //if (vn > f32.zero) return;
 
         var impulse = -this.normalMass * (vn + baum);
         var newImpulse = MathS.Max(impulse + this.accumulatedImpulse, f32.zero);

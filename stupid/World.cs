@@ -12,6 +12,10 @@ namespace stupid
         public WorldSettings WorldSettings { get; private set; }
         public SortAndSweepBroadphase Broadphase { get; set; }
         public DumbList<Collidable> Collidables { get; private set; }
+
+        List<RigidbodyS> Bodies = new List<RigidbodyS>();
+
+
         public uint SimulationFrame { get; private set; }
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
@@ -26,7 +30,6 @@ namespace stupid
         {
             WorldSettings = worldSettings;
             Collidables = new DumbList<Collidable>(startSize);
-            Rigidbodies = new DumbList<RigidbodyS>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
             _counter = 0;
             SimulationFrame = 0;
@@ -36,6 +39,7 @@ namespace stupid
         {
             c.Register(_counter++);
             Collidables.Add(c);
+            if (c is RigidbodyS rb) Bodies.Add(rb);
             return c;
         }
 
@@ -64,25 +68,10 @@ namespace stupid
             SimulationFrame++;
         }
 
-        public void Warmup(HashSet<IntPair> pairs)
-        {
-            if (WorldSettings.Warmup)
-            {
-                foreach (var pair in pairs)
-                {
-                    var manifold = _manifolds[pair];
-                    manifold.Warmup();
-                    _manifolds[pair] = manifold;
-                }
-            }
-        }
-
-
         private void UpdateCollidableTransforms()
         {
             foreach (var c in Collidables)
             {
-
                 if (c.collider.NeedsRotationUpdate)
                 {
                     c.transform.UpdateRotationMatrix();
@@ -99,56 +88,64 @@ namespace stupid
         }
 
         ContactS[] contactVectorCache = new ContactS[8];
-        private void UpdateManifold(IntPair pair)
-        {
-            var a = Collidables[pair.aIndex];
-            var b = Collidables[pair.bIndex];
-
-            // Ensure the dynamic body is 'a' for consistent processing
-            if (b.isDynamic && !a.isDynamic)
-            {
-                (a, b) = (b, a);
-            }
-
-            //Array.Clear(contactVectorCache, 0, contactVectorCache.Length);
-            var count = a.collider.Intersects(b, ref contactVectorCache);
-
-            if (count > 0)
-            {
-                var manifold = new ContactManifoldS(a, b, count, contactVectorCache);
-
-                if (WorldSettings.Warmup)
-                {
-                    if (_manifolds.TryGetValue(pair, out var oldM))
-                    {
-                        manifold.PrepareWarmup(oldM);
-                    }
-                }
-
-                _manifolds[pair] = manifold;
-                OnContact?.Invoke(manifold);
-            }
-            else
-            {
-                _manifolds.Remove(pair);
-            }
-        }
-
         void PrepareContacts(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();
             //If there are current manifolds that are not in the new broadphase, remove
             foreach (var key in _manifolds.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
-            foreach (var key in _removeCache) _manifolds.Remove(key);
-
 
             //Go through pairs and test collisions, share data, etc.
-            foreach (var pair in pairs) UpdateManifold(pair);
+            foreach (var pair in pairs)
+            {
+                var a = Collidables[pair.aIndex];
+                var b = Collidables[pair.bIndex];
 
-            //Remove pairs that didnt survive the collision test
-            pairs.RemoveWhere(x => !_manifolds.ContainsKey(x));
+                // Ensure the dynamic body is 'a' for consistent processing
+                if (b.isDynamic && !a.isDynamic)
+                {
+                    (a, b) = (b, a);
+                }
+
+                var count = a.collider.Intersects(b, ref contactVectorCache);
+                if (count > 0)
+                {
+                    var manifold = new ContactManifoldS(a, b, count, contactVectorCache);
+
+                    if (WorldSettings.Warmup)
+                    {
+                        if (_manifolds.TryGetValue(pair, out var oldM))
+                        {
+                            manifold.PrepareWarmup(oldM);
+                        }
+                    }
+
+                    _manifolds[pair] = manifold;
+                    OnContact?.Invoke(manifold);
+                }
+                else
+                {
+                    _removeCache.Add(pair);
+                }
+            }
+
+            foreach (var key in _removeCache)
+            {
+                _manifolds.Remove(key);
+                pairs.Remove(key);
+            }
+
         }
 
+        public void Warmup(HashSet<IntPair> pairs)
+        {
+            if (WorldSettings.Warmup)
+            {
+                foreach (var pair in pairs)
+                {
+                    _manifolds[pair].Warmup();
+                }
+            }
+        }
 
         private void NarrowPhaseTGS(HashSet<IntPair> pairs)
         {
@@ -157,7 +154,7 @@ namespace stupid
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
-                foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(dt, WorldSettings);
+                foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
 
                 Warmup(pairs);
 
@@ -168,7 +165,7 @@ namespace stupid
                     _manifolds[pair] = manifold;
                 }
 
-                foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
+                foreach (var rb in Bodies) rb.IntegrateVelocity(dt, WorldSettings);
 
                 if (WorldSettings.Relaxation)
                 {
@@ -181,13 +178,8 @@ namespace stupid
                 }
             }
 
-            foreach (var c in Collidables)
-            {
-                if (c is RigidbodyS rb)
-                {
-                    rb.FinalizePosition();
-                }
-            }
+
+            foreach (var rb in Bodies) rb.FinalizePosition();
         }
 
         private void NarrowPhase(HashSet<IntPair> pairs)
@@ -197,7 +189,7 @@ namespace stupid
 
             Warmup(pairs);
 
-            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateForces(dt, WorldSettings);
+            foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
@@ -209,7 +201,7 @@ namespace stupid
                 }
             }
 
-            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
+            foreach (var rb in Bodies) rb.IntegrateVelocity(dt, WorldSettings);
 
             if (WorldSettings.Relaxation)
             {
@@ -224,7 +216,7 @@ namespace stupid
                 }
             }
 
-            foreach (var c in Collidables) if (c is RigidbodyS rb) rb.FinalizePosition();
+            foreach (var rb in Bodies) rb.FinalizePosition();
         }
     }
 }

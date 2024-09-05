@@ -49,6 +49,8 @@ namespace stupid
             return (rotationMatrix * localPoint) + position;
         }
 
+
+
         // Converts world direction to local direction
         public Vector3S InverseTransformDirection(in Vector3S worldDirection)
         {
