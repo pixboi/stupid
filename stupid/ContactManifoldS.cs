@@ -5,8 +5,8 @@ namespace stupid.Colliders
 {
     public struct ContactManifoldS
     {
-        public Collidable a, b;
-        public RigidbodyS ab, bb;
+        public readonly Collidable a, b;
+        public readonly RigidbodyS ab, bb;
         public readonly f32 friction, restitution;
 
         public ContactS c1, c2, c3, c4;
@@ -85,7 +85,6 @@ namespace stupid.Colliders
             this.c4 = contacts[3];
         }
 
-        // PGS style resolution
         public void Resolve(in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
             if (contactCount == 0)
@@ -100,47 +99,17 @@ namespace stupid.Colliders
         void SolvePair(in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
             //Impulses
-            if (contactCount >= 1)
-            {
-                c1.SolveImpulse(ab, b, inverseDt, settings, bias);
-            }
-
-            if (contactCount >= 2)
-            {
-                c2.SolveImpulse(ab, b, inverseDt, settings, bias);
-            }
-
-            if (contactCount >= 3)
-            {
-                c3.SolveImpulse(ab, b, inverseDt, settings, bias);
-            }
-
-            if (contactCount >= 4)
-            {
-                c4.SolveImpulse(ab, b, inverseDt, settings, bias);
-            }
+            if (contactCount >= 1) c1.SolveImpulse(ab, b, inverseDt, settings, bias);
+            if (contactCount >= 2) c2.SolveImpulse(ab, b, inverseDt, settings, bias);
+            if (contactCount >= 3) c3.SolveImpulse(ab, b, inverseDt, settings, bias);
+            if (contactCount >= 4) c4.SolveImpulse(ab, b, inverseDt, settings, bias);
 
 
             //Frictions
-            if (contactCount >= 1)
-            {
-                c1.SolveFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 2)
-            {
-                c2.SolveFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 3)
-            {
-                c3.SolveFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 4)
-            {
-                c4.SolveFriction(ab, b, friction);
-            }
+            if (contactCount >= 1) c1.SolveFriction(ab, b, friction);
+            if (contactCount >= 2) c2.SolveFriction(ab, b, friction);
+            if (contactCount >= 3) c3.SolveFriction(ab, b, friction);
+            if (contactCount >= 4) c4.SolveFriction(ab, b, friction);
         }
 
 
