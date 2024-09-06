@@ -41,8 +41,9 @@ namespace stupid.Colliders
         {
             if (c.featureId == old.featureId)
             {
-                c.accumulatedFriction = old.accumulatedFriction;
+                c.accFric1 = old.accFric1;
                 c.accumulatedImpulse = old.accumulatedImpulse;
+                c.accumulatedTwist = old.accumulatedTwist;
             }
         }
 
@@ -136,22 +137,22 @@ namespace stupid.Colliders
             //Frictions
             if (contactCount >= 1)
             {
-                //c1.SolveTwistFriction(ab, b, friction);
+                //    c1.SolveTwistFriction(ab, b, friction);
             }
 
             if (contactCount >= 2)
             {
-                // c2.SolveTwistFriction(ab, b, friction);
+                //     c2.SolveTwistFriction(ab, b, friction);
             }
 
             if (contactCount >= 3)
             {
-                //  c3.SolveTwistFriction(ab, b, friction);
+                //     c3.SolveTwistFriction(ab, b, friction);
             }
 
             if (contactCount >= 4)
             {
-                //  c4.SolveTwistFriction(ab, b, friction);
+                //      c4.SolveTwistFriction(ab, b, friction);
             }
         }
     }

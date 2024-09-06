@@ -9,7 +9,7 @@ public struct ContactS
     public readonly f32 penetrationDepth;
     public readonly int featureId;
 
-    public f32 accumulatedImpulse, accumulatedFriction, accumulatedTwist;
+    public f32 accumulatedImpulse, accFric1, accFric2, accumulatedTwist;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
@@ -29,7 +29,8 @@ public struct ContactS
         this.tangentMass1 = f32.zero;
         this.tangentMass2 = f32.zero;
         this.twistMass = f32.zero;
-        this.accumulatedFriction = f32.zero;
+        this.accFric1 = f32.zero;
+        this.accFric2 = f32.zero;
         this.accumulatedImpulse = f32.zero;
         this.accumulatedTwist = f32.zero;
 
@@ -56,7 +57,7 @@ public struct ContactS
 
         // Reapply the accumulated impulses
         var normalImpulse = (this.normal * this.accumulatedImpulse);
-        var tangentImpulse = (this.tangent1 * this.accumulatedFriction);
+        var tangentImpulse = (this.tangent1 * this.accFric1);
 
         Vector3S warmImpulse = normalImpulse + tangentImpulse;
         ApplyImpulse(a, bb, warmImpulse);
@@ -90,7 +91,7 @@ public struct ContactS
     void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S t1, out f32 m1, out Vector3S t2, out f32 m2)
     {
         // Calculate relative velocity at the contact point
-        var contactVelocity = CalculateContactVelocity(a, b);
+        var contactVelocity = CalculateContactVelocity(a, b, this.localAnchorA, this.localAnchorB);
 
         // Project the contact velocity onto the plane perpendicular to the normal (get the tangential velocity)
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
@@ -159,7 +160,7 @@ public struct ContactS
             baum = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 
-        var contactVelocity = CalculateContactVelocity(a, bb);
+        var contactVelocity = CalculateContactVelocity(a, bb, this.localAnchorA, this.localAnchorB);
         var vn = Vector3S.Dot(contactVelocity, this.normal);
 
         var impulse = -this.normalMass * (vn + baum);
@@ -176,30 +177,24 @@ public struct ContactS
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-        var contactVelocity = CalculateContactVelocity(a, bb);
+        var contactVelocity = CalculateContactVelocity(a, bb, this.localAnchorA, this.localAnchorB);
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent1);
         var incrementalFriction = -this.tangentMass1 * vt;
 
-        /*
-        var vt1 = Vector3S.Dot(contactVelocity, this.tangent2);
-        var incrementalFriction1 = -this.tangentMass2 * vt1;
-        incrementalFriction += incrementalFriction1;
-        */
-
         var couloumbMax = this.accumulatedImpulse * friction;
-        var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);
-        incrementalFriction = newImpulse - this.accumulatedFriction;
-        this.accumulatedFriction = newImpulse;
+        var newImpulse = MathS.Clamp(this.accFric1 + incrementalFriction, -couloumbMax, couloumbMax);
+        incrementalFriction = newImpulse - this.accFric1;
+        this.accFric1 = newImpulse;
 
         ApplyImpulse(a, bb, this.tangent1 * incrementalFriction);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
+    Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb, in Vector3S ra, in Vector3S rb)
     {
-        var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.localAnchorA);
-        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.localAnchorB) : Vector3S.zero;
+        var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, rb) : Vector3S.zero;
         return bv - av;
     }
 

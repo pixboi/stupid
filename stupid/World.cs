@@ -50,7 +50,7 @@ namespace stupid
                 DeltaTime = deltaTime;
                 InverseDeltaTime = f32.one / deltaTime;
                 SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
-                InverseSubDelta = InverseDeltaTime / (f32)WorldSettings.DefaultSolverIterations;
+                InverseSubDelta = InverseDeltaTime * (f32)WorldSettings.DefaultSolverIterations;
             }
 
             //Broadphase
@@ -62,7 +62,6 @@ namespace stupid
 
             //Solve contacts + iterate?
             NarrowPhase(pairs);
-            //NarrowPhaseTGS(pairs);
 
             SimulationFrame++;
         }
@@ -146,7 +145,7 @@ namespace stupid
             }
         }
 
-        private void NarrowPhaseTGS(HashSet<IntPair> pairs)
+        private void NarrowPhase1(HashSet<IntPair> pairs)
         {
             var dt = SubDelta;
             var inverseDt = InverseSubDelta;
@@ -155,7 +154,8 @@ namespace stupid
             {
                 foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
 
-                Warmup(pairs);
+                if (WorldSettings.Warmup)
+                    Warmup(pairs);
 
                 foreach (var pair in pairs)
                 {
@@ -186,7 +186,8 @@ namespace stupid
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
 
-            Warmup(pairs);
+            if (WorldSettings.Warmup)
+                Warmup(pairs);
 
             foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
 
