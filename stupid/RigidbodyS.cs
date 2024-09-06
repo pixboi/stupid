@@ -91,7 +91,8 @@ namespace stupid
             // Update the object's position based on the current velocity.
             if (velocity.sqrMagnitude > f32.zero)
             {
-                transform.deltaPosition += velocity * deltaTime;
+                this.transform.MoveDelta(velocity * deltaTime);
+                //transform.deltaPosition += velocity * deltaTime;
             }
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
@@ -109,10 +110,7 @@ namespace stupid
 
         public void FinalizePosition()
         {
-            this.transform.position += this.transform.deltaPosition;
-            this.transform.deltaPosition = Vector3S.zero;
-
-            //This helped on jitter
+            this.transform.ActuateDelta();
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)

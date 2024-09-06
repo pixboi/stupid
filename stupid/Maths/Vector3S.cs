@@ -166,7 +166,7 @@ namespace stupid.Maths
         public static f32 AbsDot(in Vector3S a, in Vector3S b)
         {
             var f = RawAbsDot(a, b);
-            return new f32(f);    
+            return new f32(f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -180,16 +180,6 @@ namespace stupid.Maths
             long mask = dotProduct >> 63; // Create a mask based on the sign of dotProduct
             return (dotProduct + mask) ^ mask;
         }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S ProjectPointOnPlane(in Vector3S point, in Vector3S planeNormal, in Vector3S planePoint)
-        {
-            Vector3S toPoint = point - planePoint;
-            f32 distance = Dot(toPoint, planeNormal);
-            return point - planeNormal * distance;
-        }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S Cross(in Vector3S a, in Vector3S b)

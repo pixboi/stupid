@@ -1,5 +1,6 @@
 ﻿using stupid.Maths;
 using stupid;
+using System.Runtime.CompilerServices;
 
 public struct ContactS
 {
@@ -10,6 +11,7 @@ public struct ContactS
 
     public f32 accumulatedImpulse, accumulatedFriction;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
     {
         // Contact point on A, normal points towards B
@@ -40,6 +42,7 @@ public struct ContactS
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateMassNormal(RigidbodyS ab, RigidbodyS bb)
     {
         f32 invMassA = ab.inverseMass;
@@ -61,6 +64,7 @@ public struct ContactS
         return effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S tangent, out f32 mass)
     {
         var contactVelocity = CalculateContactVelocity(a, b);
@@ -74,7 +78,7 @@ public struct ContactS
         mass = f32.one / mass;
     }
 
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WarmStart(in RigidbodyS a, in Collidable b)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
@@ -88,6 +92,7 @@ public struct ContactS
         ApplyImpulse(a, bb, warmImpulse);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool bias = true)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
@@ -116,12 +121,12 @@ public struct ContactS
         ApplyImpulse(a, bb, normalImpulse);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SolveFriction(in RigidbodyS a, in Collidable b, in f32 friction)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
         var contactVelocity = CalculateContactVelocity(a, bb);
-
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent);
         var incrementalFriction = -this.tangentMass * vt;
@@ -134,14 +139,16 @@ public struct ContactS
         ApplyImpulse(a, bb, this.tangent * incrementalFriction);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
     {
+
         var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.localAnchorA);
         var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.localAnchorB) : Vector3S.zero;
         return bv - av;
 
-        /*
 
+        /*
         var cv = Vector3S.zero;
 
         if (bb != null)
@@ -162,9 +169,9 @@ public struct ContactS
         */
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
     {
-
         a.velocity -= impulse * a.inverseMass; // A moves away
         a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, impulse);
 
@@ -173,6 +180,7 @@ public struct ContactS
             bb.velocity += impulse * bb.inverseMass; // B moves along normal
             bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, impulse);
         }
+
 
         /*
         var ai = impulse;
@@ -199,6 +207,7 @@ public struct ContactS
         */
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
 
@@ -208,9 +217,11 @@ public struct ContactS
         return MathS.Min(f32.zero, separation + slop);
 
         /*
+
         Vector3S worldPointA = a.position;
         worldPointA.AddInPlace(a.deltaPosition);
         worldPointA.AddInPlace(this.localAnchorA);
+
 
         Vector3S worldPointB = b.position;
         worldPointB.AddInPlace(b.deltaPosition);

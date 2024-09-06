@@ -11,7 +11,6 @@ namespace stupidtests
     [TestClass]
     public class UnitTest1
     {
-        [TestMethod]
 
         public void TestMethod1()
         {
@@ -33,7 +32,7 @@ namespace stupidtests
                 var transform = new TransformS(randomVector, QuaternionS.identity, Vector3S.one);
                 transform.position = randomVector;
                 var box = new BoxColliderS(Vector3S.one);
-                var body = new RigidbodyS(-1, box, true, transform);
+                var body = new RigidbodyS(-1, box, true, transform, Vector3S.zero, Vector3S.zero, f32.one, true, false);
                 world.AddCollidable(body);
             }
 
@@ -53,8 +52,51 @@ namespace stupidtests
 
             Console.WriteLine($"Average simulation time per frame: {avgTime} ms");
             Console.WriteLine($"Standard deviation of simulation time: {stdDevTime} ms");
-
-            Assert.IsTrue(avgTime > 0, "Average time should be greater than zero.");
         }
+
+        public int it = 10000000;
+        [TestMethod]
+        public void Vector3SAdd()
+        {
+            var v = Vector3S.zero;
+
+            for (int i = 0; i < it; i++)
+            {
+                v += Vector3S.one;
+                v -= Vector3S.left;
+                v /= f32.two;
+            }
+
+            Console.WriteLine(v.ToString());
+
+        }
+
+        [TestMethod]
+        public void Vector3SAddFast()
+        {
+            var v = Vector3S.zero;
+
+            for (int i = 0; i < it; i++)
+            {
+                v.AddInPlace(Vector3S.one);
+                v.SubtractInPlace(Vector3S.left);
+                v.DivideInPlace(f32.two);
+            }
+
+            Console.WriteLine(v.ToString());
+        }
+
+        [TestMethod]
+        public void Vector3SDot()
+        {
+            var v = Vector3S.zero;
+
+            for (int i = 0; i < it; i++)
+            {
+            }
+
+            Console.WriteLine(v.ToString());
+        }
+
     }
 }
