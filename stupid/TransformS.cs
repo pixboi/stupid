@@ -25,19 +25,6 @@ namespace stupid
             this.rotationMatrixTransposed = rotationMatrix.Transpose();
         }
 
-        public void MoveDelta(Vector3S amount)
-        {
-            this.deltaPosition.AddInPlace(amount);
-            this.transientPosition = position + deltaPosition;
-        }
-
-        public void ActuateDelta()
-        {
-            this.position.AddInPlace(this.deltaPosition);
-            this.deltaPosition.Reset();
-            //this.transientPosition = position + deltaPosition;
-        }
-
         // Updates rotation matrix
         public void UpdateRotationMatrix()
         {
@@ -62,8 +49,6 @@ namespace stupid
         {
             return (rotationMatrix * localPoint) + position;
         }
-
-
 
         // Converts world direction to local direction
         public Vector3S InverseTransformDirection(in Vector3S worldDirection)

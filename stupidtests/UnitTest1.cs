@@ -93,6 +93,19 @@ namespace stupidtests
 
             for (int i = 0; i < it; i++)
             {
+                Vector3S.AbsDot(v, Vector3S.zero);
+            }
+
+            Console.WriteLine(v.ToString());
+        }
+        [TestMethod]
+        public void Vector3SDotRaw()
+        {
+            var v = Vector3S.zero;
+
+            for (int i = 0; i < it; i++)
+            {
+                Vector3S.RawAbsDot(v, Vector3S.zero);
             }
 
             Console.WriteLine(v.ToString());

@@ -107,8 +107,6 @@ namespace stupid.Maths
             return new f32(xRaw);
         }
 
-
-
         public static f32 Exp(in f32 value)
         {
             f32 result = f32.one;

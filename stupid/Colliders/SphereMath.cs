@@ -16,6 +16,8 @@ namespace stupid.Colliders
             f32 combinedRadius = a.radius + b.radius;
             f32 squaredCombinedRadius = combinedRadius * combinedRadius;
 
+            //Easy speculative would be just to fatten the AABB and fatten this check
+
             if (squaredDistance > squaredCombinedRadius)
             {
                 return 0; // No intersection
@@ -76,8 +78,6 @@ namespace stupid.Colliders
             var worldClosestPoint = boxTrans.position + (boxTrans.rotationMatrix * closestPoint);
 
             var worldNormal = (boxTrans.rotationMatrix * normal).Normalize();
-            //This makes boxes slippy
-            // worldClosestPoint = sphereTrans.position + sphere.radius * worldNormal;
 
             var penetrationDepth = sphere.radius - distance;
 

@@ -1,5 +1,4 @@
 ﻿using stupid.Maths;
-using System.Runtime;
 
 namespace stupid.Colliders
 {
@@ -92,26 +91,38 @@ namespace stupid.Colliders
                 return;
             }
 
-            SolvePair(inverseDt, settings, bias);
-        }
-
-
-        void SolvePair(in f32 inverseDt, in WorldSettings settings, in bool bias)
-        {
             //Impulses
-            if (contactCount >= 1) c1.SolveImpulse(ab, b, inverseDt, settings, bias);
-            if (contactCount >= 2) c2.SolveImpulse(ab, b, inverseDt, settings, bias);
-            if (contactCount >= 3) c3.SolveImpulse(ab, b, inverseDt, settings, bias);
-            if (contactCount >= 4) c4.SolveImpulse(ab, b, inverseDt, settings, bias);
+            if (contactCount >= 1)
+            {
+                c1.SolveImpulse(ab, b, inverseDt, settings, bias);
+                c1.SolveFriction(ab, b, friction);
+            }
 
+            if (contactCount >= 2)
+            {
+                c2.SolveImpulse(ab, b, inverseDt, settings, bias);
+                c2.SolveFriction(ab, b, friction);
+            }
 
+            if (contactCount >= 3)
+            {
+                c3.SolveImpulse(ab, b, inverseDt, settings, bias);
+                c3.SolveFriction(ab, b, friction);
+            }
+
+            if (contactCount >= 4)
+            {
+                c4.SolveImpulse(ab, b, inverseDt, settings, bias);
+                c4.SolveFriction(ab, b, friction);
+            }
+
+            /*
             //Frictions
             if (contactCount >= 1) c1.SolveFriction(ab, b, friction);
             if (contactCount >= 2) c2.SolveFriction(ab, b, friction);
             if (contactCount >= 3) c3.SolveFriction(ab, b, friction);
             if (contactCount >= 4) c4.SolveFriction(ab, b, friction);
+            */
         }
-
-
     }
 }
