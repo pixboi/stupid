@@ -95,34 +95,64 @@ namespace stupid.Colliders
             if (contactCount >= 1)
             {
                 c1.SolveImpulse(ab, b, inverseDt, settings, bias);
-                c1.SolveFriction(ab, b, friction);
             }
 
             if (contactCount >= 2)
             {
                 c2.SolveImpulse(ab, b, inverseDt, settings, bias);
-                c2.SolveFriction(ab, b, friction);
             }
 
             if (contactCount >= 3)
             {
                 c3.SolveImpulse(ab, b, inverseDt, settings, bias);
-                c3.SolveFriction(ab, b, friction);
             }
 
             if (contactCount >= 4)
             {
                 c4.SolveImpulse(ab, b, inverseDt, settings, bias);
+            }
+
+            //Frictions
+            if (contactCount >= 1)
+            {
+                c1.SolveFriction(ab, b, friction);
+            }
+
+            if (contactCount >= 2)
+            {
+                c2.SolveFriction(ab, b, friction);
+            }
+
+            if (contactCount >= 3)
+            {
+                c3.SolveFriction(ab, b, friction);
+            }
+
+            if (contactCount >= 4)
+            {
                 c4.SolveFriction(ab, b, friction);
             }
 
-            /*
             //Frictions
-            if (contactCount >= 1) c1.SolveFriction(ab, b, friction);
-            if (contactCount >= 2) c2.SolveFriction(ab, b, friction);
-            if (contactCount >= 3) c3.SolveFriction(ab, b, friction);
-            if (contactCount >= 4) c4.SolveFriction(ab, b, friction);
-            */
+            if (contactCount >= 1)
+            {
+                //c1.SolveTwistFriction(ab, b, friction);
+            }
+
+            if (contactCount >= 2)
+            {
+                // c2.SolveTwistFriction(ab, b, friction);
+            }
+
+            if (contactCount >= 3)
+            {
+                //  c3.SolveTwistFriction(ab, b, friction);
+            }
+
+            if (contactCount >= 4)
+            {
+                //  c4.SolveTwistFriction(ab, b, friction);
+            }
         }
     }
 }
