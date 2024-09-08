@@ -78,9 +78,9 @@ namespace stupidtests
 
             for (int i = 0; i < it; i++)
             {
-                v.AddInPlace(Vector3S.one);
-                v.SubtractInPlace(Vector3S.left);
-                v.DivideInPlace(f32.two);
+                v.Add(Vector3S.one);
+                v.Subtract(Vector3S.left);
+                v.Divide(f32.two);
             }
 
             Console.WriteLine(v.ToString());

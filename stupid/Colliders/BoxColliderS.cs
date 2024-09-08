@@ -182,10 +182,10 @@ namespace stupid.Colliders
                 if (localDirComponent != f32.zero)
                 {
                     f32 t1 = (halfSizeComponent - localOriginComponent);
-                    t1.DivideInPlace(localDirComponent);
+                    t1.Divide(localDirComponent);
 
                     f32 t2 = (-halfSizeComponent - localOriginComponent) / localDirComponent;
-                    t2.DivideInPlace(localDirComponent);
+                    t2.Divide(localDirComponent);
                     if (t1 > t2)
                     {
                         var temp = t1;

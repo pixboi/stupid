@@ -40,7 +40,7 @@ namespace stupid
 
         public void ToLocalPointFast(ref Vector3S worldPoint)
         {
-            worldPoint.SubtractInPlace(position);
+            worldPoint.Subtract(position);
             Matrix3S.MultiplyInPlace(rotationMatrixTransposed, ref worldPoint);
         }
 

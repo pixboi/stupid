@@ -46,14 +46,14 @@ namespace stupid.Maths
         public static f32 operator +(in f32 a, in f32 b) => new f32(a.rawValue + b.rawValue);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AddInPlace(in f32 b) { rawValue += b.rawValue; }
+        public void Add(in f32 b) { rawValue += b.rawValue; }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(in f32 a, in f32 b) => new f32(a.rawValue - b.rawValue);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SubtractInPlace(in f32 b) { rawValue -= b.rawValue; }
+        public void Subtract(in f32 b) { rawValue -= b.rawValue; }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -63,20 +63,19 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MultiplyInPlace(in f32 b) { rawValue = (rawValue * b.rawValue) >> FractionalBits; }
+        public void Multiply(in f32 b) { rawValue = (rawValue * b.rawValue) >> FractionalBits; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator /(in f32 a, in f32 b)
         {
             if (b.rawValue == 0) throw new DivideByZeroException("Cannot divide by zero.");
-
             long dividend = (a.rawValue << FractionalBits);
             long result = dividend / b.rawValue;
             return new f32(result);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void DivideInPlace(in f32 b)
+        public void Divide(in f32 b)
         {
             if (b.rawValue == 0) throw new DivideByZeroException("Cannot divide by zero.");
             long dividend = (this.rawValue << FractionalBits);
@@ -90,7 +89,14 @@ namespace stupid.Maths
             rawValue = (rawValue + mask) ^ mask;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset() { rawValue = 0; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Negate()
+        {
+            this.rawValue = -this.rawValue;
+        }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

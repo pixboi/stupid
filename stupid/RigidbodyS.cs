@@ -103,12 +103,8 @@ namespace stupid
             if (angularVelocity.sqrMagnitude > f32.zero)
             {
                 var halfAngle = angularVelocity * deltaTime * f32.half;
-                if (halfAngle.sqrMagnitude > f32.zero)
-                {
-                    var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
-                    transform.rotation = (dq * transform.rotation).Normalize();
-                }
-
+                var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
+                transform.rotation = (dq * transform.rotation).Normalize();
             }
         }
 
@@ -120,7 +116,6 @@ namespace stupid
             }
 
             this.transform.deltaPosition = Vector3S.zero;
-
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
