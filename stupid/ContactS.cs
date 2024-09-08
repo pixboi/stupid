@@ -91,24 +91,7 @@ public struct ContactS
         // Project the contact velocity onto the plane perpendicular to the normal (get the tangential velocity)
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-
-        // Define a threshold for when the tangential velocity is considered too small
-        f32 tangentialVelocityThreshold = f32.epsilon;
-
-        // Use tangential velocity if it is significant
-        if (tangentialVelocity.sqrMagnitude > tangentialVelocityThreshold)
-        {
-            // Tangent 1 aligned with sliding direction (tangential velocity)
-            t1 = tangentialVelocity.Normalize();
-        }
-        else
-        {
-            // Fallback mechanism: Use last known good tangent direction (persistent tangents between frames)
-            // If this is not feasible, fall back to an arbitrary perpendicular direction
-            t1 = Vector3S.Cross(Vector3S.right, this.normal).Normalize();  // Try with X-axis
-            if (t1.sqrMagnitude < f32.epsilon)
-                t1 = Vector3S.Cross(Vector3S.up, this.normal).Normalize(); // Try with Y-axis as fallback
-        }
+        t1 = tangentialVelocity.Normalize();
 
         // Calculate effective mass along the first tangent (t1)
         m1 = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, t1), this.localAnchorA), t1);
