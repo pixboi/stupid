@@ -132,7 +132,7 @@ public struct ContactS
     }
 
 
-
+    //The twist mass is same for every contact, i dont think its right
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateTwistMass(in RigidbodyS a, in RigidbodyS bb)
     {

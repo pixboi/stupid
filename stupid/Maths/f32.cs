@@ -13,7 +13,7 @@ namespace stupid.Maths
         public static readonly f32 epsilon = new f32(1L);
         public static readonly f32 zero = new f32(0L);
         public static readonly f32 one = new f32(One);
-        public static readonly f32 two = new f32(2L << FractionalBits);
+        public static readonly f32 two = new f32(Two);
         public static readonly f32 quarter = FromFloat(0.25f);
         public static readonly f32 half = new f32(One >> 1);
         public static readonly f32 negativeOne = new f32(-One);
@@ -59,9 +59,6 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator *(in f32 a, in f32 b)
         {
-            if (a.rawValue == 0L) return f32.zero;
-            if (b.rawValue == 0L) return f32.zero;
-
             return new f32((a.rawValue * b.rawValue) >> FractionalBits);
         }
 
@@ -71,12 +68,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator /(in f32 a, in f32 b)
         {
-            if (a.rawValue == 0L) return zero;
+            if (b.rawValue == 0) throw new DivideByZeroException("Cannot divide by zero.");
 
-            if (b.rawValue == 0)
-            {
-                throw new DivideByZeroException("Cannot divide by zero.");
-            }
             long dividend = (a.rawValue << FractionalBits);
             long result = dividend / b.rawValue;
             return new f32(result);
@@ -85,10 +78,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void DivideInPlace(in f32 b)
         {
-            if (b.rawValue == 0)
-            {
-                throw new DivideByZeroException("Cannot divide by zero.");
-            }
+            if (b.rawValue == 0) throw new DivideByZeroException("Cannot divide by zero.");
             long dividend = (this.rawValue << FractionalBits);
             this.rawValue = dividend / b.rawValue;
         }

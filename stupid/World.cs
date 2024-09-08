@@ -89,6 +89,7 @@ namespace stupid
         void PrepareContacts(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();
+
             //If there are current manifolds that are not in the new broadphase, remove
             foreach (var key in _manifolds.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
 
@@ -186,8 +187,7 @@ namespace stupid
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
 
-            if (WorldSettings.Warmup)
-                Warmup(pairs);
+            if (WorldSettings.Warmup) Warmup(pairs);
 
             foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
 
