@@ -1,7 +1,4 @@
 using stupid.Maths;
-using System.Numerics;
-using System;
-using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
@@ -11,6 +8,7 @@ namespace stupid.Colliders
     public struct BoundsS
     {
         public Vector3S min;
+
         public Vector3S max;
         public Vector3S center => (min + max) * f32.half;
         public Vector3S size => max - min;

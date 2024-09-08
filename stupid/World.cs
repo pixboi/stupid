@@ -13,8 +13,6 @@ namespace stupid
         public DumbList<Collidable> Collidables { get; private set; }
 
         List<RigidbodyS> Bodies = new List<RigidbodyS>();
-
-
         public uint SimulationFrame { get; private set; }
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;

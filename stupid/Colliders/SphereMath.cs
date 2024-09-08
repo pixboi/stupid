@@ -41,7 +41,7 @@ namespace stupid.Colliders
             var sphereTrans = sphere.collidable.transform;
 
             // Transform the sphere center into the box's local space
-            var localSpherePos = boxTrans.rotationMatrixTransposed * (sphereTrans.position - boxTrans.position);
+            var localSpherePos = boxTrans.rotationMatrix.Transpose() * (sphereTrans.position - boxTrans.position);
             var halfSize = box.halfSize;
 
             // Find the closest point on the box to the sphere center

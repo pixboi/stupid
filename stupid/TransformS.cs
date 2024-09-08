@@ -5,43 +5,40 @@ namespace stupid
     public struct TransformS
     {
         // Transform properties
-        public Vector3S position, deltaPosition, transientPosition;
+        public Vector3S position, deltaPosition;
 
         public QuaternionS rotation;
 
         public Vector3S localScale;
 
-        public Matrix3S rotationMatrix, rotationMatrixTransposed;
+        public Matrix3S rotationMatrix;
 
         // Constructor
         public TransformS(Vector3S position, QuaternionS rotation, Vector3S localScale)
         {
             this.position = position;
             this.deltaPosition = Vector3S.zero;
-            this.transientPosition = Vector3S.zero;
             this.rotation = rotation;
             this.localScale = localScale;
             this.rotationMatrix = Matrix3S.Rotate(this.rotation);
-            this.rotationMatrixTransposed = rotationMatrix.Transpose();
         }
 
         // Updates rotation matrix
         public void UpdateRotationMatrix()
         {
             this.rotationMatrix = Matrix3S.Rotate(this.rotation);
-            this.rotationMatrixTransposed = this.rotationMatrix.Transpose();
         }
 
         // Converts world point to local point
         public Vector3S ToLocalPoint(in Vector3S worldPoint)
         {
-            return rotationMatrixTransposed * (worldPoint - position); // Assuming rotationMatrix is orthogonal
+            return this.rotationMatrix.Transpose() * (worldPoint - position); // Assuming rotationMatrix is orthogonal
         }
 
         public void ToLocalPointFast(ref Vector3S worldPoint)
         {
             worldPoint.Subtract(position);
-            Matrix3S.MultiplyInPlace(rotationMatrixTransposed, ref worldPoint);
+            Matrix3S.MultiplyInPlace(this.rotationMatrix.Transpose(), ref worldPoint);
         }
 
         // Converts local point to world point
@@ -53,7 +50,7 @@ namespace stupid
         // Converts world direction to local direction
         public Vector3S InverseTransformDirection(in Vector3S worldDirection)
         {
-            return rotationMatrixTransposed * worldDirection; // Assuming rotationMatrix is orthogonal
+            return this.rotationMatrix.Transpose() * worldDirection; // Assuming rotationMatrix is orthogonal
         }
 
         // Converts local direction to world direction
