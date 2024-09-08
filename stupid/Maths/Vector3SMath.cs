@@ -5,6 +5,47 @@ namespace stupid.Maths
 {
     public partial struct Vector3S : IEquatable<Vector3S>
     {
+        #region MAGNITUDE
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public f32 Magnitude()
+        {
+            // Use sqrMagnitude to avoid recomputing the squared magnitude
+            var sqrMag = sqrMagnitude;
+            return sqrMag > f32.zero ? MathS.Sqrt(sqrMag) : f32.zero;
+        }
+
+        // Combined rawSqrMagnitude and sqrMagnitude into one method for efficiency
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private long ComputeRawSqrMagnitude()
+        {
+            long xx = x.rawValue * x.rawValue;
+            long yy = y.rawValue * y.rawValue;
+            long zz = z.rawValue * z.rawValue;
+            return xx + yy + zz;
+        }
+
+        // Raw squared magnitude (in raw long form)
+        public long rawSqrMagnitude
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ComputeRawSqrMagnitude();
+        }
+
+        // Squared magnitude, shifted for fractional bits
+        public f32 sqrMagnitude
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                long rawSqrMag = ComputeRawSqrMagnitude();
+                return new f32(rawSqrMag >> f32.FractionalBits);
+            }
+        }
+
+        #endregion
+
+
         #region DOT PRODUCT
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

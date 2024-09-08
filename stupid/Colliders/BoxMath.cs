@@ -139,7 +139,7 @@ namespace stupid.Colliders
             */
         }
 
-        static List<(Vector3S, int)> pointCache = new List<(Vector3S, int)>();
+        static List<(Vector3S, byte)> pointCache = new List<(Vector3S, byte)>();
 
         //A vertex on B
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -150,7 +150,7 @@ namespace stupid.Colliders
             for (int i = 0; i < 8; i++)
             {
                 var v = a.vertices[i];
-                if (b.ContainsPoint(v)) pointCache.Add((v, i));
+                if (b.ContainsPoint(v)) pointCache.Add((v, (byte)i));
             }
 
             if (pointCache.Count == 0) return false;

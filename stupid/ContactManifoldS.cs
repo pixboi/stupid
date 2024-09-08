@@ -12,7 +12,6 @@ namespace stupid.Colliders
         public readonly int contactCount;
         public void CopyToArray(ref ContactS[] array)
         {
-
             if (contactCount == 1)
             {
                 array[0] = c1;
@@ -49,18 +48,14 @@ namespace stupid.Colliders
 
         public void PrepareWarmup(in ContactManifoldS old)
         {
-
             TransferOldImpulse(ref c1, old.c1);
             TransferOldImpulse(ref c2, old.c2);
             TransferOldImpulse(ref c3, old.c3);
             TransferOldImpulse(ref c4, old.c4);
-
         }
 
         public void Warmup()
         {
-            //Impulses
-
             if (contactCount >= 1) c1.WarmStart(ab, b);
             if (contactCount >= 2) c2.WarmStart(ab, b);
             if (contactCount >= 3) c3.WarmStart(ab, b);
@@ -137,7 +132,7 @@ namespace stupid.Colliders
             //Frictions
             if (contactCount >= 1)
             {
-              //  c1.SolveTwistFriction(ab, b, friction);
+                c1.SolveTwistFriction(ab, b, friction);
             }
 
             /*

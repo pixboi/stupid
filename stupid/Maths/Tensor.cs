@@ -4,36 +4,34 @@ namespace stupid.Maths
 {
     public struct Tensor
     {
-        public readonly Matrix3S inertia; // Precalculated local inertia tensor
-        public readonly Matrix3S inertiaInverse; // Precalculated local inverse inertia tensor
+        // Only the inverse of the local inertia tensor is stored
+        public readonly Matrix3S inertiaInverse;
         public Matrix3S inertiaWorld { get; private set; }
 
-        public Tensor(Matrix3S inertia, QuaternionS initialRotation)
+        public Tensor(in Matrix3S inertia, in QuaternionS initialRotation)
         {
-            this.inertia = inertia;
+            // Precompute the inverse of the local inertia tensor
             this.inertiaInverse = inertia.Inverse();
-
-            this.inertiaWorld = Matrix3S.Identity; // This will be updated below
+            this.inertiaWorld = Matrix3S.identity; // Initial value, updated in the next step
             CalculateInverseInertiaTensor(initialRotation);
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculateInverseInertiaTensor(in QuaternionS rotation)
         {
-            // Compute the world space inertia tensor using cached and precomputed values
+            // Calculate the world space inertia tensor using the rotation
             Matrix3S rotationMatrix = Matrix3S.Rotate(rotation);
-
-            // Perform in-place combined matrix multiplication to calculate the world inertia tensor
             inertiaWorld = MultiplyTransposed(rotationMatrix, inertiaInverse);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculateInverseInertiaTensor(in TransformS t)
         {
+            // Use the transform's rotation matrix to calculate the world space inertia tensor
             inertiaWorld = MultiplyTransposed(t.rotationMatrix, inertiaInverse);
         }
 
+        // Optimized matrix multiplication using a transposed rotation matrix
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Matrix3S MultiplyTransposed(in Matrix3S rotationMatrix, in Matrix3S inertiaTensorLocal)
         {
@@ -79,6 +77,5 @@ namespace stupid.Maths
                 )
             );
         }
-
     }
 }

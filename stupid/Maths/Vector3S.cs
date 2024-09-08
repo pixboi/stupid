@@ -175,38 +175,6 @@ namespace stupid.Maths
 
         #endregion
 
-        // Magnitude
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public f32 Magnitude()
-        {
-            f32 ms = sqrMagnitude;
-            return ms > f32.zero ? MathS.Sqrt(ms) : f32.zero;
-        }
-
-        public long rawSqrMagnitude
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                long xx = (x.rawValue * x.rawValue);
-                long yy = (y.rawValue * y.rawValue);
-                long zz = (z.rawValue * z.rawValue);
-                return xx + yy + zz;
-            }
-        }
-
-        public f32 sqrMagnitude
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                long xx = (x.rawValue * x.rawValue) >> f32.FractionalBits;
-                long yy = (y.rawValue * y.rawValue) >> f32.FractionalBits;
-                long zz = (z.rawValue * z.rawValue) >> f32.FractionalBits;
-                return new f32(xx + yy + zz);
-            }
-        }
-
         // Equality
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Vector3S other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);

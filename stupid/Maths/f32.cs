@@ -90,13 +90,13 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset() { rawValue = 0; }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Negate()
         {
             this.rawValue = -this.rawValue;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Reset() { rawValue = 0; }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -37,7 +37,7 @@ namespace stupid.Maths
             m22 = row3.z;
         }
 
-        public static Matrix3S Identity => new Matrix3S(new Vector3S(1, 0, 0), new Vector3S(0, 1, 0), new Vector3S(0, 0, 1));
+        public static Matrix3S identity => new Matrix3S(new Vector3S(1, 0, 0), new Vector3S(0, 1, 0), new Vector3S(0, 0, 1));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S GetColumn(int index)

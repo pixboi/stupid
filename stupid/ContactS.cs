@@ -4,15 +4,15 @@ using System.Runtime.CompilerServices;
 
 public struct ContactS
 {
-    public readonly Vector3S point, normal, tangent1, tangent2, localAnchorA, localAnchorB;
-    public readonly f32 normalMass, tangentMass1, tangentMass2, twistMass;
+    public readonly Vector3S point, normal, tangent1, localAnchorA, localAnchorB;
+    public readonly f32 normalMass, tangentMass1, twistMass;
     public readonly f32 penetrationDepth;
-    public readonly int featureId;
+    public readonly byte featureId;
 
-    public f32 accumulatedImpulse, accFric1, accFric2, accumulatedTwist;
+    public f32 accumulatedImpulse, accFric1, accumulatedTwist;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, int featureId = 0)
+    public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, byte featureId = 0)
     {
         // Contact point on A, normal points towards B
         this.point = point;
@@ -25,12 +25,9 @@ public struct ContactS
 
         this.normalMass = f32.zero;
         this.tangent1 = Vector3S.zero;
-        this.tangent2 = Vector3S.zero;
         this.tangentMass1 = f32.zero;
-        this.tangentMass2 = f32.zero;
         this.twistMass = f32.zero;
         this.accFric1 = f32.zero;
-        this.accFric2 = f32.zero;
         this.accumulatedImpulse = f32.zero;
         this.accumulatedTwist = f32.zero;
 
@@ -41,11 +38,9 @@ public struct ContactS
 
             this.normalMass = CalculateMassNormal(ab, bb);
 
-            CalculateTangentAndMass(ab, bb, out var t1, out var m1, out var t2, out var m2);
+            CalculateTangentAndMass(ab, bb, out var t1, out var m1);
             this.tangent1 = t1;
             this.tangentMass1 = m1;
-            this.tangent2 = t2;
-            this.tangentMass2 = m2;
             this.twistMass = CalculateTwistMass(ab, bb);
         }
     }
@@ -88,7 +83,7 @@ public struct ContactS
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S t1, out f32 m1, out Vector3S t2, out f32 m2)
+    void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S t1, out f32 m1)
     {
         // Calculate relative velocity at the contact point
         var contactVelocity = CalculateContactVelocity(a, b, this.localAnchorA, this.localAnchorB);
@@ -120,15 +115,6 @@ public struct ContactS
         if (b != null)
             m1 += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, t1), this.localAnchorB), t1);
         m1 = f32.one / m1;  // Invert the mass to get the effective mass
-
-        // Calculate the second tangent (t2) as perpendicular to both the normal and the first tangent (t1)
-        t2 = Vector3S.Cross(this.normal, t1).Normalize();
-
-        // Calculate effective mass along the second tangent (t2)
-        m2 = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, t2), this.localAnchorA), t2);
-        if (b != null)
-            m2 += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, t2), this.localAnchorB), t2);
-        m2 = f32.one / m2;  // Invert the mass to get the effective mass
     }
 
 
@@ -244,7 +230,6 @@ public struct ContactS
         // Apply the angular impulse for twist friction
         ApplyTwistImpulse(a, bb, twistImpulse);
     }
-
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
