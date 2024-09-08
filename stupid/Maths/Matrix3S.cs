@@ -9,6 +9,7 @@ namespace stupid.Maths
         public readonly f32 m10, m11, m12;
         public readonly f32 m20, m21, m22;
 
+        // Constructor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S(f32 m00, f32 m01, f32 m02, f32 m10, f32 m11, f32 m12, f32 m20, f32 m21, f32 m22)
         {
@@ -37,8 +38,14 @@ namespace stupid.Maths
             m22 = row3.z;
         }
 
-        public static Matrix3S identity => new Matrix3S(new Vector3S(1, 0, 0), new Vector3S(0, 1, 0), new Vector3S(0, 0, 1));
+        // Identity matrix
+        public static Matrix3S identity => new Matrix3S(
+            new Vector3S(f32.one, f32.zero, f32.zero),
+            new Vector3S(f32.zero, f32.one, f32.zero),
+            new Vector3S(f32.zero, f32.zero, f32.one)
+        );
 
+        // Get column vector
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S GetColumn(int index)
         {
@@ -47,10 +54,11 @@ namespace stupid.Maths
                 0 => new Vector3S(m00, m10, m20),
                 1 => new Vector3S(m01, m11, m21),
                 2 => new Vector3S(m02, m12, m22),
-                _ => throw new IndexOutOfRangeException("Invalid column index"),
+                _ => throw new IndexOutOfRangeException("Invalid column index")
             };
         }
 
+        // Multiply matrix by vector
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(in Matrix3S m, in Vector3S v)
         {
@@ -61,18 +69,7 @@ namespace stupid.Maths
             return new Vector3S(new f32(x), new f32(y), new f32(z));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void MultiplyInPlace(in Matrix3S m, ref Vector3S v)
-        {
-            long x = ((m.m00.rawValue * v.x.rawValue) + (m.m01.rawValue * v.y.rawValue) + (m.m02.rawValue * v.z.rawValue)) >> f32.FractionalBits;
-            long y = ((m.m10.rawValue * v.x.rawValue) + (m.m11.rawValue * v.y.rawValue) + (m.m12.rawValue * v.z.rawValue)) >> f32.FractionalBits;
-            long z = ((m.m20.rawValue * v.x.rawValue) + (m.m21.rawValue * v.y.rawValue) + (m.m22.rawValue * v.z.rawValue)) >> f32.FractionalBits;
-
-            v.x.rawValue = x;
-            v.y.rawValue = y;
-            v.z.rawValue = z;
-        }
-
+        // Multiply matrix by matrix
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S operator *(in Matrix3S a, in Matrix3S b)
         {
@@ -95,6 +92,7 @@ namespace stupid.Maths
             );
         }
 
+        // Transpose matrix
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S Transpose()
         {
@@ -105,6 +103,7 @@ namespace stupid.Maths
             );
         }
 
+        // Scale matrix
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S Scale(in Vector3S v)
         {
@@ -115,6 +114,7 @@ namespace stupid.Maths
             );
         }
 
+        // Rotation matrix from quaternion
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S Rotate(in QuaternionS q)
         {
@@ -135,12 +135,13 @@ namespace stupid.Maths
             );
         }
 
+        // Inverse matrix
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S Inverse()
         {
-            var a = (m00 * (m11 * m22 - m12 * m21));
-            var b = (m01 * (m10 * m22 - m12 * m20));
-            var c = (m02 * (m10 * m21 - m11 * m20));
+            f32 a = m00 * (m11 * m22 - m12 * m21);
+            f32 b = m01 * (m10 * m22 - m12 * m20);
+            f32 c = m02 * (m10 * m21 - m11 * m20);
 
             f32 determinant = a - b + c;
 
@@ -151,15 +152,15 @@ namespace stupid.Maths
 
             f32 invDet = f32.one / determinant;
 
-            var invM00 = invDet * (m11 * m22 - m12 * m21);
-            var invM01 = invDet * (m02 * m21 - m01 * m22);
-            var invM02 = invDet * (m01 * m12 - m02 * m11);
-            var invM10 = invDet * (m12 * m20 - m10 * m22);
-            var invM11 = invDet * (m00 * m22 - m02 * m20);
-            var invM12 = invDet * (m02 * m10 - m00 * m12);
-            var invM20 = invDet * (m10 * m21 - m11 * m20);
-            var invM21 = invDet * (m01 * m20 - m00 * m21);
-            var invM22 = invDet * (m00 * m11 - m01 * m10);
+            f32 invM00 = invDet * (m11 * m22 - m12 * m21);
+            f32 invM01 = invDet * (m02 * m21 - m01 * m22);
+            f32 invM02 = invDet * (m01 * m12 - m02 * m11);
+            f32 invM10 = invDet * (m12 * m20 - m10 * m22);
+            f32 invM11 = invDet * (m00 * m22 - m02 * m20);
+            f32 invM12 = invDet * (m02 * m10 - m00 * m12);
+            f32 invM20 = invDet * (m10 * m21 - m11 * m20);
+            f32 invM21 = invDet * (m01 * m20 - m00 * m21);
+            f32 invM22 = invDet * (m00 * m11 - m01 * m10);
 
             return new Matrix3S(invM00, invM01, invM02, invM10, invM11, invM12, invM20, invM21, invM22);
         }

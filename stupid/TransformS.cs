@@ -35,12 +35,6 @@ namespace stupid
             return this.rotationMatrix.Transpose() * (worldPoint - position); // Assuming rotationMatrix is orthogonal
         }
 
-        public void ToLocalPointFast(ref Vector3S worldPoint)
-        {
-            worldPoint.Subtract(position);
-            Matrix3S.MultiplyInPlace(this.rotationMatrix.Transpose(), ref worldPoint);
-        }
-
         // Converts local point to world point
         public Vector3S ToWorldPoint(in Vector3S localPoint)
         {

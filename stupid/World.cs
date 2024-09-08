@@ -106,7 +106,7 @@ namespace stupid
                 var count = a.collider.Intersects(b, ref contactVectorCache);
                 if (count > 0)
                 {
-                    var manifold = new ContactManifoldS(a, b, count, contactVectorCache);
+                    var manifold = new ContactManifoldS(a, b, (byte)count, contactVectorCache);
 
                     if (WorldSettings.Warmup)
                     {

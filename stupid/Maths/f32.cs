@@ -83,16 +83,10 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AbsInPlace()
+        public void Abs()
         {
             long mask = rawValue >> 63;  // This creates a mask that is 0xFFFFFFFFFFFFFFFF if rawValue is negative, or 0x0000000000000000 if positive.
             rawValue = (rawValue + mask) ^ mask;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Negate()
-        {
-            this.rawValue = -this.rawValue;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -101,6 +95,12 @@ namespace stupid.Maths
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(in f32 value) => new f32(-value.rawValue);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Negate()
+        {
+            this.rawValue = -this.rawValue;
+        }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

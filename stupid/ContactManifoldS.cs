@@ -9,7 +9,21 @@ namespace stupid.Colliders
         public readonly f32 friction, restitution;
 
         public ContactS c1, c2, c3, c4;
-        public readonly int contactCount;
+        public readonly byte contactCount;
+
+        public ContactS GetContact(int index)
+        {
+            switch (index)
+            {
+                case 0: return c1;
+                case 1: return c2;
+                case 2: return c3;
+                case 3: return c4;
+            }
+
+            return default;
+        }
+
         public void CopyToArray(ref ContactS[] array)
         {
             if (contactCount == 1)
@@ -48,10 +62,30 @@ namespace stupid.Colliders
 
         public void PrepareWarmup(in ContactManifoldS old)
         {
-            TransferOldImpulse(ref c1, old.c1);
-            TransferOldImpulse(ref c2, old.c2);
-            TransferOldImpulse(ref c3, old.c3);
-            TransferOldImpulse(ref c4, old.c4);
+            if (this.contactCount == old.contactCount)
+            {
+                TransferOldImpulse(ref c1, old.c1);
+                TransferOldImpulse(ref c2, old.c2);
+                TransferOldImpulse(ref c3, old.c3);
+                TransferOldImpulse(ref c4, old.c4);
+            }
+
+            return;
+            if (this.contactCount == 1 && old.contactCount == 1)
+            {
+                TransferOldImpulse(ref c1, old.c1);
+                return;
+            }
+
+            for (int i = 0; i < this.contactCount; i++)
+            {
+                var a = this.GetContact(i);
+                for (int j = 0; j < old.contactCount; j++)
+                {
+                    var b = old.GetContact(j);
+                    TransferOldImpulse(ref a, b);
+                }
+            }
         }
 
         public void Warmup()
@@ -62,7 +96,7 @@ namespace stupid.Colliders
             if (contactCount >= 4) c4.WarmStart(ab, b);
         }
 
-        public ContactManifoldS(Collidable a, Collidable b, int contactCount, in ContactS[] contacts)
+        public ContactManifoldS(Collidable a, Collidable b, byte contactCount, in ContactS[] contacts)
         {
             this.a = a;
             this.b = b;
@@ -135,22 +169,21 @@ namespace stupid.Colliders
                 c1.SolveTwistFriction(ab, b, friction);
             }
 
-            /*
             if (contactCount >= 2)
             {
-                c2.SolveTwistFriction(ab, b, friction);
+                //  c2.SolveTwistFriction(ab, b, friction);
             }
 
             if (contactCount >= 3)
             {
-                c3.SolveTwistFriction(ab, b, friction);
+                //  c3.SolveTwistFriction(ab, b, friction);
             }
 
             if (contactCount >= 4)
             {
-                c4.SolveTwistFriction(ab, b, friction);
+                //  c4.SolveTwistFriction(ab, b, friction);
             }
-            */
+
         }
     }
 }

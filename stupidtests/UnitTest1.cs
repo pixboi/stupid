@@ -55,7 +55,7 @@ namespace stupidtests
         }
 
         public int it = 10000000;
-        [TestMethod]
+
         public void Vector3SAdd()
         {
             var v = Vector3S.zero;
@@ -71,7 +71,7 @@ namespace stupidtests
 
         }
 
-        [TestMethod]
+
         public void Vector3SAddFast()
         {
             var v = Vector3S.zero;
@@ -86,7 +86,7 @@ namespace stupidtests
             Console.WriteLine(v.ToString());
         }
 
-        [TestMethod]
+
         public void Vector3SDot()
         {
             var v = Vector3S.zero;
@@ -98,7 +98,8 @@ namespace stupidtests
 
             Console.WriteLine(v.ToString());
         }
-        [TestMethod]
+
+
         public void Vector3SDotRaw()
         {
             var v = Vector3S.zero;
@@ -109,6 +110,36 @@ namespace stupidtests
             }
 
             Console.WriteLine(v.ToString());
+        }
+
+        List<Vector3S> s = new List<Vector3S>(100000);
+
+        [TestMethod]
+        public void IterateForEach()
+        {
+            Vector3S sum = Vector3S.zero;
+
+            foreach (var v in s)
+            {
+                var v1 = v + Vector3S.one;
+                sum += v1;
+            }
+
+            Console.WriteLine(sum.ToString());
+        }
+
+        [TestMethod]
+        public void IterateForEachInPlace()
+        {
+            Vector3S sum = Vector3S.zero;
+
+            foreach (var v in s)
+            {
+                v.Add(Vector3S.one);
+                sum.Add(v);
+            }
+
+            Console.WriteLine(sum.ToString());
         }
 
     }

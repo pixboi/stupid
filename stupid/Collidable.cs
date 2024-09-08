@@ -29,7 +29,7 @@ namespace stupid
         }
 
         public BoundsS GetBounds() => this.collider.bounds;
-        public BoundsS CalculateBounds() => this.collider.CalculateAABB(transform.position, transform.rotation);
+        public BoundsS CalculateBounds() => this.collider.CalculateAABB(this.transform);
 
         public override bool Equals(object? obj)
         {

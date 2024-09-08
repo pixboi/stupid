@@ -17,7 +17,6 @@ namespace stupid.Colliders
             f32 squaredCombinedRadius = combinedRadius * combinedRadius;
 
             //Easy speculative would be just to fatten the AABB and fatten this check
-
             if (squaredDistance > squaredCombinedRadius)
             {
                 return 0; // No intersection
@@ -28,7 +27,7 @@ namespace stupid.Colliders
             Vector3S point = aPos + normal * a.radius;
             f32 penetrationDepth = distance - combinedRadius;
 
-            contacts[0] = new ContactS(point, normal, penetrationDepth, a.collidable, b.collidable);
+            contacts[0] = new ContactS(point, normal, penetrationDepth, a.collidable, b.collidable, 0);
             return 1;
         }
 
@@ -82,12 +81,9 @@ namespace stupid.Colliders
             var penetrationDepth = sphere.radius - distance;
 
             // Ensure the normal follows the convention: Point on A, NORMAL TOWARDS B
-            if (flip)
-            {
-                worldNormal = -worldNormal;
-            }
+            if (flip) worldNormal = -worldNormal;
 
-            contact = new ContactS(worldClosestPoint, worldNormal, -penetrationDepth, a, b);
+            contact = new ContactS(worldClosestPoint, worldNormal, -penetrationDepth, a, b, 0);
             return 1;
         }
 

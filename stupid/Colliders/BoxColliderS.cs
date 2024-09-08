@@ -1,6 +1,4 @@
 ﻿using stupid.Maths;
-using System;
-using System.Numerics;
 
 namespace stupid.Colliders
 {
@@ -76,16 +74,25 @@ namespace stupid.Colliders
 
         public bool ContainsPoint(in Vector3S worldPoint)
         {
-            var localPoint = worldPoint;
-            _collidable.transform.ToLocalPointFast(ref localPoint);
+            var absLocal = Vector3S.Abs(_collidable.transform.ToLocalPoint(worldPoint));
 
-            localPoint.x.AbsInPlace();
-            localPoint.y.AbsInPlace();
-            localPoint.z.AbsInPlace();
+            return absLocal.x <= halfSize.x &&
+                   absLocal.y <= halfSize.y &&
+                   absLocal.z <= halfSize.z;
+        }
 
-            return localPoint.x <= halfSize.x &&
-                   localPoint.y <= halfSize.y &&
-                   localPoint.z <= halfSize.z;
+        public BoundsS CalculateAABB(in TransformS t)
+        {
+            Vector3S rotatedHalfSize = new Vector3S(
+    MathS.Abs(t.rotationMatrix.m00) * halfSize.x + MathS.Abs(t.rotationMatrix.m01) * halfSize.y + MathS.Abs(t.rotationMatrix.m02) * halfSize.z,
+    MathS.Abs(t.rotationMatrix.m10) * halfSize.x + MathS.Abs(t.rotationMatrix.m11) * halfSize.y + MathS.Abs(t.rotationMatrix.m12) * halfSize.z,
+    MathS.Abs(t.rotationMatrix.m20) * halfSize.x + MathS.Abs(t.rotationMatrix.m21) * halfSize.y + MathS.Abs(t.rotationMatrix.m22) * halfSize.z
+);
+
+            var min = t.position - rotatedHalfSize;
+            var max = t.position + rotatedHalfSize;
+            _bounds = new BoundsS(min, max);
+            return _bounds;
         }
 
         public BoundsS CalculateAABB(in Vector3S position, in QuaternionS rotation)

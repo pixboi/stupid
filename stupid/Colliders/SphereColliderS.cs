@@ -30,10 +30,10 @@ namespace stupid.Colliders
             return;
         }
 
-        public BoundsS CalculateAABB(in Vector3S position, in QuaternionS rotation)
+        public BoundsS CalculateAABB(in TransformS transform)
         {
             var size = new Vector3S(radius, radius, radius);
-            _bounds = new BoundsS(position - size, position + size);
+            _bounds = new BoundsS(transform.position - size, transform.position + size);
             return _bounds;
         }
 

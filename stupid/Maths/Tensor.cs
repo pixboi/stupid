@@ -6,23 +6,16 @@ namespace stupid.Maths
     {
         // Only the inverse of the local inertia tensor is stored
         public readonly Matrix3S inertiaInverse;
-        public Matrix3S inertiaWorld { get; private set; }
+        public Matrix3S inertiaWorld;
 
-        public Tensor(in Matrix3S inertia, in QuaternionS initialRotation)
+        public Tensor(in Matrix3S inertia, in TransformS t)
         {
             // Precompute the inverse of the local inertia tensor
             this.inertiaInverse = inertia.Inverse();
             this.inertiaWorld = Matrix3S.identity; // Initial value, updated in the next step
-            CalculateInverseInertiaTensor(initialRotation);
+            CalculateInverseInertiaTensor(t);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculateInverseInertiaTensor(in QuaternionS rotation)
-        {
-            // Calculate the world space inertia tensor using the rotation
-            Matrix3S rotationMatrix = Matrix3S.Rotate(rotation);
-            inertiaWorld = MultiplyTransposed(rotationMatrix, inertiaInverse);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculateInverseInertiaTensor(in TransformS t)

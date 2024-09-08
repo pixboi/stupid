@@ -12,7 +12,7 @@ public struct ContactS
     public f32 accumulatedImpulse, accFric1, accumulatedTwist;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, Collidable a, Collidable b, byte featureId = 0)
+    public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, in Collidable a, in Collidable b, byte featureId = byte.MaxValue)
     {
         // Contact point on A, normal points towards B
         this.point = point;
