@@ -76,10 +76,7 @@ namespace stupid
 
                 c.CalculateBounds();
 
-                if (c is RigidbodyS rb)
-                {
-                    rb.tensor.CalculateInverseInertiaTensor(c.transform);
-                }
+                if (c is RigidbodyS rb) rb.tensor.CalculateInverseInertiaTensor(c.transform);
             }
         }
 
@@ -87,9 +84,6 @@ namespace stupid
         void PrepareContacts(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();
-
-            //If there are current manifolds that are not in the new broadphase, remove
-            foreach (var key in _manifolds.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
 
             //Go through pairs and test collisions, share data, etc.
             foreach (var pair in pairs)
@@ -125,6 +119,9 @@ namespace stupid
                 }
             }
 
+            //If there are current manifolds that are not in the new broadphase, remove
+            foreach (var key in _manifolds.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
+
             foreach (var key in _removeCache)
             {
                 _manifolds.Remove(key);
@@ -144,7 +141,7 @@ namespace stupid
             }
         }
 
-        private void NarrowPhase1(HashSet<IntPair> pairs)
+        private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = SubDelta;
             var inverseDt = InverseSubDelta;
@@ -180,7 +177,7 @@ namespace stupid
             foreach (var rb in Bodies) rb.FinalizePosition();
         }
 
-        private void NarrowPhase(HashSet<IntPair> pairs)
+        private void NarrowPhase1(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;

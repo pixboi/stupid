@@ -20,8 +20,10 @@ public struct ContactS
         this.penetrationDepth = penetrationDepth;
         this.featureId = featureId;
 
-        this.localAnchorA = this.point - a.transform.position;
-        this.localAnchorB = this.point - b.transform.position;
+
+        //This needs to be rechecked
+        this.localAnchorA = (this.point - a.transform.position);
+        this.localAnchorB = (this.point - b.transform.position);
 
         this.normalMass = f32.zero;
         this.tangent1 = Vector3S.zero;
@@ -95,8 +97,8 @@ public struct ContactS
 
         // Calculate effective mass along the first tangent (t1)
         m1 = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorA, t1), this.localAnchorA), t1);
-        if (b != null)
-            m1 += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, t1), this.localAnchorB), t1);
+        if (b != null) m1 += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.localAnchorB, t1), this.localAnchorB), t1);
+
         m1 = f32.one / m1;  // Invert the mass to get the effective mass
     }
 
@@ -183,8 +185,13 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        Vector3S worldPointA = (a.position + a.deltaPosition) + this.localAnchorA;
-        Vector3S worldPointB = (b.position + b.deltaPosition) + this.localAnchorB;
+        //Local anchor is a direction in worldspace, so we need to transform this into a localdirection?
+
+        var ra = a.InverseTransformDirection(this.localAnchorA);
+        var rb = b.InverseTransformDirection(this.localAnchorB);
+
+        Vector3S worldPointA = a.transientPosition + this.localAnchorA;
+        Vector3S worldPointB = b.transientPosition + this.localAnchorB;
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
         return MathS.Min(f32.zero, separation + slop);
     }

@@ -7,6 +7,8 @@ namespace stupid
         // Transform properties
         public Vector3S position, deltaPosition;
 
+        public Vector3S transientPosition => position + deltaPosition;
+
         public QuaternionS rotation;
 
         public Vector3S localScale;
