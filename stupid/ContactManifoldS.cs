@@ -62,29 +62,10 @@ namespace stupid.Colliders
 
         public void PrepareWarmup(in ContactManifoldS old)
         {
-
             TransferOldImpulse(ref c1, old.c1);
             TransferOldImpulse(ref c2, old.c2);
             TransferOldImpulse(ref c3, old.c3);
             TransferOldImpulse(ref c4, old.c4);
-
-
-            return;
-            if (this.contactCount == 1 && old.contactCount == 1)
-            {
-                TransferOldImpulse(ref c1, old.c1);
-                return;
-            }
-
-            for (int i = 0; i < this.contactCount; i++)
-            {
-                var a = this.GetContact(i);
-                for (int j = 0; j < old.contactCount; j++)
-                {
-                    var b = old.GetContact(j);
-                    TransferOldImpulse(ref a, b);
-                }
-            }
         }
 
         public void Warmup()

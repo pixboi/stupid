@@ -141,7 +141,7 @@ namespace stupid
             }
         }
 
-        private void NarrowPhase(HashSet<IntPair> pairs)
+        private void NarrowPhase1(HashSet<IntPair> pairs)
         {
             var dt = SubDelta;
             var inverseDt = InverseSubDelta;
@@ -150,8 +150,7 @@ namespace stupid
             {
                 foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
 
-                if (WorldSettings.Warmup)
-                    Warmup(pairs);
+                if (WorldSettings.Warmup) Warmup(pairs);
 
                 foreach (var pair in pairs)
                 {
@@ -177,7 +176,7 @@ namespace stupid
             foreach (var rb in Bodies) rb.FinalizePosition();
         }
 
-        private void NarrowPhase1(HashSet<IntPair> pairs)
+        private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;

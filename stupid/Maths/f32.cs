@@ -57,10 +57,7 @@ namespace stupid.Maths
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator *(in f32 a, in f32 b)
-        {
-            return new f32((a.rawValue * b.rawValue) >> FractionalBits);
-        }
+        public static f32 operator *(in f32 a, in f32 b) => new f32((a.rawValue * b.rawValue) >> FractionalBits);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Multiply(in f32 b) { rawValue = (rawValue * b.rawValue) >> FractionalBits; }
