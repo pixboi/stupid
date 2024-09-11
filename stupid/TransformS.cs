@@ -34,6 +34,8 @@ namespace stupid
         public Vector3S ToLocalPoint(in Vector3S worldPoint)
         {
             return this.rotationMatrix.Transpose() * (worldPoint - position); // Assuming rotationMatrix is orthogonal
+
+
         }
 
         // Converts local point to world point

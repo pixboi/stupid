@@ -91,8 +91,10 @@ namespace stupid
             // Update the object's position based on the current velocity.
             if (velocity.sqrMagnitude > f32.zero)
             {
-                transform.deltaPosition += velocity * deltaTime;
             }
+
+            transform.deltaPosition += velocity * deltaTime;
+
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
@@ -111,9 +113,10 @@ namespace stupid
         {
             if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
             {
-                this.transform.position += this.transform.deltaPosition;
+
             }
 
+            this.transform.position += this.transform.deltaPosition;
             this.transform.deltaPosition = Vector3S.zero;
         }
 

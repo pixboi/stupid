@@ -7,9 +7,7 @@ namespace stupid.Colliders
     /// </summary>
     public struct BoundsS
     {
-        public Vector3S min;
-
-        public Vector3S max;
+        public Vector3S min, max;
         public Vector3S center => (min + max) * f32.half;
         public Vector3S size => max - min;
         public Vector3S halfSize => size * f32.half;
@@ -41,7 +39,7 @@ namespace stupid.Colliders
             var y = (max.y < other.max.y) ? max.y - other.min.y : other.max.y - min.y;
             var z = (max.z < other.max.z) ? max.z - other.min.z : other.max.z - min.z;
 
-            penetrationDepth = new Vector3S(x, y, z);   
+            penetrationDepth = new Vector3S(x, y, z);
             return true;
         }
 
@@ -82,7 +80,6 @@ namespace stupid.Colliders
             f32 x_size = max.x - min.x;
             f32 y_size = max.y - min.y;
             f32 z_size = max.z - min.z;
-
             return f32.two * ((x_size * y_size) + (x_size * z_size) + (y_size * z_size));
         }
 
@@ -90,7 +87,6 @@ namespace stupid.Colliders
         {
             var x_size = max.x - min.x;
             var y_size = max.y - min.y;
-
             return f32.two * (x_size + y_size);
         }
 

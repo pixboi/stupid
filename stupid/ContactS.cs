@@ -9,6 +9,8 @@ public struct ContactS
     public readonly f32 penetrationDepth;
     public readonly byte featureId;
 
+    public Vector3S ra, rb;
+
     public f32 accumulatedImpulse, accFric1, accumulatedTwist;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -20,10 +22,15 @@ public struct ContactS
         this.penetrationDepth = penetrationDepth;
         this.featureId = featureId;
 
+        //Point in world space
+        //This needs to be rechecked, we must compute this dir as a local dir
+        this.localAnchorA = a.transform.ToLocalPoint(this.point);
+        this.localAnchorB = b.transform.ToLocalPoint(this.point);
 
-        //This needs to be rechecked
-        this.localAnchorA = (this.point - a.transform.position);
-        this.localAnchorB = (this.point - b.transform.position);
+        //Then we transform rb and ra every iteratation into world directions!
+        this.ra = a.transform.TransformDirection(localAnchorA);
+        this.rb = a.transform.TransformDirection(localAnchorB);
+
 
         this.normalMass = f32.zero;
         this.tangent1 = Vector3S.zero;
@@ -70,13 +77,13 @@ public struct ContactS
 
         f32 effectiveMass = invMassA + invMassB;
 
-        Vector3S raCrossNormal = Vector3S.Cross(this.localAnchorA, this.normal);
+        Vector3S raCrossNormal = Vector3S.Cross(this.ra, this.normal);
         f32 angularMassA = Vector3S.Dot(raCrossNormal, ab.tensor.inertiaWorld * raCrossNormal);
         effectiveMass += angularMassA;
 
         if (bb != null)
         {
-            Vector3S rbCrossNormal = Vector3S.Cross(this.localAnchorB, this.normal);
+            Vector3S rbCrossNormal = Vector3S.Cross(this.rb, this.normal);
             f32 angularMassB = Vector3S.Dot(rbCrossNormal, bb.tensor.inertiaWorld * rbCrossNormal);
             effectiveMass += angularMassB;
         }
@@ -88,7 +95,7 @@ public struct ContactS
     void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S t1, out f32 m1)
     {
         // Calculate relative velocity at the contact point
-        var contactVelocity = CalculateContactVelocity(a, b, this.localAnchorA, this.localAnchorB);
+        var contactVelocity = CalculateContactVelocity(a, b, this.ra, this.rb);
 
         // Project the contact velocity onto the plane perpendicular to the normal (get the tangential velocity)
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
@@ -116,25 +123,25 @@ public struct ContactS
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool bias = true)
+    public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool useBias = true)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
-        var baum = f32.zero;
+        var bias = f32.zero;
 
         if (this.penetrationDepth > f32.zero)
         {
-            baum = this.penetrationDepth * inverseDt;
+            bias = this.penetrationDepth * inverseDt;
         }
-        else if (bias)
+        else if (useBias)
         {
             var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
-            baum = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
+            bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 
         var contactVelocity = CalculateContactVelocity(a, bb, this.localAnchorA, this.localAnchorB);
         var vn = Vector3S.Dot(contactVelocity, this.normal);
 
-        var impulse = -this.normalMass * (vn + baum);
+        var impulse = -this.normalMass * (vn + bias);
         var newImpulse = MathS.Max(impulse + this.accumulatedImpulse, f32.zero);
         impulse = newImpulse - this.accumulatedImpulse;
         this.accumulatedImpulse = newImpulse;
@@ -187,8 +194,8 @@ public struct ContactS
     {
         //Local anchor is a direction in worldspace, so we need to transform this into a localdirection?
 
-        var ra = a.InverseTransformDirection(this.localAnchorA);
-        var rb = b.InverseTransformDirection(this.localAnchorB);
+        //var ra = a.InverseTransformDirection(this.localAnchorA);
+        //var rb = b.InverseTransformDirection(this.localAnchorB);
 
         Vector3S worldPointA = a.transientPosition + this.localAnchorA;
         Vector3S worldPointB = b.transientPosition + this.localAnchorB;
