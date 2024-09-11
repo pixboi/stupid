@@ -109,24 +109,14 @@ public struct ContactS
     }
 
 
-    //The twist mass is same for every contact, i dont think its right
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    f32 CalculateTwistMass(in RigidbodyS a, in RigidbodyS bb)
-    {
-        // Effective mass for twist friction is based on the moment of inertia along the normal
-        var twistMassA = Vector3S.Dot(this.normal, a.tensor.inertiaWorld * this.normal);
-        var twistMassB = bb != null ? Vector3S.Dot(this.normal, bb.tensor.inertiaWorld * this.normal) : f32.zero;
 
-        var totalTwistMass = twistMassA + twistMassB;
-        return totalTwistMass > f32.zero ? f32.one / totalTwistMass : f32.zero;
-    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool useBias = true)
     {
         //Then we transform rb and ra every iteratation into world directions!
-        this.ra = a.transform.TransformDirection(this.localAnchorA);
-        if (b.isDynamic) this.rb = b.transform.TransformDirection(this.localAnchorB);
+        //  this.ra = a.transform.TransformDirection(this.localAnchorA);
+        //  if (b.isDynamic) this.rb = b.transform.TransformDirection(this.localAnchorB);
 
 
         var bb = b.isDynamic ? (RigidbodyS)b : null;
@@ -204,6 +194,18 @@ public struct ContactS
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    f32 CalculateTwistMass(in RigidbodyS a, in RigidbodyS bb)
+    {
+        // Effective mass for twist friction is based on the moment of inertia along the normal
+        var twistMassA = Vector3S.Dot(this.normal, a.tensor.inertiaWorld * this.normal);
+        var twistMassB = bb != null ? Vector3S.Dot(this.normal, bb.tensor.inertiaWorld * this.normal) : f32.zero;
+
+        var totalTwistMass = twistMassA + twistMassB;
+        return totalTwistMass > f32.zero ? f32.one / totalTwistMass : f32.zero;
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SolveTwistFriction(in RigidbodyS a, in Collidable b, in f32 friction)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
@@ -218,10 +220,11 @@ public struct ContactS
         var twistImpulse = -this.twistMass * relativeTwistVelocity;
 
         // Limit the twist friction impulse by Coulomb's law
-        var maxTwistFriction = this.accumulatedImpulse * friction;
-        var newTwistFriction = MathS.Clamp(this.accumulatedTwist + twistImpulse, -maxTwistFriction, maxTwistFriction);
-        twistImpulse = newTwistFriction - this.accumulatedTwist;
-        this.accumulatedTwist = newTwistFriction;
+        var maxTwist = this.accumulatedImpulse * friction;
+        var newTwist = MathS.Clamp(this.accumulatedTwist + twistImpulse, -maxTwist, maxTwist);
+        twistImpulse = newTwist - this.accumulatedTwist;
+        this.accumulatedTwist = newTwist;
+
 
         // Apply the angular impulse for twist friction
         ApplyTwistImpulse(a, bb, twistImpulse);

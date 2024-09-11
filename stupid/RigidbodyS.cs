@@ -59,7 +59,7 @@ namespace stupid
         }
 
 
-        public void IntegrateForces(f32 deltaTime, WorldSettings settings)
+        public void IntegrateForces(in f32 deltaTime, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
             if (isKinematic) return;
@@ -83,7 +83,7 @@ namespace stupid
             ClearBuckets();
         }
 
-        public void IntegrateVelocity(f32 deltaTime, WorldSettings settings)
+        public void IntegrateVelocity(in f32 deltaTime, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
             if (isKinematic) return;
@@ -93,24 +93,32 @@ namespace stupid
             {
                 var delta = velocity * deltaTime;
                 if (delta.sqrMagnitude > f32.zero)
-                {
-                    transform.position += velocity * deltaTime;
-                }
+                    transform.position += delta;
             }
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
                 angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
+            bool changed = false;
+
             // Update the object's rotation based on the angular velocity.
             if (angularVelocity.sqrMagnitude > f32.zero)
             {
                 var halfAngle = angularVelocity * deltaTime * f32.half;
+
                 var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
                 transform.rotation = (dq * transform.rotation).Normalize();
+                changed = true;
+                if (halfAngle.sqrMagnitude > f32.zero)
+                {
+
+                }
+
             }
 
-            transform.UpdateRotationMatrix();
+            if (changed)
+                transform.UpdateRotationMatrix();
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)

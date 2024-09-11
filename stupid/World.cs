@@ -48,7 +48,7 @@ namespace stupid
                 DeltaTime = deltaTime;
                 InverseDeltaTime = f32.one / deltaTime;
                 SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
-                InverseSubDelta = InverseDeltaTime * (f32)WorldSettings.DefaultSolverIterations;
+                InverseSubDelta = f32.one / SubDelta;
             }
 
             //Broadphase
@@ -165,15 +165,12 @@ namespace stupid
                 {
                     foreach (var pair in pairs)
                     {
-                        var manifold = _manifolds[pair];  // Retrieve the struct (copy)
+                        var manifold = _manifolds[pair];
                         manifold.Resolve(inverseDt, WorldSettings, false);
-                        _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                        _manifolds[pair] = manifold;
                     }
                 }
             }
-
-
-            //foreach (var rb in Bodies) rb.FinalizePosition();
         }
 
         private void NarrowPhase(HashSet<IntPair> pairs)
