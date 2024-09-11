@@ -173,7 +173,7 @@ namespace stupid
             }
 
 
-            foreach (var rb in Bodies) rb.FinalizePosition();
+            //foreach (var rb in Bodies) rb.FinalizePosition();
         }
 
         private void NarrowPhase(HashSet<IntPair> pairs)
@@ -210,7 +210,7 @@ namespace stupid
                 }
             }
 
-            foreach (var rb in Bodies) rb.FinalizePosition();
+            //foreach (var rb in Bodies) rb.FinalizePosition();
         }
     }
 }

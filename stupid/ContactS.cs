@@ -196,8 +196,8 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        Vector3S worldPointA = a.transientPosition + this.ra;
-        Vector3S worldPointB = b.transientPosition + this.rb;
+        Vector3S worldPointA = a.position + this.ra;
+        Vector3S worldPointB = b.position + this.rb;
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
         return MathS.Min(f32.zero, separation + slop);
     }

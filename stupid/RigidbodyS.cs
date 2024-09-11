@@ -91,14 +91,16 @@ namespace stupid
             // Update the object's position based on the current velocity.
             if (velocity.sqrMagnitude > f32.zero)
             {
+                var delta = velocity * deltaTime;
+                if (delta.sqrMagnitude > f32.zero)
+                {
+                    transform.position += velocity * deltaTime;
+                }
             }
 
-            transform.deltaPosition += velocity * deltaTime;
-
-
             // Clamp the angular velocity to avoid excessive rotational speeds.
-            var maxAngularSpeedSq = settings.DefaultMaxAngularSpeed * settings.DefaultMaxAngularSpeed;
-            if (angularVelocity.sqrMagnitude > maxAngularSpeedSq) angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
+            if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
+                angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
             // Update the object's rotation based on the angular velocity.
             if (angularVelocity.sqrMagnitude > f32.zero)
@@ -107,17 +109,8 @@ namespace stupid
                 var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
                 transform.rotation = (dq * transform.rotation).Normalize();
             }
-        }
 
-        public void FinalizePosition()
-        {
-            if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
-            {
-
-            }
-
-            this.transform.position += this.transform.deltaPosition;
-            this.transform.deltaPosition = Vector3S.zero;
+            transform.UpdateRotationMatrix();
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
