@@ -44,7 +44,6 @@ namespace stupid
 
             this.mass = mass;
             if (this.mass <= f32.zero) this.mass = f32.one;
-
             this.inverseMass = f32.one / this.mass;
 
             if (collider != null)

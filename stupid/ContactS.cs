@@ -76,7 +76,7 @@ public struct ContactS
         ni.Add(ti);
 
         ApplyImpulse(a, bb, ni);
-      //  ApplyTwistImpulse(a, bb, this.accumulatedTwist);
+        //  ApplyTwistImpulse(a, bb, this.accumulatedTwist);
 
     }
 
@@ -255,14 +255,14 @@ public struct ContactS
     {
         //return MathS.Min(f32.zero, this.penetrationDepth + slop);
 
-        
+
         Vector3S worldPointA = a.position + this.ra;
         Vector3S worldPointB = b.position + this.rb;
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
-       // if (separation != this.penetrationDepth) throw new System.ArgumentException("LOL");
+        // if (separation != this.penetrationDepth) throw new System.ArgumentException("LOL");
 
         return MathS.Min(f32.zero, separation + slop);
-        
+
     }
 
 

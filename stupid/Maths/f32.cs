@@ -18,7 +18,7 @@ namespace stupid.Maths
         public static readonly f32 one = new f32(One);
         public static readonly f32 two = new f32(Two);
         public static readonly f32 negativeOne = new f32(-One);
-        public static readonly f32 negativeTwo = new f32(-(2L << FractionalBits));
+        public static readonly f32 negativeTwo = new f32(-Two);
         public static readonly f32 pi = FromFloat(3.14159265358979323846f);
         public static readonly f32 twoPi = FromFloat(6.28318530717958647692f);
         public static readonly f32 halfPi = FromFloat(1.57079632679489661923f);
