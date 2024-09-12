@@ -103,17 +103,13 @@ public struct ContactS
         m1 = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, t1), this.ra), t1);
         if (b != null) m1 += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.rb, t1), this.rb), t1);
 
-        m1 = f32.one / m1;  // Invert the mass to get the effective mass
+        m1 = m1 > f32.zero ? f32.one / m1 : f32.zero;  // Invert the mass to get the effective mass
     }
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool useBias = true)
     {
-        //Then we transform rb and ra every iteratation into world directions!
-        //this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
-        //if (b.isDynamic) this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
-
         var bb = b.isDynamic ? (RigidbodyS)b : null;
         var bias = f32.zero;
 
@@ -182,12 +178,15 @@ public struct ContactS
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
         return MathS.Min(f32.zero, this.penetrationDepth + slop);
+
+        /*
         Vector3S worldPointA = a.position + this.ra;
         Vector3S worldPointB = b.position + this.rb;
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
        // if (separation != this.penetrationDepth) throw new System.ArgumentException("LOL");
 
         return MathS.Min(f32.zero, separation + slop);
+        */
     }
 
 
