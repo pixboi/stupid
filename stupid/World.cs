@@ -180,7 +180,8 @@ namespace stupid
 
             if (WorldSettings.Warmup) Warmup(pairs);
 
-            foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
+            foreach (var rb in Bodies)
+                rb.IntegrateForces(dt, WorldSettings);
 
             for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
             {
@@ -192,7 +193,8 @@ namespace stupid
                 }
             }
 
-            foreach (var rb in Bodies) rb.IntegrateVelocity(dt, WorldSettings);
+            foreach (var rb in Bodies)
+                rb.IntegrateVelocity(dt, WorldSettings);
 
             if (WorldSettings.Relaxation)
             {
@@ -206,8 +208,6 @@ namespace stupid
                     }
                 }
             }
-
-            //foreach (var rb in Bodies) rb.FinalizePosition();
         }
     }
 }

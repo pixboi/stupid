@@ -57,7 +57,6 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
         /*
-
         // Reapply the accumulated impulses
         var normalImpulse = (this.normal * this.accumulatedImpulse);
         var tangentImpulse = (this.tangent * this.accumulatedFriction);
@@ -128,13 +127,15 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
         var bias = f32.zero;
 
-        if (this.penetrationDepth > f32.zero)
+        var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+
+        if (separation > f32.zero)
         {
             bias = this.penetrationDepth * inverseDt;
         }
         else if (useBias)
         {
-            var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+            //var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
             bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 
@@ -252,16 +253,16 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        return MathS.Min(f32.zero, this.penetrationDepth + slop);
+        //return MathS.Min(f32.zero, this.penetrationDepth + slop);
 
-        /*
+        
         Vector3S worldPointA = a.position + this.ra;
         Vector3S worldPointB = b.position + this.rb;
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
        // if (separation != this.penetrationDepth) throw new System.ArgumentException("LOL");
 
         return MathS.Min(f32.zero, separation + slop);
-        */
+        
     }
 
 
