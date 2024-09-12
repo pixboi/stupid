@@ -9,6 +9,30 @@ namespace stupid.Colliders
         //EVERYTHING HERE MUST FOLLOW THE convention: Point on A, NORMAL TOWARDS B
         public static int SphereVSphere(in SphereColliderS a, in SphereColliderS b, ref ContactS[] contacts)
         {
+
+            var bPos = a.collidable.transform.ToLocalPoint(b.collidable.transform.position);
+            var squaredDistance = bPos.sqrMagnitude;
+            var combinedRadius = a.radius + b.radius;
+            var squaredCombinedRadius = combinedRadius * combinedRadius;
+
+            if (squaredDistance > squaredCombinedRadius)
+            {
+                return 0;
+            }
+
+            var localNormal = bPos.Normalize();
+            var localPoint = localNormal * a.radius;
+            var distance = bPos.Magnitude();
+
+            f32 penetrationDepth = distance - combinedRadius;
+
+            var worldPoint = a.collidable.transform.ToWorldPoint(localPoint);
+            var worldNormal = a.collidable.transform.TransformDirection(localNormal);
+
+            contacts[0] = new ContactS(worldPoint, worldNormal, penetrationDepth, a.collidable, b.collidable, 0);
+            return 1;
+
+            /*
             Vector3S aPos = a.collidable.transform.position;
             Vector3S bPos = b.collidable.transform.position;
 
@@ -29,6 +53,7 @@ namespace stupid.Colliders
 
             contacts[0] = new ContactS(point, normal, penetrationDepth, a.collidable, b.collidable, 0);
             return 1;
+            */
         }
 
 
@@ -40,18 +65,18 @@ namespace stupid.Colliders
             var sphereTrans = sphere.collidable.transform;
 
             // Transform the sphere center into the box's local space
-            var localSpherePos = boxTrans.rotationMatrix.Transpose() * (sphereTrans.position - boxTrans.position);
+            var localSpherePos = boxTrans.ToLocalPoint(sphereTrans.position);
             var halfSize = box.halfSize;
 
             // Find the closest point on the box to the sphere center
-            var closestPoint = new Vector3S(
+            var localPoint = new Vector3S(
                 MathS.Clamp(localSpherePos.x, -halfSize.x, halfSize.x),
                 MathS.Clamp(localSpherePos.y, -halfSize.y, halfSize.y),
                 MathS.Clamp(localSpherePos.z, -halfSize.z, halfSize.z)
             );
 
             // Calculate the vector from the closest point to the sphere center
-            var distanceVector = localSpherePos - closestPoint;
+            var distanceVector = localSpherePos - localPoint;
             var distanceSquared = distanceVector.sqrMagnitude;
             var radiusSquared = sphere.radius * sphere.radius;
 
@@ -61,27 +86,27 @@ namespace stupid.Colliders
 
             // Calculate the distance and the normal vector
             f32 distance = MathS.Sqrt(distanceSquared);
-            Vector3S normal;
+            Vector3S localNormal;
 
-            if (distance > f32.epsilon)
+            if (distance >= f32.epsilon)
             {
-                normal = distanceVector / distance;
+                localNormal = distanceVector / distance;
             }
             else
             {
                 // If the distance is zero or very small, default to an arbitrary normal
-                normal = box.axes[1]; // Or any axis-aligned vector
+                localNormal = Vector3S.up;
             }
 
             // Transform the closest point and normal back to world space
-            var worldClosestPoint = boxTrans.position + (boxTrans.rotationMatrix * closestPoint);
-            var worldNormal = (boxTrans.rotationMatrix * normal).Normalize();
+            var worldPoint = boxTrans.ToWorldPoint(localPoint);
+            var worldNormal = boxTrans.TransformDirection(localNormal);
             var penetrationDepth = sphere.radius - distance;
 
             // Ensure the normal follows the convention: Point on A, NORMAL TOWARDS B
             if (flip) worldNormal = -worldNormal;
 
-            contact = new ContactS(worldClosestPoint, worldNormal, -penetrationDepth, a, b, 0);
+            contact = new ContactS(worldPoint, worldNormal, -penetrationDepth, a, b, 0);
             return 1;
         }
 
