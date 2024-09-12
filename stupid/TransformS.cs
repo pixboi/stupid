@@ -6,19 +6,14 @@ namespace stupid
     {
         // Transform properties
         public Vector3S position;
-        // public Vector3S transientPosition => position + deltaPosition;
-
         public QuaternionS rotation;
-
         public Vector3S localScale;
-
         public Matrix3S rotationMatrix;
 
         // Constructor
         public TransformS(Vector3S position, QuaternionS rotation, Vector3S localScale)
         {
             this.position = position;
-            //   this.deltaPosition = Vector3S.zero;
             this.rotation = rotation;
             this.localScale = localScale;
             this.rotationMatrix = Matrix3S.Rotate(this.rotation);

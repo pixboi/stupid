@@ -75,9 +75,7 @@ namespace stupid.Colliders
 
             // Transform the closest point and normal back to world space
             var worldClosestPoint = boxTrans.position + (boxTrans.rotationMatrix * closestPoint);
-
             var worldNormal = (boxTrans.rotationMatrix * normal).Normalize();
-
             var penetrationDepth = sphere.radius - distance;
 
             // Ensure the normal follows the convention: Point on A, NORMAL TOWARDS B
@@ -95,7 +93,6 @@ namespace stupid.Colliders
             {
                 contacts[0] = contact;
                 return 1;
-
             }
 
             return 0;
@@ -108,7 +105,6 @@ namespace stupid.Colliders
             {
                 contacts[0] = contact;
                 return 1;
-
             }
 
             return 0;

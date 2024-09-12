@@ -47,6 +47,7 @@ namespace stupid.Maths
             f32 c1 = MathS.Cos(eulerAngles.y * f32.half);
             f32 c2 = MathS.Cos(eulerAngles.z * f32.half);
             f32 c3 = MathS.Cos(eulerAngles.x * f32.half);
+
             f32 s1 = MathS.Sin(eulerAngles.y * f32.half);
             f32 s2 = MathS.Sin(eulerAngles.z * f32.half);
             f32 s3 = MathS.Sin(eulerAngles.x * f32.half);
@@ -128,11 +129,9 @@ namespace stupid.Maths
                     new f32((q.w.rawValue * invMagSq) >> f32.FractionalBits)
                 );
             }
-            return QuaternionS.identity;
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public QuaternionS Inverse() => Inverse(this);
+            return identity;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public QuaternionS Normalize()

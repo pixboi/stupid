@@ -92,6 +92,7 @@ namespace stupid
             if (velocity.sqrMagnitude > f32.zero)
             {
                 var delta = velocity * deltaTime;
+
                 if (delta.sqrMagnitude > f32.zero)
                     transform.position += delta;
             }
@@ -106,15 +107,12 @@ namespace stupid
             if (angularVelocity.sqrMagnitude > f32.zero)
             {
                 var halfAngle = angularVelocity * deltaTime * f32.half;
-
-                var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
-                transform.rotation = (dq * transform.rotation).Normalize();
-                changed = true;
                 if (halfAngle.sqrMagnitude > f32.zero)
                 {
-
+                    var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
+                    transform.rotation = (dq * transform.rotation).Normalize();
+                    changed = true;
                 }
-
             }
 
             if (changed)

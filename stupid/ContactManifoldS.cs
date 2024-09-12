@@ -24,6 +24,27 @@ namespace stupid.Colliders
             return default;
         }
 
+        public void SetContact(int index, ContactS c)
+        {
+            switch (index)
+            {
+                case 0:
+                    c1 = c;
+                    break;
+                case 1:
+                    c2 = c;
+                    break;
+                case 2:
+                    c3 = c;
+                    break;
+                case 3:
+                    c4 = c;
+                    break;
+
+            }
+
+        }
+
         public void CopyToArray(ref ContactS[] array)
         {
             if (contactCount == 1)
@@ -54,14 +75,30 @@ namespace stupid.Colliders
         {
             if (c.featureId == old.featureId)
             {
-                c.accFric1 = old.accFric1;
                 c.accumulatedImpulse = old.accumulatedImpulse;
+                c.accumulatedFriction = old.accumulatedFriction;
                 c.accumulatedTwist = old.accumulatedTwist;
             }
         }
 
         public void PrepareWarmup(in ContactManifoldS old)
         {
+            //if (old.contactCount != this.contactCount) return;
+            /*
+            for (int i = 0; i < this.contactCount; i++)
+            {
+                var c = GetContact(i);
+
+                for (int j = 0; j < old.contactCount; j++)
+                {
+                    var oldC = GetContact(j);
+                    TransferOldImpulse(ref c, oldC);
+                    SetContact(i, c);
+                }
+            }
+
+            return;
+            */
             TransferOldImpulse(ref c1, old.c1);
             TransferOldImpulse(ref c2, old.c2);
             TransferOldImpulse(ref c3, old.c3);
@@ -87,7 +124,6 @@ namespace stupid.Colliders
             this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
 
             this.contactCount = contactCount;
-
             this.c1 = contacts[0];
             this.c2 = contacts[1];
             this.c3 = contacts[2];
@@ -98,7 +134,7 @@ namespace stupid.Colliders
         {
             if (contactCount == 0)
             {
-                return;
+                throw new System.ArgumentException("No contacts in manifold?");
             }
 
             //Impulses
@@ -132,48 +168,10 @@ namespace stupid.Colliders
                 c4.SolveTwistFriction(ab, b, friction);
             }
 
-            //Frictions
             if (contactCount >= 1)
             {
-              //  c1.SolveFriction(ab, b, friction);
+                // c1.SolveTwistFriction(ab, b, friction);
             }
-
-            if (contactCount >= 2)
-            {
-               // c2.SolveFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 3)
-            {
-               // c3.SolveFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 4)
-            {
-               // c4.SolveFriction(ab, b, friction);
-            }
-
-            //Frictions
-            if (contactCount >= 1)
-            {
-               // c1.SolveTwistFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 2)
-            {
-                // c2.SolveTwistFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 3)
-            {
-                // c3.SolveTwistFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 4)
-            {
-                // c4.SolveTwistFriction(ab, b, friction);
-            }
-
         }
     }
 }
