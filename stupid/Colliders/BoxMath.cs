@@ -85,60 +85,7 @@ namespace stupid.Colliders
                 }
             }
 
-
             return count;
-
-            /*
-            var totalIntersectionPoint = Vector3S.zero;
-            int intersectionCount = 0;
-
-            void CheckEdgeIntersections((Vector3S, Vector3S, Vector3S) edge, BoxColliderS other)
-            {
-                var edgeDirection = (edge.Item2 - edge.Item1).NormalizeWithMagnitude(out var edgeMagnitude);
-
-                // Check intersection with the first point of the edge
-                if (other.RayTest(edge.Item1, edgeDirection, edgeMagnitude, out var intersectionPoint1))
-                {
-                    totalIntersectionPoint += intersectionPoint1;
-                    intersectionCount++;
-                }
-
-                // Check intersection with the second point of the edge
-                if (other.RayTest(edge.Item2, -edgeDirection, edgeMagnitude, out var intersectionPoint2))
-                {
-                    totalIntersectionPoint += intersectionPoint2;
-                    intersectionCount++;
-                }
-            }
-
-            a.GetAllEdges(ref edgeCache);
-            foreach (var e in edgeCache)
-            {
-                CheckEdgeIntersections(e, b);
-            }
-
-            if (intersectionCount == 0)
-            {
-                b.GetAllEdges(ref edgeCache);
-                foreach (var e in edgeCache)
-                {
-                    CheckEdgeIntersections(e, a);
-                }
-            }
-
-            if (intersectionCount == 0) return 0;
-
-            // Average of intersection points
-            contacts.point = totalIntersectionPoint / (f32)intersectionCount;
-            var normal = minAxis.Normalize();
-            if (Vector3S.Dot(normal, relativePosition) > f32.zero) normal = -normal;
-
-            contacts.normal = normal;
-            contacts.penetrationDepth = minPen;
-
-
-            return 1;
-            */
         }
 
         static List<(Vector3S, byte)> pointCache = new List<(Vector3S, byte)>();

@@ -76,7 +76,7 @@ public struct ContactS
         ni.Add(ti);
 
         ApplyImpulse(a, bb, ni);
-        ApplyTwistImpulse(a, bb, this.accumulatedTwist);
+      //  ApplyTwistImpulse(a, bb, this.accumulatedTwist);
 
     }
 
