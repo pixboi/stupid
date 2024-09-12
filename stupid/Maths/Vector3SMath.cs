@@ -79,11 +79,32 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S Cross(in Vector3S a, in Vector3S b)
         {
+            // Calculate the cross product and maintain fixed-point precision
+            long xRaw = (a.y.rawValue * b.z.rawValue - a.z.rawValue * b.y.rawValue);
+            long yRaw = (a.z.rawValue * b.x.rawValue - a.x.rawValue * b.z.rawValue);
+            long zRaw = (a.x.rawValue * b.y.rawValue - a.y.rawValue * b.x.rawValue);
+
+            // Return the new Vector3S with properly scaled values
             return new Vector3S(
-                new f32(((a.y.rawValue * b.z.rawValue - a.z.rawValue * b.y.rawValue)) >> f32.FractionalBits),
-                new f32(((a.z.rawValue * b.x.rawValue - a.x.rawValue * b.z.rawValue)) >> f32.FractionalBits),
-                new f32(((a.x.rawValue * b.y.rawValue - a.y.rawValue * b.x.rawValue)) >> f32.FractionalBits)
+                new f32(xRaw >> f32.FractionalBits),  // Scale the result to fixed-point
+                new f32(yRaw >> f32.FractionalBits),
+                new f32(zRaw >> f32.FractionalBits)
             );
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CrossInPlace(in Vector3S b)
+        {
+            // Compute the cross product in fixed-point
+            long xRaw = (this.y.rawValue * b.z.rawValue - this.z.rawValue * b.y.rawValue);
+            long yRaw = (this.z.rawValue * b.x.rawValue - this.x.rawValue * b.z.rawValue);
+            long zRaw = (this.x.rawValue * b.y.rawValue - this.y.rawValue * b.x.rawValue);
+
+            // Update the current vector with the scaled cross product
+            this.x.rawValue = xRaw >> f32.FractionalBits;  // Scale the result
+            this.y.rawValue = yRaw >> f32.FractionalBits;
+            this.z.rawValue = zRaw >> f32.FractionalBits;
         }
 
         #endregion

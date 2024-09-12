@@ -27,7 +27,7 @@ namespace stupid
 
         // Settings
         public f32 mass = f32.one;
-        public f32 inverseMass => f32.one / mass;
+        public f32 inverseMass;
 
         public f32 drag = f32.zero;
         public f32 angularDrag = (f32)0.05;
@@ -44,6 +44,8 @@ namespace stupid
 
             this.mass = mass;
             if (this.mass <= f32.zero) this.mass = f32.one;
+
+            this.inverseMass = f32.one / this.mass;
 
             if (collider != null)
             {

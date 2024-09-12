@@ -16,7 +16,6 @@ namespace stupid.Maths
             CalculateInverseInertiaTensor(t);
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculateInverseInertiaTensor(in TransformS t)
         {

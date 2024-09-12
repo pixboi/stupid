@@ -139,10 +139,17 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Multiply(in Matrix3S m)
         {
-            this.x.rawValue = ((m.m00.rawValue * x.rawValue) + (m.m01.rawValue * y.rawValue) + (m.m02.rawValue * z.rawValue)) >> f32.FractionalBits;
-            this.y.rawValue = ((m.m10.rawValue * x.rawValue) + (m.m11.rawValue * y.rawValue) + (m.m12.rawValue * z.rawValue)) >> f32.FractionalBits;
-            this.z.rawValue = ((m.m20.rawValue * x.rawValue) + (m.m21.rawValue * y.rawValue) + (m.m22.rawValue * z.rawValue)) >> f32.FractionalBits;
+            // Temporary variables to store intermediate results
+            var xResult = (m.m00.rawValue * x.rawValue) + (m.m01.rawValue * y.rawValue) + (m.m02.rawValue * z.rawValue);
+            var yResult = (m.m10.rawValue * x.rawValue) + (m.m11.rawValue * y.rawValue) + (m.m12.rawValue * z.rawValue);
+            var zResult = (m.m20.rawValue * x.rawValue) + (m.m21.rawValue * y.rawValue) + (m.m22.rawValue * z.rawValue);
+
+            // Apply right shift to account for fixed-point fractional bits
+            this.x.rawValue = xResult >> f32.FractionalBits;
+            this.y.rawValue = yResult >> f32.FractionalBits;
+            this.z.rawValue = zResult >> f32.FractionalBits;
         }
+
 
         // Division
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
