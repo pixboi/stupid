@@ -72,13 +72,16 @@ namespace stupid.Colliders
             axes[2] = rotMat.GetColumn(2).Normalize();  // Local Z axis
         }
 
+
         public bool ContainsPoint(in Vector3S worldPoint)
         {
             var absLocal = Vector3S.Abs(_collidable.transform.ToLocalPoint(worldPoint));
 
-            return absLocal.x <= halfSize.x &&
-                   absLocal.y <= halfSize.y &&
-                   absLocal.z <= halfSize.z;
+            var fat = f32.small;
+
+            return absLocal.x <= halfSize.x + fat &&
+                   absLocal.y <= halfSize.y + fat &&
+                   absLocal.z <= halfSize.z + fat;
         }
 
         public BoundsS CalculateAABB(in TransformS t)

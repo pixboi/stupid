@@ -113,6 +113,7 @@ namespace stupid
                     transform.rotation = (dq * transform.rotation).Normalize();
                     changed = true;
                 }
+
             }
 
             if (changed)
