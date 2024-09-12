@@ -48,7 +48,7 @@ namespace stupid
                 DeltaTime = deltaTime;
                 InverseDeltaTime = f32.one / deltaTime;
                 SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
-                InverseSubDelta = f32.one / SubDelta;
+                InverseSubDelta = InverseDeltaTime * (f32)WorldSettings.DefaultSolverIterations;
             }
 
             //Broadphase

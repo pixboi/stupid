@@ -30,6 +30,9 @@ public struct ContactS
         this.localAnchorA = a.transform.ToLocalPoint(this.point);
         this.localAnchorB = b.transform.ToLocalPoint(this.point);
 
+       // this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
+       // this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
+
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
         this.tangentMass = f32.zero;
@@ -127,6 +130,9 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
         var bias = f32.zero;
 
+        // this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
+        // this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
+
         var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
 
         if (separation > f32.zero)
@@ -152,6 +158,7 @@ public struct ContactS
 
         ApplyImpulse(a, bb, normalImpulse);
     }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SolveFriction(in RigidbodyS a, in Collidable b, in f32 friction)
@@ -256,8 +263,8 @@ public struct ContactS
         //return MathS.Min(f32.zero, this.penetrationDepth + slop);
 
 
-        Vector3S worldPointA = a.position + this.ra;
-        Vector3S worldPointB = b.position + this.rb;
+        Vector3S worldPointA = a.ToWorldPoint(this.localAnchorA);
+        Vector3S worldPointB = b.ToWorldPoint(this.localAnchorB);
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
         // if (separation != this.penetrationDepth) throw new System.ArgumentException("LOL");
 

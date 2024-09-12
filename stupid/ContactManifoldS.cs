@@ -142,14 +142,14 @@ namespace stupid.Colliders
             {
                 c1.SolveImpulse(ab, b, inverseDt, settings, bias);
                 c1.SolveFriction(ab, b, friction);
-               // c1.SolveTwistFriction(ab, b, friction);
+                // c1.SolveTwistFriction(ab, b, friction);
             }
 
             if (contactCount >= 2)
             {
                 c2.SolveImpulse(ab, b, inverseDt, settings, bias);
                 c2.SolveFriction(ab, b, friction);
-               // c2.SolveTwistFriction(ab, b, friction);
+                // c2.SolveTwistFriction(ab, b, friction);
 
             }
 
@@ -157,7 +157,7 @@ namespace stupid.Colliders
             {
                 c3.SolveImpulse(ab, b, inverseDt, settings, bias);
                 c3.SolveFriction(ab, b, friction);
-               // c3.SolveTwistFriction(ab, b, friction);
+                // c3.SolveTwistFriction(ab, b, friction);
 
             }
 
@@ -170,7 +170,7 @@ namespace stupid.Colliders
 
             if (contactCount >= 1)
             {
-              //  c1.SolveTwistFriction(ab, b, friction);
+                //  c1.SolveTwistFriction(ab, b, friction);
             }
         }
     }

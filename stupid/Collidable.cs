@@ -30,7 +30,6 @@ namespace stupid
 
         public BoundsS GetBounds() => this.collider.bounds;
         public BoundsS CalculateBounds() => this.collider.CalculateAABB(this.transform);
-
         public override bool Equals(object? obj)
         {
             return Equals(obj as Collidable);
