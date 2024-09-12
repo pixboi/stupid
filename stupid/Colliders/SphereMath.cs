@@ -70,7 +70,7 @@ namespace stupid.Colliders
             else
             {
                 // If the distance is zero or very small, default to an arbitrary normal
-                normal = new Vector3S(1, 0, 0); // Or any axis-aligned vector
+                normal = box.axes[1]; // Or any axis-aligned vector
             }
 
             // Transform the closest point and normal back to world space

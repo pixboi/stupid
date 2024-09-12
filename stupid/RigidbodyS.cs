@@ -79,6 +79,7 @@ namespace stupid
             // Apply angular drag, ensuring it doesn't invert the angular velocity direction.
             if (angularDrag > f32.zero) angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
 
+
             // Clear the accumulated forces and torques after applying them.
             ClearBuckets();
         }
@@ -91,6 +92,9 @@ namespace stupid
             // Update the object's position based on the current velocity.
             if (velocity.sqrMagnitude > f32.zero)
             {
+                if (velocity.Magnitude() > settings.FastMotionThreshold)
+                    velocity = velocity.ClampMagnitude(-settings.FastMotionThreshold, settings.FastMotionThreshold);
+
                 var delta = velocity * deltaTime;
 
                 if (delta.sqrMagnitude > f32.zero)

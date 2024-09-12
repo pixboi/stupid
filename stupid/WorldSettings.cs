@@ -19,6 +19,7 @@ namespace stupid
         public bool Presolve, Relaxation, Warmup;
         public f32 PositionCorrection;
         public f32 Baumgartner;
+        public f32 FastMotionThreshold;
 
         public static WorldSettings Default()
         {
@@ -39,6 +40,7 @@ namespace stupid
                 Warmup = true,
                 PositionCorrection = (f32)0.2,
                 Baumgartner = (f32)0.2,
+                FastMotionThreshold = (f32)512,
             };
         }
     }

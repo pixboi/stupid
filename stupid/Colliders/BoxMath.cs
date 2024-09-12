@@ -154,6 +154,7 @@ namespace stupid.Colliders
             }
 
             if (pointCache.Count == 0) return false;
+
             return true;
         }
 
@@ -161,7 +162,7 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryAxis(in Vector3S relativePosition, in Vector3S axis, in BoxColliderS a, in BoxColliderS b, int index, ref long minOverlap, ref Vector3S minAxis, ref int best)
         {
-            if (axis.rawSqrMagnitude < (1L << f32.FractionalBits)) return true; // Skip zero-length axes
+            if (axis.sqrMagnitude < f32.epsilon) return true; // Skip zero-length axes
 
             // Calculate projection and overlap using raw values
             long pA = ProjectBoxRaw(axis, a);
@@ -190,9 +191,11 @@ namespace stupid.Colliders
             long absDot1 = Vector3S.RawAbsDot(axis, box.axes[1]);
             long absDot2 = Vector3S.RawAbsDot(axis, box.axes[2]);
 
-            return ((box.halfSize.x.rawValue * absDot0) +
-                    (box.halfSize.y.rawValue * absDot1) +
-                    (box.halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
+            var halfSize = box.halfSize;
+
+            return ((halfSize.x.rawValue * absDot0) +
+                    (halfSize.y.rawValue * absDot1) +
+                    (halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
         }
 
 
