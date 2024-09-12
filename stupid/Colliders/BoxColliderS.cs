@@ -4,7 +4,9 @@ namespace stupid.Colliders
 {
     public struct BoxColliderS : IShape
     {
-        public readonly Vector3S size, halfSize;
+        public readonly Vector3S halfSize;
+        public Vector3S size => this.halfSize * f32.two;
+
         public readonly Vector3S[] localVertices;
         public Vector3S[] vertices, axes;
 
@@ -16,7 +18,6 @@ namespace stupid.Colliders
 
         public BoxColliderS(Vector3S size)
         {
-            this.size = size;
             this.halfSize = size * f32.half;
 
             // Initialize local vertices array

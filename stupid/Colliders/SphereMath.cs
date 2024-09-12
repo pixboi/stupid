@@ -76,27 +76,11 @@ namespace stupid.Colliders
             );
 
             // Calculate the vector from the closest point to the sphere center
-            var distanceVector = localSpherePos - localPoint;
-            var distanceSquared = distanceVector.sqrMagnitude;
-            var radiusSquared = sphere.radius * sphere.radius;
+            var localNormal = (localSpherePos - localPoint).NormalizeWithMagnitude(out var distance);
 
             // Early exit if there's no intersection
-            if (distanceSquared > radiusSquared)
+            if (distance > sphere.radius)
                 return 0;
-
-            // Calculate the distance and the normal vector
-            f32 distance = MathS.Sqrt(distanceSquared);
-            Vector3S localNormal;
-
-            if (distance >= f32.epsilon)
-            {
-                localNormal = distanceVector / distance;
-            }
-            else
-            {
-                // If the distance is zero or very small, default to an arbitrary normal
-                localNormal = Vector3S.up;
-            }
 
             // Transform the closest point and normal back to world space
             var worldPoint = boxTrans.ToWorldPoint(localPoint);
