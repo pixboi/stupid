@@ -127,7 +127,7 @@ public struct ContactS
 
         if (this.penetrationDepth > f32.zero)
         {
-            bias = penetrationDepth * inverseDt;
+            bias = this.penetrationDepth * inverseDt;
         }
         else if (useBias)
         {

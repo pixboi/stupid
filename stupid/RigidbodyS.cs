@@ -93,7 +93,9 @@ namespace stupid
             if (velocity.sqrMagnitude > f32.zero)
             {
                 var delta = velocity * dt;
-                transform.deltaPosition += delta;
+
+                if (delta.sqrMagnitude > f32.zero)
+                    transform.deltaPosition += delta;
             }
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
@@ -104,12 +106,13 @@ namespace stupid
             if (angularVelocity.sqrMagnitude > f32.zero)
             {
                 var halfAngle = angularVelocity * dt * f32.half;
-               // if (halfAngle.sqrMagnitude > f32.zero)
-               // {
+
+                if (halfAngle.sqrMagnitude > f32.zero)
+                {
                     var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
                     transform.rotation = (dq * transform.rotation).Normalize();
                     transform.UpdateRotationMatrix();
-              //  }
+                }
             }
         }
 
