@@ -30,9 +30,6 @@ public struct ContactS
         this.localAnchorA = a.transform.ToLocalPoint(this.point);
         this.localAnchorB = b.transform.ToLocalPoint(this.point);
 
-        // this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
-        // this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
-
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
         this.tangentMass = f32.zero;
@@ -55,17 +52,11 @@ public struct ContactS
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-        /*
-        // Reapply the accumulated impulses
-        var normalImpulse = (this.normal * this.accumulatedImpulse);
-        var tangentImpulse = (this.tangent * this.accumulatedFriction);
+        Vector3S warmImpulse = (this.normal * this.accumulatedImpulse) + (this.tangent * this.accumulatedFriction);
 
-        Vector3S warmImpulse = normalImpulse + tangentImpulse;
         ApplyImpulse(a, bb, warmImpulse);
-
-        ApplyTwistImpulse(a, bb, this.accumulatedTwist);
-        */
-
+        
+        /*
         var ni = this.normal;
         ni.Multiply(this.accumulatedImpulse);
 
@@ -75,7 +66,7 @@ public struct ContactS
         ni.Add(ti);
 
         ApplyImpulse(a, bb, ni);
-
+        */
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -118,6 +109,19 @@ public struct ContactS
         m1 = m1 > f32.zero ? f32.one / m1 : f32.zero;  // Invert the mass to get the effective mass
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
+    {
+        //return MathS.Min(f32.zero, this.penetrationDepth + slop);
+
+        Vector3S worldPointA = a.position + this.ra;
+        Vector3S worldPointB = b.position + this.rb;
+        f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
+
+        return MathS.Min(f32.zero, separation + slop);
+
+    }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool useBias = true)
@@ -125,14 +129,14 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
         var bias = f32.zero;
 
-        // this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
-        // this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
+        //this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
+        //this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
 
         var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
 
         if (separation > f32.zero)
         {
-            bias = this.penetrationDepth * inverseDt;
+            bias = separation * inverseDt;
         }
         else if (useBias)
         {
@@ -180,12 +184,11 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
     {
-        /*
-    var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
-    var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
-    return bv - av;
-*/
+        var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
+        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
+        return bv - av;
 
+        /*
         var ai = a.velocity;
         var ac = a.angularVelocity;
         ac.CrossInPlace(this.ra);// Vector3S.Cross(a.angularVelocity, this.ra);
@@ -202,27 +205,22 @@ public struct ContactS
 
         bi.Subtract(ai);
         return bi;
+        */
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
     {
-        /*
         a.velocity -= impulse * a.inverseMass; // A moves away
-
-        var ab = Vector3S.Cross(this.ra, impulse);
-        ab.Multiply(a.tensor.inertiaWorld);
-        a.angularVelocity -= ab;
+        a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(this.ra, impulse);
 
         if (bb != null)
         {
             bb.velocity += impulse * bb.inverseMass; // B moves along normal
-            var cb = Vector3S.Cross(this.rb, impulse);
-            cb.Multiply(bb.tensor.inertiaWorld);
-            bb.angularVelocity += cb;
+            bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, impulse);
         }
-        */
 
+        /*
         // Update linear velocity for 'a'
         Vector3S ai = impulse;
         ai.Multiply(a.inverseMass); // ai = impulse * a.inverseMass
@@ -248,21 +246,10 @@ public struct ContactS
             rbCrossImpulse.Multiply(bb.tensor.inertiaWorld); // rbCrossImpulse = bb.tensor.inertiaWorld * rbCrossImpulse
             bb.angularVelocity.Add(rbCrossImpulse); // bb.angularVelocity += rbCrossImpulse
         }
+        */
 
     }
 
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
-    {
-        return MathS.Min(f32.zero, this.penetrationDepth + slop);
 
-        Vector3S worldPointA = a.ToWorldPoint(this.localAnchorA);
-        Vector3S worldPointB = b.ToWorldPoint(this.localAnchorB);
-        f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
-        // if (separation != this.penetrationDepth) throw new System.ArgumentException("LOL");
-
-        return MathS.Min(f32.zero, separation + slop);
-
-    }
 }

@@ -146,30 +146,47 @@ namespace stupid
             var dt = SubDelta;
             var inverseDt = InverseSubDelta;
 
-            for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
+            _manifolds.Clear();
+            foreach (var p in pairs)
+                _manifolds.Add(ManifoldMap[p]);
+
+            for (int substep = 0; substep < WorldSettings.DefaultSolverIterations; substep++)
             {
-                foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
+                foreach (var rb in Bodies)
+                    rb.IntegrateForces(dt, WorldSettings);
 
-                if (WorldSettings.Warmup) Warmup(pairs);
+                if (WorldSettings.Warmup)
+                    foreach (var m in _manifolds) m.Warmup();
 
-                foreach (var pair in pairs)
+                for (int i = 0; i < _manifolds.Count; i++)
                 {
-                    var manifold = ManifoldMap[pair];
-                    manifold.Resolve(inverseDt, WorldSettings, true);
-                    ManifoldMap[pair] = manifold;
+                    var m = _manifolds[i];
+                    m.Resolve(inverseDt, WorldSettings, true);
+                    _manifolds[i] = m;
                 }
 
-                foreach (var rb in Bodies) rb.IntegrateVelocity(dt, WorldSettings);
+                foreach (var rb in Bodies)
+                    rb.IntegrateVelocity(dt, WorldSettings);
 
                 if (WorldSettings.Relaxation)
                 {
-                    foreach (var pair in pairs)
+                    for (int relax = 0; relax < WorldSettings.DefaultSolverVelocityIterations; relax++)
                     {
-                        var manifold = ManifoldMap[pair];
-                        manifold.Resolve(inverseDt, WorldSettings, false);
-                        ManifoldMap[pair] = manifold;
+                        for (int i = 0; i < _manifolds.Count; i++)
+                        {
+                            var m = _manifolds[i];
+                            m.Resolve(inverseDt, WorldSettings, false);
+                            _manifolds[i] = m;
+                        }
                     }
                 }
+            }
+
+            //Save changes
+            for (int i = 0; i < _manifolds.Count; i++)
+            {
+                var m = _manifolds[i];
+                ManifoldMap[m.ToPair()] = m;
             }
         }
 
@@ -204,7 +221,7 @@ namespace stupid
 
             if (WorldSettings.Relaxation)
             {
-                for (int iter = 0; iter < WorldSettings.DefaultSolverIterations; iter++)
+                for (int relax = 0; relax < WorldSettings.DefaultSolverIterations; relax++)
                 {
                     for (int i = 0; i < _manifolds.Count; i++)
                     {

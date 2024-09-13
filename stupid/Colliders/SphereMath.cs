@@ -9,7 +9,6 @@ namespace stupid.Colliders
         //EVERYTHING HERE MUST FOLLOW THE convention: Point on A, NORMAL TOWARDS B
         public static int SphereVSphere(in SphereColliderS a, in SphereColliderS b, ref ContactS[] contacts)
         {
-
             var bPos = a.collidable.transform.ToLocalPoint(b.collidable.transform.position);
             var squaredDistance = bPos.sqrMagnitude;
             var combinedRadius = a.radius + b.radius;
@@ -28,6 +27,12 @@ namespace stupid.Colliders
 
             var worldPoint = a.collidable.transform.ToWorldPoint(localPoint);
             var worldNormal = a.collidable.transform.TransformDirection(localNormal);
+
+            /*
+            var pointA = a.collidable.transform.position + worldNormal * a.radius;
+            var pointB = b.collidable.transform.position + -worldNormal * b.radius;
+            var worldPoint = (pointA + pointB) * f32.half;
+            */
 
             contacts[0] = new ContactS(worldPoint, worldNormal, penetrationDepth, a.collidable, b.collidable, 0);
             return 1;
