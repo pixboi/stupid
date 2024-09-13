@@ -10,19 +10,16 @@ namespace stupid.Colliders
         public static int SphereVSphere(in SphereColliderS a, in SphereColliderS b, ref ContactS[] contacts)
         {
             var bPos = a.collidable.transform.ToLocalPoint(b.collidable.transform.position);
-            var squaredDistance = bPos.sqrMagnitude;
-            var combinedRadius = a.radius + b.radius;
-            var squaredCombinedRadius = combinedRadius * combinedRadius;
 
-            if (squaredDistance > squaredCombinedRadius)
+            var localNormal = bPos.NormalizeWithMagnitude(out var distance);
+            var combinedRadius = a.radius + b.radius;
+
+            if (distance > combinedRadius)
             {
                 return 0;
             }
 
-            var localNormal = bPos.Normalize();
             var localPoint = localNormal * a.radius;
-            var distance = bPos.Magnitude();
-
             f32 penetrationDepth = distance - combinedRadius;
 
             var worldPoint = a.collidable.transform.ToWorldPoint(localPoint);
@@ -36,29 +33,6 @@ namespace stupid.Colliders
 
             contacts[0] = new ContactS(worldPoint, worldNormal, penetrationDepth, a.collidable, b.collidable, 0);
             return 1;
-
-            /*
-            Vector3S aPos = a.collidable.transform.position;
-            Vector3S bPos = b.collidable.transform.position;
-
-            f32 squaredDistance = Vector3S.DistanceSquared(aPos, bPos);
-            f32 combinedRadius = a.radius + b.radius;
-            f32 squaredCombinedRadius = combinedRadius * combinedRadius;
-
-            //Easy speculative would be just to fatten the AABB and fatten this check
-            if (squaredDistance > squaredCombinedRadius)
-            {
-                return 0; // No intersection
-            }
-
-            //Towards B
-            Vector3S normal = (bPos - aPos).NormalizeWithMagnitude(out f32 distance);
-            Vector3S point = aPos + normal * a.radius;
-            f32 penetrationDepth = distance - combinedRadius;
-
-            contacts[0] = new ContactS(point, normal, penetrationDepth, a.collidable, b.collidable, 0);
-            return 1;
-            */
         }
 
 

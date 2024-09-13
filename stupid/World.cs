@@ -141,7 +141,9 @@ namespace stupid
             }
         }
 
-        private void NarrowPhase1(HashSet<IntPair> pairs)
+        List<ContactManifoldS> _manifolds = new List<ContactManifoldS>(1000);
+
+        private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = SubDelta;
             var inverseDt = InverseSubDelta;
@@ -190,8 +192,7 @@ namespace stupid
             }
         }
 
-        List<ContactManifoldS> _manifolds = new List<ContactManifoldS>(1000);
-        private void NarrowPhase(HashSet<IntPair> pairs)
+        private void NarrowPhase1(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
