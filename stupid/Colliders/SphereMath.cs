@@ -69,21 +69,21 @@ namespace stupid.Colliders
             var halfSize = box.halfSize;
 
             // Find the closest point on the box to the sphere center
-            var localPoint = new Vector3S(
+            var pointOnBox = new Vector3S(
                 MathS.Clamp(localSpherePos.x, -halfSize.x, halfSize.x),
                 MathS.Clamp(localSpherePos.y, -halfSize.y, halfSize.y),
                 MathS.Clamp(localSpherePos.z, -halfSize.z, halfSize.z)
             );
 
             // Calculate the vector from the closest point to the sphere center
-            var localNormal = (localSpherePos - localPoint).NormalizeWithMagnitude(out var distance);
+            var localNormal = (localSpherePos - pointOnBox).NormalizeWithMagnitude(out var distance);
 
             // Early exit if there's no intersection
             if (distance > sphere.radius)
                 return 0;
 
             // Transform the closest point and normal back to world space
-            var worldPoint = boxTrans.ToWorldPoint(localPoint);
+            var worldPoint = boxTrans.ToWorldPoint(pointOnBox);
             var worldNormal = boxTrans.TransformDirection(localNormal);
             var penetrationDepth = sphere.radius - distance;
 

@@ -11,6 +11,7 @@ namespace stupid.Colliders
         public ContactS c1, c2, c3, c4;
         public readonly byte contactCount;
 
+        public IntPair ToPair() => new IntPair(a.index, b.index);
         public ContactS GetContact(int index)
         {
             switch (index)

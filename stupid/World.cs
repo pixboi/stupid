@@ -18,7 +18,7 @@ namespace stupid
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
 
         int _counter;
-        Dictionary<IntPair, ContactManifoldS> _manifolds = new Dictionary<IntPair, ContactManifoldS>();
+        Dictionary<IntPair, ContactManifoldS> ManifoldMap = new Dictionary<IntPair, ContactManifoldS>();
         List<IntPair> _removeCache = new List<IntPair>();
 
         public event Action<ContactManifoldS> OnContact;
@@ -104,13 +104,13 @@ namespace stupid
 
                     if (WorldSettings.Warmup)
                     {
-                        if (_manifolds.TryGetValue(pair, out var oldM))
+                        if (ManifoldMap.TryGetValue(pair, out var oldM))
                         {
                             manifold.PrepareWarmup(oldM);
                         }
                     }
 
-                    _manifolds[pair] = manifold;
+                    ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);
                 }
                 else
@@ -120,11 +120,11 @@ namespace stupid
             }
 
             //If there are current manifolds that are not in the new broadphase, remove
-            foreach (var key in _manifolds.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
+            foreach (var key in ManifoldMap.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
 
             foreach (var key in _removeCache)
             {
-                _manifolds.Remove(key);
+                ManifoldMap.Remove(key);
                 pairs.Remove(key);
             }
 
@@ -136,7 +136,7 @@ namespace stupid
             {
                 foreach (var pair in pairs)
                 {
-                    _manifolds[pair].Warmup();
+                    ManifoldMap[pair].Warmup();
                 }
             }
         }
@@ -154,9 +154,9 @@ namespace stupid
 
                 foreach (var pair in pairs)
                 {
-                    var manifold = _manifolds[pair];
+                    var manifold = ManifoldMap[pair];
                     manifold.Resolve(inverseDt, WorldSettings, true);
-                    _manifolds[pair] = manifold;
+                    ManifoldMap[pair] = manifold;
                 }
 
                 foreach (var rb in Bodies) rb.IntegrateVelocity(dt, WorldSettings);
@@ -165,31 +165,37 @@ namespace stupid
                 {
                     foreach (var pair in pairs)
                     {
-                        var manifold = _manifolds[pair];
+                        var manifold = ManifoldMap[pair];
                         manifold.Resolve(inverseDt, WorldSettings, false);
-                        _manifolds[pair] = manifold;
+                        ManifoldMap[pair] = manifold;
                     }
                 }
             }
         }
 
+        List<ContactManifoldS> _manifolds = new List<ContactManifoldS>(1000);
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
 
-            if (WorldSettings.Warmup) Warmup(pairs);
+            _manifolds.Clear();
+            foreach (var p in pairs)
+                _manifolds.Add(ManifoldMap[p]);
+
+            if (WorldSettings.Warmup)
+                foreach (var m in _manifolds) m.Warmup();
 
             foreach (var rb in Bodies)
                 rb.IntegrateForces(dt, WorldSettings);
 
-            for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
+            for (int iter = 0; iter < WorldSettings.DefaultSolverIterations; iter++)
             {
-                foreach (var pair in pairs)
+                for (int i = 0; i < _manifolds.Count; i++)
                 {
-                    var manifold = _manifolds[pair];
-                    manifold.Resolve(inverseDt, WorldSettings, true);
-                    _manifolds[pair] = manifold;
+                    var m = _manifolds[i];
+                    m.Resolve(inverseDt, WorldSettings, true);
+                    _manifolds[i] = m;
                 }
             }
 
@@ -198,15 +204,22 @@ namespace stupid
 
             if (WorldSettings.Relaxation)
             {
-                for (int i = 0; i < WorldSettings.DefaultSolverIterations; i++)
+                for (int iter = 0; iter < WorldSettings.DefaultSolverIterations; iter++)
                 {
-                    foreach (var pair in pairs)
+                    for (int i = 0; i < _manifolds.Count; i++)
                     {
-                        var manifold = _manifolds[pair];  // Retrieve the struct (copy)
-                        manifold.Resolve(inverseDt, WorldSettings, false);
-                        _manifolds[pair] = manifold;  // Reinsert the modified copy back into the dictionary
+                        var m = _manifolds[i];
+                        m.Resolve(inverseDt, WorldSettings, false);
+                        _manifolds[i] = m;
                     }
                 }
+            }
+
+            //Save changes
+            for (int i = 0; i < _manifolds.Count; i++)
+            {
+                var m = _manifolds[i];
+                ManifoldMap[m.ToPair()] = m;
             }
         }
     }
