@@ -6,11 +6,11 @@ using System;
 public struct ContactS
 {
     public readonly Vector3S point, normal, tangent, localAnchorA, localAnchorB;
-    public readonly f32 normalMass, tangentMass, twistMass, penetrationDepth;
+    public readonly f32 normalMass, tangentMass, penetrationDepth;
     public readonly byte featureId;
 
     public Vector3S ra, rb;
-    public f32 accumulatedImpulse, accumulatedFriction, accumulatedTwist;
+    public f32 accumulatedImpulse, accumulatedFriction;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, in Collidable a, in Collidable b, byte featureId = byte.MaxValue)
@@ -30,16 +30,14 @@ public struct ContactS
         this.localAnchorA = a.transform.ToLocalPoint(this.point);
         this.localAnchorB = b.transform.ToLocalPoint(this.point);
 
-       // this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
-       // this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
+        // this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
+        // this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
 
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
         this.tangentMass = f32.zero;
-        this.twistMass = f32.zero;
         this.accumulatedFriction = f32.zero;
         this.accumulatedImpulse = f32.zero;
-        this.accumulatedTwist = f32.zero;
 
         if (a.isDynamic || b.isDynamic)
         {
@@ -47,9 +45,7 @@ public struct ContactS
             var bb = b.isDynamic ? (RigidbodyS)b : null;
 
             this.normalMass = CalculateMassNormal(ab, bb);
-
             CalculateTangentAndMass(ab, bb, out this.tangent, out this.tangentMass);
-            this.twistMass = CalculateTwistMass(ab, bb);
         }
     }
 
@@ -79,7 +75,6 @@ public struct ContactS
         ni.Add(ti);
 
         ApplyImpulse(a, bb, ni);
-        //  ApplyTwistImpulse(a, bb, this.accumulatedTwist);
 
     }
 
@@ -262,75 +257,12 @@ public struct ContactS
     {
         return MathS.Min(f32.zero, this.penetrationDepth + slop);
 
-
         Vector3S worldPointA = a.ToWorldPoint(this.localAnchorA);
         Vector3S worldPointB = b.ToWorldPoint(this.localAnchorB);
         f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
         // if (separation != this.penetrationDepth) throw new System.ArgumentException("LOL");
 
         return MathS.Min(f32.zero, separation + slop);
-
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    f32 CalculateTwistMass(in RigidbodyS a, in RigidbodyS bb)
-    {
-        // Effective mass for twist friction is based on the moment of inertia along the normal
-        var twistMassA = Vector3S.Dot(this.normal, a.tensor.inertiaWorld * this.normal);
-        var twistMassB = bb != null ? Vector3S.Dot(this.normal, bb.tensor.inertiaWorld * this.normal) : f32.zero;
-
-        var totalTwistMass = twistMassA + twistMassB;
-        return totalTwistMass > f32.zero ? f32.one / totalTwistMass : f32.zero;
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SolveTwistFriction(in RigidbodyS a, in Collidable b, in f32 friction)
-    {
-        var bb = b.isDynamic ? (RigidbodyS)b : null;
-
-        // Calculate relative angular velocity around the normal
-        var angularVelocityA = Vector3S.Dot(a.angularVelocity, this.normal);
-        var angularVelocityB = bb != null ? Vector3S.Dot(bb.angularVelocity, this.normal) : f32.zero;
-
-        var relativeTwistVelocity = angularVelocityB - angularVelocityA;
-
-        // Calculate twist friction impulse
-        var twistImpulse = -this.twistMass * relativeTwistVelocity;
-
-        // Limit the twist friction impulse by Coulomb's law
-        var maxTwist = this.accumulatedImpulse * friction;
-        var newTwist = MathS.Clamp(this.accumulatedTwist + twistImpulse, -maxTwist, maxTwist);
-        twistImpulse = newTwist - this.accumulatedTwist;
-        this.accumulatedTwist = newTwist;
-
-
-        // Apply the angular impulse for twist friction
-        ApplyTwistImpulse(a, bb, twistImpulse);
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    void ApplyTwistImpulse(in RigidbodyS a, in RigidbodyS bb, in f32 twistImpulse)
-    {
-        // Apply angular impulse around the normal for twist friction
-        //var angularImpulse = this.normal * twistImpulse;
-
-        var impulse = this.normal;
-        impulse.Multiply(twistImpulse);
-
-        var ai = impulse;
-        ai.Multiply(a.tensor.inertiaWorld);
-
-        a.angularVelocity.Subtract(ai);
-
-        if (bb != null)
-        {
-            var bi = impulse;
-            bi.Multiply(bb.tensor.inertiaWorld);
-            bb.angularVelocity.Add(bi);
-        }
 
     }
 }
