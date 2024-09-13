@@ -21,14 +21,14 @@ public struct ContactS
         this.penetrationDepth = penetrationDepth;
         this.featureId = featureId;
 
+        //This needs to be rechecked, we must compute this dir as a local dir
+        this.localAnchorA = a.transform.ToLocalPoint(this.point);
+        this.localAnchorB = b.transform.ToLocalPoint(this.point);
+
         //Then we transform rb and ra every iteratation into world directions!
         //We dont need to transform the initial
         this.ra = this.point - a.transform.position;
         this.rb = this.point - b.transform.position;
-
-        //This needs to be rechecked, we must compute this dir as a local dir
-        this.localAnchorA = a.transform.ToLocalPoint(this.point);
-        this.localAnchorB = b.transform.ToLocalPoint(this.point);
 
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
@@ -44,29 +44,6 @@ public struct ContactS
             this.normalMass = CalculateMassNormal(ab, bb);
             CalculateTangentAndMass(ab, bb, out this.tangent, out this.tangentMass);
         }
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void WarmStart(in RigidbodyS a, in Collidable b)
-    {
-        var bb = b.isDynamic ? (RigidbodyS)b : null;
-
-        Vector3S warmImpulse = (this.normal * this.accumulatedImpulse) + (this.tangent * this.accumulatedFriction);
-
-        ApplyImpulse(a, bb, warmImpulse);
-        
-        /*
-        var ni = this.normal;
-        ni.Multiply(this.accumulatedImpulse);
-
-        var ti = this.tangent;
-        ti.Multiply(this.accumulatedFriction);
-
-        ni.Add(ti);
-
-        ApplyImpulse(a, bb, ni);
-        */
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -92,7 +69,7 @@ public struct ContactS
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S t1, out f32 m1)
+    void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S tangent, out f32 tangentMass)
     {
         // Calculate relative velocity at the contact point
         var contactVelocity = CalculateContactVelocity(a, b);
@@ -100,26 +77,45 @@ public struct ContactS
         // Project the contact velocity onto the plane perpendicular to the normal (get the tangential velocity)
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-        t1 = tangentialVelocity.Normalize();
+        tangent = tangentialVelocity.Normalize();
 
         // Calculate effective mass along the first tangent (t1)
-        m1 = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, t1), this.ra), t1);
-        if (b != null) m1 += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.rb, t1), this.rb), t1);
+        tangentMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
+        if (b != null) tangentMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
 
-        m1 = m1 > f32.zero ? f32.one / m1 : f32.zero;  // Invert the mass to get the effective mass
+        tangentMass = tangentMass > f32.zero ? f32.one / tangentMass : f32.zero;  // Invert the mass to get the effective mass
+    }
+
+    public void SubtickUpdate(in Collidable a, in Collidable b)
+    {
+        this.ra = a.transform.TransformDirection(this.localAnchorA);
+        if (b.isDynamic) this.rb = b.transform.TransformDirection(this.localAnchorB);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WarmStart(in RigidbodyS a, in Collidable b)
+    {
+        var bb = b.isDynamic ? (RigidbodyS)b : null;
+        Vector3S warmImpulse = (this.normal * this.accumulatedImpulse) + (this.tangent * this.accumulatedFriction);
+        ApplyImpulse(a, bb, warmImpulse);
+
+        /*
+        var ni = this.normal;
+        ni.Multiply(this.accumulatedImpulse);
+
+        var ti = this.tangent;
+        ti.Multiply(this.accumulatedFriction);
+
+        ni.Add(ti);
+
+        ApplyImpulse(a, bb, ni);
+        */
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        //return MathS.Min(f32.zero, this.penetrationDepth + slop);
-
-        Vector3S worldPointA = a.position + this.ra;
-        Vector3S worldPointB = b.position + this.rb;
-        f32 separation = Vector3S.Dot(worldPointB - worldPointA, this.normal) + this.penetrationDepth;
-
-        return MathS.Min(f32.zero, separation + slop);
-
+        return MathS.Min(f32.zero, this.penetrationDepth + slop);
     }
 
 
@@ -129,18 +125,13 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
         var bias = f32.zero;
 
-        //this.ra = a.transform.ToWorldPoint(this.localAnchorA) - a.transform.position;
-        //this.rb = b.transform.ToWorldPoint(this.localAnchorB) - b.transform.position;
-
-        var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
-
-        if (separation > f32.zero)
+        if (this.penetrationDepth > f32.zero)
         {
-            bias = separation * inverseDt;
+            bias = penetrationDepth * inverseDt;
         }
         else if (useBias)
         {
-            //var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+            var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
             bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 
@@ -152,9 +143,7 @@ public struct ContactS
         impulse = newImpulse - this.accumulatedImpulse;
         this.accumulatedImpulse = newImpulse;
 
-        var normalImpulse = this.normal;
-        normalImpulse.Multiply(impulse);
-
+        var normalImpulse = this.normal * impulse;
         ApplyImpulse(a, bb, normalImpulse);
     }
 
@@ -174,9 +163,7 @@ public struct ContactS
         incrementalFriction = newImpulse - this.accumulatedFriction;
         this.accumulatedFriction = newImpulse;
 
-        var tangentImpulse = this.tangent;
-        tangentImpulse.Multiply(incrementalFriction);
-
+        var tangentImpulse = this.tangent * incrementalFriction;
         ApplyImpulse(a, bb, tangentImpulse);
     }
 

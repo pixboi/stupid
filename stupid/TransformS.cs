@@ -27,6 +27,12 @@ namespace stupid
             this.rotationMatrix = Matrix3S.Rotate(this.rotation);
         }
 
+        public void Rotate(QuaternionS delta)
+        {
+            this.rotation = (delta * rotation).Normalize();
+            UpdateRotationMatrix();
+        }
+
         // Converts world point to local point
         public Vector3S ToLocalPoint(in Vector3S worldPoint) => this.rotationMatrix.Transpose() * (worldPoint - position);
         public Vector3S ToWorldPoint(in Vector3S localPoint) => (rotationMatrix * localPoint) + position;

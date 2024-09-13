@@ -25,12 +25,6 @@ namespace stupid.Colliders
             var worldPoint = a.collidable.transform.ToWorldPoint(localPoint);
             var worldNormal = a.collidable.transform.TransformDirection(localNormal);
 
-            /*
-            var pointA = a.collidable.transform.position + worldNormal * a.radius;
-            var pointB = b.collidable.transform.position + -worldNormal * b.radius;
-            var worldPoint = (pointA + pointB) * f32.half;
-            */
-
             contacts[0] = new ContactS(worldPoint, worldNormal, penetrationDepth, a.collidable, b.collidable, 0);
             return 1;
         }
@@ -47,31 +41,79 @@ namespace stupid.Colliders
             var localSpherePos = boxTrans.ToLocalPoint(sphereTrans.position);
             var halfSize = box.halfSize;
 
-            // Find the closest point on the box to the sphere center
-            var pointOnBox = new Vector3S(
-                MathS.Clamp(localSpherePos.x, -halfSize.x, halfSize.x),
-                MathS.Clamp(localSpherePos.y, -halfSize.y, halfSize.y),
-                MathS.Clamp(localSpherePos.z, -halfSize.z, halfSize.z)
-            );
+            // Check if the sphere's center is inside the box
+            if (MathS.Abs(localSpherePos.x) <= halfSize.x &&
+                MathS.Abs(localSpherePos.y) <= halfSize.y &&
+                MathS.Abs(localSpherePos.z) <= halfSize.z)
+            {
+                // Find the nearest face of the box in each dimension
+                var dx = halfSize.x - MathS.Abs(localSpherePos.x);
+                var dy = halfSize.y - MathS.Abs(localSpherePos.y);
+                var dz = halfSize.z - MathS.Abs(localSpherePos.z);
 
-            // Calculate the vector from the closest point to the sphere center
-            var localNormal = (localSpherePos - pointOnBox).NormalizeWithMagnitude(out var distance);
+                // Determine the minimum penetration axis
+                var minPenetration = MathS.Min(dx, MathS.Min(dy, dz));
 
-            // Early exit if there's no intersection
-            if (distance > sphere.radius)
-                return 0;
+                Vector3S worldNormal;
 
-            // Transform the closest point and normal back to world space
-            var worldPoint = boxTrans.ToWorldPoint(pointOnBox);
-            var worldNormal = boxTrans.TransformDirection(localNormal);
-            var penetrationDepth = sphere.radius - distance;
+                var right = box.axes[0];
+                var up = box.axes[1];
+                var forward = box.axes[2];
 
-            // Ensure the normal follows the convention: Point on A, NORMAL TOWARDS B
-            if (flip) worldNormal = -worldNormal;
+                if (minPenetration == dx)
+                {
+                    worldNormal = localSpherePos.x > f32.zero ? right : -right;
+                }
+                else if (minPenetration == dy)
+                {
+                    worldNormal = localSpherePos.y > f32.zero ? up : -up;
+                }
+                else
+                {
+                    worldNormal = localSpherePos.z > f32.zero ? forward : -forward;
+                }
 
-            contact = new ContactS(worldPoint, worldNormal, -penetrationDepth, a, b, 0);
-            return 1;
+                worldNormal.NormalizeInPlace();
+
+                var penetrationDepth = (sphere.radius * worldNormal).Magnitude();
+
+                // Ensure the normal follows the convention: Point on A, NORMAL TOWARDS B
+                if (flip) worldNormal = -worldNormal;
+
+                contact = new ContactS(sphereTrans.position, worldNormal, penetrationDepth, a, b, 0);
+                return 1;
+            }
+            else
+            {
+                // Find the closest point on the box to the sphere center (outside the box)
+                var pointOnBox = new Vector3S(
+                    MathS.Clamp(localSpherePos.x, -halfSize.x, halfSize.x),
+                    MathS.Clamp(localSpherePos.y, -halfSize.y, halfSize.y),
+                    MathS.Clamp(localSpherePos.z, -halfSize.z, halfSize.z)
+                );
+
+                // Calculate the vector from the closest point to the sphere center
+                var localNormal = (localSpherePos - pointOnBox).NormalizeWithMagnitude(out var distance);
+
+                // Early exit if there's no intersection
+                if (distance > sphere.radius)
+                {
+                    return 0;
+                }
+
+                // Transform the closest point and normal back to world space
+                var worldPoint = boxTrans.ToWorldPoint(pointOnBox);
+                var worldNormal = boxTrans.TransformDirection(localNormal);
+                var penetrationDepth = sphere.radius - distance;
+
+                // Ensure the normal follows the convention: Point on A, NORMAL TOWARDS B
+                if (flip) worldNormal = -worldNormal;
+
+                contact = new ContactS(worldPoint, worldNormal, -penetrationDepth, a, b, 0);
+                return 1;
+            }
         }
+
 
 
         public static int BoxVsSphere(in BoxColliderS box, in SphereColliderS sphere, ref ContactS[] contacts)

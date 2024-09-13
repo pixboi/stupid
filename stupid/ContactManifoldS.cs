@@ -89,6 +89,14 @@ namespace stupid.Colliders
             }
         }
 
+        public void SubtickUpdate()
+        {
+            if (contactCount >= 1) c1.SubtickUpdate(ab, b);
+            if (contactCount >= 2) c2.SubtickUpdate(ab, b);
+            if (contactCount >= 3) c3.SubtickUpdate(ab, b);
+            if (contactCount >= 4) c4.SubtickUpdate(ab, b);
+        }
+
         public void Warmup()
         {
             if (contactCount >= 1) c1.WarmStart(ab, b);
@@ -120,6 +128,8 @@ namespace stupid.Colliders
             {
                 throw new System.ArgumentException("No contacts in manifold?");
             }
+
+            //SubtickUpdate();
 
             //Impulses
             if (contactCount >= 1)

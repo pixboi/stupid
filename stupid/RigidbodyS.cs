@@ -60,32 +60,31 @@ namespace stupid
         }
 
 
-        public void IntegrateForces(in f32 deltaTime, in WorldSettings settings)
+        public void IntegrateForces(in f32 dt, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
             if (isKinematic) return;
 
             // Apply gravity to the velocity if gravity is enabled.
-            if (useGravity) velocity += settings.Gravity * deltaTime;
+            if (useGravity) velocity += settings.Gravity * dt;
 
             // Apply accumulated forces to the velocity.
-            if (forceBucket != Vector3S.zero) velocity += (forceBucket / mass) * deltaTime;
+            if (forceBucket != Vector3S.zero) velocity += (forceBucket / mass) * dt;
 
             // Apply linear drag, ensuring it doesn't invert the velocity direction.
-            if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - (drag * deltaTime), f32.zero, f32.one);
+            if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - (drag * dt), f32.zero, f32.one);
 
             // Apply accumulated torques to the angular velocity.
-            if (torqueBucket != Vector3S.zero) angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * deltaTime;
+            if (torqueBucket != Vector3S.zero) angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * dt;
 
             // Apply angular drag, ensuring it doesn't invert the angular velocity direction.
-            if (angularDrag > f32.zero) angularVelocity *= MathS.Clamp(f32.one - angularDrag * deltaTime, f32.zero, f32.one);
-
+            if (angularDrag > f32.zero) angularVelocity *= MathS.Clamp(f32.one - angularDrag * dt, f32.zero, f32.one);
 
             // Clear the accumulated forces and torques after applying them.
             ClearBuckets();
         }
 
-        public void IntegrateVelocity(in f32 deltaTime, in WorldSettings settings)
+        public void IntegrateVelocity(in f32 dt, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
             if (isKinematic) return;
@@ -93,36 +92,35 @@ namespace stupid
             // Update the object's position based on the current velocity.
             if (velocity.sqrMagnitude > f32.zero)
             {
-                if (velocity.Magnitude() > settings.FastMotionThreshold)
-                    velocity = velocity.ClampMagnitude(-settings.FastMotionThreshold, settings.FastMotionThreshold);
-
-                var delta = velocity * deltaTime;
-
-                if (delta.sqrMagnitude > f32.zero)
-                    transform.position += delta;
+                var delta = velocity * dt;
+                transform.deltaPosition += delta;
             }
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
                 angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
-            bool changed = false;
-
-            // Update the object's rotation based on the angular velocity.
+            //This had a mag check
             if (angularVelocity.sqrMagnitude > f32.zero)
             {
-                var halfAngle = angularVelocity * deltaTime * f32.half;
-                if (halfAngle.sqrMagnitude > f32.zero)
-                {
+                var halfAngle = angularVelocity * dt * f32.half;
+               // if (halfAngle.sqrMagnitude > f32.zero)
+               // {
                     var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
                     transform.rotation = (dq * transform.rotation).Normalize();
-                    changed = true;
-                }
+                    transform.UpdateRotationMatrix();
+              //  }
+            }
+        }
 
+        public void FinalizePosition()
+        {
+            if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
+            {
+                this.transform.position += this.transform.deltaPosition;
             }
 
-            if (changed)
-                transform.UpdateRotationMatrix();
+            this.transform.deltaPosition = Vector3S.zero;
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)

@@ -58,15 +58,13 @@ namespace stupid.Colliders
 
         private void UpdateBox()
         {
-            var rotMat = this._collidable.transform.rotationMatrix;
-            var position = this._collidable.transform.position;
-
             // Update vertex positions based on rotation and translation
             for (int i = 0; i < 8; i++)
             {
-                vertices[i] = position + rotMat * localVertices[i];
+                vertices[i] = this._collidable.transform.ToWorldPoint(localVertices[i]);
             }
 
+            var rotMat = this._collidable.transform.rotationMatrix;
             // Update axes (rotated local axes)
             axes[0] = rotMat.GetColumn(0).Normalize();  // Local X axis
             axes[1] = rotMat.GetColumn(1).Normalize();  // Local Y axis
@@ -77,7 +75,6 @@ namespace stupid.Colliders
         public bool ContainsPoint(in Vector3S worldPoint)
         {
             var absLocal = Vector3S.Abs(_collidable.transform.ToLocalPoint(worldPoint));
-
             var fat = f32.small;
 
             return absLocal.x <= halfSize.x + fat &&
@@ -87,6 +84,10 @@ namespace stupid.Colliders
 
         public BoundsS CalculateAABB(in TransformS t)
         {
+
+            // var rotatedHalfSize = Vector3S.Abs(t.TransformDirection(halfSize));
+
+
             Vector3S rotatedHalfSize = new Vector3S(
     MathS.Abs(t.rotationMatrix.m00) * halfSize.x + MathS.Abs(t.rotationMatrix.m01) * halfSize.y + MathS.Abs(t.rotationMatrix.m02) * halfSize.z,
     MathS.Abs(t.rotationMatrix.m10) * halfSize.x + MathS.Abs(t.rotationMatrix.m11) * halfSize.y + MathS.Abs(t.rotationMatrix.m12) * halfSize.z,

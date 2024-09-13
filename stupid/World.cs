@@ -48,7 +48,7 @@ namespace stupid
                 DeltaTime = deltaTime;
                 InverseDeltaTime = f32.one / deltaTime;
                 SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
-                InverseSubDelta = InverseDeltaTime * (f32)WorldSettings.DefaultSolverIterations;
+                InverseSubDelta = f32.one / SubDelta;
             }
 
             //Broadphase
@@ -141,79 +141,96 @@ namespace stupid
             }
         }
 
-        List<ContactManifoldS> _manifolds = new List<ContactManifoldS>(1000);
+        List<ContactManifoldS> _currentManifolds = new List<ContactManifoldS>(1000);
 
-        private void NarrowPhase(HashSet<IntPair> pairs)
+        private void NarrowPhase1(HashSet<IntPair> pairs)
         {
             var dt = SubDelta;
             var inverseDt = InverseSubDelta;
 
-            _manifolds.Clear();
+            _currentManifolds.Clear();
             foreach (var p in pairs)
-                _manifolds.Add(ManifoldMap[p]);
+                _currentManifolds.Add(ManifoldMap[p]);
 
             for (int substep = 0; substep < WorldSettings.DefaultSolverIterations; substep++)
             {
                 foreach (var rb in Bodies)
                     rb.IntegrateForces(dt, WorldSettings);
 
-                if (WorldSettings.Warmup)
-                    foreach (var m in _manifolds) m.Warmup();
-
-                for (int i = 0; i < _manifolds.Count; i++)
+                for (int i = 0; i < _currentManifolds.Count; i++)
                 {
-                    var m = _manifolds[i];
+                    var m = _currentManifolds[i];
+                    m.SubtickUpdate();
+                    _currentManifolds[i] = m;
+                }
+
+                if (WorldSettings.Warmup)
+                    foreach (var m in _currentManifolds) m.Warmup();
+
+                for (int i = 0; i < _currentManifolds.Count; i++)
+                {
+                    var m = _currentManifolds[i];
                     m.Resolve(inverseDt, WorldSettings, true);
-                    _manifolds[i] = m;
+                    _currentManifolds[i] = m;
                 }
 
                 foreach (var rb in Bodies)
                     rb.IntegrateVelocity(dt, WorldSettings);
 
+                for (int i = 0; i < _currentManifolds.Count; i++)
+                {
+                    var m = _currentManifolds[i];
+                    m.SubtickUpdate();
+                    _currentManifolds[i] = m;
+                }
+
                 if (WorldSettings.Relaxation)
                 {
                     for (int relax = 0; relax < WorldSettings.DefaultSolverVelocityIterations; relax++)
                     {
-                        for (int i = 0; i < _manifolds.Count; i++)
+                        for (int i = 0; i < _currentManifolds.Count; i++)
                         {
-                            var m = _manifolds[i];
+                            var m = _currentManifolds[i];
                             m.Resolve(inverseDt, WorldSettings, false);
-                            _manifolds[i] = m;
+                            _currentManifolds[i] = m;
                         }
                     }
                 }
+
             }
 
+            foreach (var rb in Bodies) rb.FinalizePosition();
+
             //Save changes
-            for (int i = 0; i < _manifolds.Count; i++)
+            for (int i = 0; i < _currentManifolds.Count; i++)
             {
-                var m = _manifolds[i];
+                var m = _currentManifolds[i];
                 ManifoldMap[m.ToPair()] = m;
             }
         }
 
-        private void NarrowPhase1(HashSet<IntPair> pairs)
+        private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
 
-            _manifolds.Clear();
+            _currentManifolds.Clear();
             foreach (var p in pairs)
-                _manifolds.Add(ManifoldMap[p]);
+                _currentManifolds.Add(ManifoldMap[p]);
 
             if (WorldSettings.Warmup)
-                foreach (var m in _manifolds) m.Warmup();
+                foreach (var m in _currentManifolds) m.Warmup();
 
             foreach (var rb in Bodies)
                 rb.IntegrateForces(dt, WorldSettings);
 
             for (int iter = 0; iter < WorldSettings.DefaultSolverIterations; iter++)
             {
-                for (int i = 0; i < _manifolds.Count; i++)
+                for (int i = 0; i < _currentManifolds.Count; i++)
                 {
-                    var m = _manifolds[i];
+                    var m = _currentManifolds[i];
                     m.Resolve(inverseDt, WorldSettings, true);
-                    _manifolds[i] = m;
+                    _currentManifolds[i] = m;
                 }
             }
 
@@ -224,19 +241,21 @@ namespace stupid
             {
                 for (int relax = 0; relax < WorldSettings.DefaultSolverIterations; relax++)
                 {
-                    for (int i = 0; i < _manifolds.Count; i++)
+                    for (int i = 0; i < _currentManifolds.Count; i++)
                     {
-                        var m = _manifolds[i];
+                        var m = _currentManifolds[i];
                         m.Resolve(inverseDt, WorldSettings, false);
-                        _manifolds[i] = m;
+                        _currentManifolds[i] = m;
                     }
                 }
             }
 
+            foreach (var rb in Bodies) rb.FinalizePosition();
+
             //Save changes
-            for (int i = 0; i < _manifolds.Count; i++)
+            for (int i = 0; i < _currentManifolds.Count; i++)
             {
-                var m = _manifolds[i];
+                var m = _currentManifolds[i];
                 ManifoldMap[m.ToPair()] = m;
             }
         }

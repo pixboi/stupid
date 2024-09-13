@@ -176,9 +176,6 @@ namespace stupid.Maths
         #region CLAMPING
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3S Clamp(f32 min, f32 max) => Clamp(this, min, max);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S Clamp(in Vector3S v, f32 min, f32 max) => new Vector3S(
             MathS.Clamp(v.x, min, max),
             MathS.Clamp(v.y, min, max),

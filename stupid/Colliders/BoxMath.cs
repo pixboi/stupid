@@ -59,7 +59,6 @@ namespace stupid.Colliders
                     var feature = p.Item2;
                     var pen = minPen;
 
-
                     //Now with fat, this can overflow
                     //if (b.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 

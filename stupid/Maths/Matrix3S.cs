@@ -114,10 +114,10 @@ namespace stupid.Maths
             );
         }
 
-        // Rotation matrix from quaternion
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S Rotate(in QuaternionS q)
         {
+            // Precompute values
             f32 xx = q.x * q.x;
             f32 yy = q.y * q.y;
             f32 zz = q.z * q.z;
@@ -128,12 +128,25 @@ namespace stupid.Maths
             f32 wy = q.w * q.y;
             f32 wz = q.w * q.z;
 
+            f32 two = f32.two;
+            f32 one = f32.one;
+
+            // Compute rotation matrix
             return new Matrix3S(
-                f32.one - f32.two * (yy + zz), f32.two * (xy - wz), f32.two * (xz + wy),
-                f32.two * (xy + wz), f32.one - f32.two * (xx + zz), f32.two * (yz - wx),
-                f32.two * (xz - wy), f32.two * (yz + wx), f32.one - f32.two * (xx + yy)
+                one - two * (yy + zz), two * (xy - wz), two * (xz + wy),
+                two * (xy + wz), one - two * (xx + zz), two * (yz - wx),
+                two * (xz - wy), two * (yz + wx), one - two * (xx + yy)
             );
         }
+
+        public static Matrix3S CreateInertiaMatrix(in Vector3S inertiaVector)
+        {
+            return new Matrix3S
+                (inertiaVector.x, f32.zero, f32.zero,
+                f32.zero, inertiaVector.y, f32.zero,
+                f32.zero, f32.zero, inertiaVector.z);
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S Inverse()
