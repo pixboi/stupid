@@ -124,6 +124,7 @@ namespace stupid
                 this.transform.position += this.transform.deltaPosition;
                 this.transform.deltaPosition = Vector3S.zero;
             }
+
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)

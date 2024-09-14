@@ -5,12 +5,12 @@ using System;
 
 public struct ContactS
 {
-    public readonly Vector3S point, normal, localAnchorA, localAnchorB, ra, rb;
+    public readonly Vector3S point, normal, localAnchorA, localAnchorB;
     public readonly f32 penetrationDepth;
     public readonly byte featureId;
 
     //Runtime
-    public Vector3S tangent, prevTangent;
+    public Vector3S tangent, prevTangent, ra, rb;
     public f32 normalMass, tangentMass, prevTangentMass;
     public f32 accumulatedImpulse, accumulatedFriction;
 
@@ -49,6 +49,12 @@ public struct ContactS
             CalculateMassNormal(ab, bb, out this.normalMass);
             CalculateTangentAndMass(ab, bb, out this.tangent, out this.tangentMass);
         }
+    }
+
+    public void SubtickUpdate(Collidable a, Collidable b)
+    {
+        this.ra = a.transform.TransformDirection(this.localAnchorA);
+        this.rb = b.transform.TransformDirection(this.localAnchorB);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -91,6 +97,7 @@ public struct ContactS
         tangentMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
         if (b != null) tangentMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
         tangentMass = tangentMass > f32.zero ? f32.one / tangentMass : f32.zero;  // Invert the mass to get the effective mass
+
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -118,13 +125,10 @@ public struct ContactS
     {
         //return MathS.Min(f32.zero, this.penetrationDepth + slop);
 
-       //var aPos = a.transientPosition + a.TransformDirection(localAnchorA);
-       // var bPos = b.transientPosition + b.TransformDirection(localAnchorB);
-
-        var ds = b.transientPosition - b.TransformDirection(localAnchorB) - a.transientPosition - a.TransformDirection(localAnchorA);
-
+        var ds = b.transientPosition + this.rb - a.transientPosition - this.ra;
         f32 separation = Vector3S.Dot(ds, this.normal) + this.penetrationDepth;
 
+        //return separation;
         return MathS.Min(f32.zero, separation + slop);
     }
 
@@ -133,9 +137,9 @@ public struct ContactS
     public void SolveImpulse(in RigidbodyS a, in Collidable b, in f32 inverseDt, in WorldSettings settings, bool useBias = true)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
-        var bias = f32.zero;
 
         var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+        var bias = f32.zero;
 
         if (separation > f32.zero)
         {
@@ -143,7 +147,6 @@ public struct ContactS
         }
         else if (useBias)
         {
-           
             bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 

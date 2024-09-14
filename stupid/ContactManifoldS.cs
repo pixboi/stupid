@@ -125,6 +125,15 @@ namespace stupid.Colliders
             if (contactCount >= 4) c4.CalculatePrestep(ab, b);
         }
 
+        public void SubtickUpdate()
+        {
+            if (contactCount >= 1) c1.SubtickUpdate(a, b);
+            if (contactCount >= 2) c2.SubtickUpdate(a, b);
+            if (contactCount >= 3) c3.SubtickUpdate(a, b);
+            if (contactCount >= 4) c4.SubtickUpdate(a, b);
+        }
+
+
         public void Warmup()
         {
             if (contactCount >= 1) c1.WarmStart(ab, b);

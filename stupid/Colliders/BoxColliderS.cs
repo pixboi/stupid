@@ -84,10 +84,6 @@ namespace stupid.Colliders
 
         public BoundsS CalculateAABB(in TransformS t)
         {
-
-            // var rotatedHalfSize = Vector3S.Abs(t.TransformDirection(halfSize));
-
-
             Vector3S rotatedHalfSize = new Vector3S(
     MathS.Abs(t.rotationMatrix.m00) * halfSize.x + MathS.Abs(t.rotationMatrix.m01) * halfSize.y + MathS.Abs(t.rotationMatrix.m02) * halfSize.z,
     MathS.Abs(t.rotationMatrix.m10) * halfSize.x + MathS.Abs(t.rotationMatrix.m11) * halfSize.y + MathS.Abs(t.rotationMatrix.m12) * halfSize.z,

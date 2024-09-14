@@ -159,15 +159,15 @@ namespace stupid
 
             for (int substep = 0; substep < WorldSettings.DefaultSolverIterations; substep++)
             {
-                foreach (var rb in Bodies)
-                    rb.IntegrateForces(dt, WorldSettings);
-
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
                     var m = _currentManifolds[i];
-                    // m.SubtickUpdate();
+                    m.SubtickUpdate();
                     _currentManifolds[i] = m;
                 }
+
+                foreach (var rb in Bodies)
+                    rb.IntegrateForces(dt, WorldSettings);
 
                 if (WorldSettings.Warmup)
                     foreach (var m in _currentManifolds) m.Warmup();
@@ -182,13 +182,6 @@ namespace stupid
                 foreach (var rb in Bodies)
                     rb.IntegrateVelocity(dt, WorldSettings);
 
-                for (int i = 0; i < _currentManifolds.Count; i++)
-                {
-                    var m = _currentManifolds[i];
-                    //m.SubtickUpdate();
-                    _currentManifolds[i] = m;
-                }
-
                 if (WorldSettings.Relaxation)
                 {
                     for (int relax = 0; relax < WorldSettings.DefaultSolverVelocityIterations; relax++)
@@ -201,6 +194,7 @@ namespace stupid
                         }
                     }
                 }
+
 
             }
 
