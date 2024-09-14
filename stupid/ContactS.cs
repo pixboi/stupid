@@ -9,7 +9,7 @@ public struct ContactS
     public readonly f32 normalMass, tangentMass, penetrationDepth;
     public readonly byte featureId;
 
-    public Vector3S ra, rb;
+    public readonly Vector3S ra, rb;
     public f32 accumulatedImpulse, accumulatedFriction;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -36,18 +36,15 @@ public struct ContactS
         this.accumulatedFriction = f32.zero;
         this.accumulatedImpulse = f32.zero;
 
-        if (a.isDynamic || b.isDynamic)
-        {
-            var ab = (RigidbodyS)a;
-            var bb = b.isDynamic ? (RigidbodyS)b : null;
+        var ab = (RigidbodyS)a;
+        var bb = b.isDynamic ? (RigidbodyS)b : null;
+        CalculateMassNormal(ab, bb, out this.normalMass);
+        CalculateTangentAndMass(ab, bb, out this.tangent, out this.tangentMass);
 
-            this.normalMass = CalculateMassNormal(ab, bb);
-            CalculateTangentAndMass(ab, bb, out this.tangent, out this.tangentMass);
-        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    f32 CalculateMassNormal(RigidbodyS ab, RigidbodyS bb)
+    void CalculateMassNormal(RigidbodyS ab, RigidbodyS bb, out f32 normalMass)
     {
         f32 invMassA = ab.inverseMass;
         f32 invMassB = bb != null ? bb.inverseMass : f32.zero;
@@ -65,7 +62,7 @@ public struct ContactS
             effectiveMass += angularMassB;
         }
 
-        return effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
+        normalMass = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -88,8 +85,8 @@ public struct ContactS
 
     public void SubtickUpdate(in Collidable a, in Collidable b)
     {
-        this.ra = a.transform.TransformDirection(this.localAnchorA);
-        if (b.isDynamic) this.rb = b.transform.TransformDirection(this.localAnchorB);
+        //  this.ra = a.transform.TransformDirection(this.localAnchorA);
+        // if (b.isDynamic) this.rb = b.transform.TransformDirection(this.localAnchorB);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
