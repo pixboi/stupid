@@ -76,9 +76,9 @@ namespace stupid.Colliders
         ///Its good to account for some change, we can handle a bit of noise for more accurate things
         public void PrepareWarmup(in ContactManifoldS old)
         {
-            if (old.contactCount != this.contactCount) return;
+            //if (old.contactCount != this.contactCount) return;
 
-            /*
+            
             for (int i = 0; i < contactCount; i++)
             {
                 var c = GetContact(i);
@@ -95,7 +95,7 @@ namespace stupid.Colliders
             }
 
             return;
-            */
+            
 
             TransferOldImpulse(ref c1, old.c1);
             TransferOldImpulse(ref c2, old.c2);
