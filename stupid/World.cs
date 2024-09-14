@@ -148,7 +148,7 @@ namespace stupid
 
         List<ContactManifoldS> _currentManifolds = new List<ContactManifoldS>(1000);
 
-        private void NarrowPhase1(HashSet<IntPair> pairs)
+        private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = SubDelta;
             var inverseDt = InverseSubDelta;
@@ -214,7 +214,7 @@ namespace stupid
             }
         }
 
-        private void NarrowPhase(HashSet<IntPair> pairs)
+        private void NarrowPhase1(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
@@ -223,7 +223,7 @@ namespace stupid
             foreach (var p in pairs)
                 _currentManifolds.Add(ManifoldMap[p]);
 
-            //_currentManifolds = _currentManifolds.OrderByDescending(x => x.c1.penetrationDepth).ToList();
+            // _currentManifolds = _currentManifolds.OrderByDescending(x => x.c1.penetrationDepth).ToList();
 
             if (WorldSettings.Warmup)
                 foreach (var m in _currentManifolds) m.Warmup();

@@ -95,7 +95,7 @@ namespace stupid
             if (velocity.sqrMagnitude > f32.zero)
             {
                 var delta = velocity * dt;
-              //  if (delta.sqrMagnitude > f32.zero)
+                if (delta.sqrMagnitude > f32.zero)
                     transform.deltaPosition += delta;
             }
 
