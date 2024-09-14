@@ -28,8 +28,8 @@ public struct ContactS
         //We dont need to transform the initial
         this.localAnchorA = a.transform.ToLocalPoint(this.point);
         this.localAnchorB = b.transform.ToLocalPoint(this.point);
-        this.ra = this.point - a.transform.position;
-        this.rb = this.point - b.transform.position;
+        this.ra = a.transform.TransformDirection(this.localAnchorA);
+        this.rb = b.transform.TransformDirection(this.localAnchorB);
 
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
@@ -135,13 +135,15 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
         var bias = f32.zero;
 
-        if (this.penetrationDepth > f32.zero)
+        var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+
+        if (separation > f32.zero)
         {
-            bias = this.penetrationDepth * inverseDt;
+            bias = separation * inverseDt;
         }
         else if (useBias)
         {
-            var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+           
             bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 

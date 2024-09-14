@@ -122,9 +122,8 @@ namespace stupid
             if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
             {
                 this.transform.position += this.transform.deltaPosition;
+                this.transform.deltaPosition = Vector3S.zero;
             }
-
-            this.transform.deltaPosition = Vector3S.zero;
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
