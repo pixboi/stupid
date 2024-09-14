@@ -79,7 +79,7 @@ public struct ContactS
 
         if (tangentialVelocity.sqrMagnitude < f32.epsilon)
         {
-            tangent = prevTangent;
+            tangent = prevTangent.Normalize();
         }
         else
         {

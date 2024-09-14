@@ -84,6 +84,8 @@ namespace stupid
             ClearBuckets();
         }
 
+
+        const bool CLAMP_SMALL = false;
         public void IntegrateVelocity(in f32 dt, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
@@ -93,8 +95,7 @@ namespace stupid
             if (velocity.sqrMagnitude > f32.zero)
             {
                 var delta = velocity * dt;
-
-                if (delta.sqrMagnitude > f32.zero)
+              //  if (delta.sqrMagnitude > f32.zero)
                     transform.deltaPosition += delta;
             }
 
