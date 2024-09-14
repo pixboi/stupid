@@ -5,11 +5,13 @@ using System;
 
 public struct ContactS
 {
-    public readonly Vector3S point, normal, tangent, localAnchorA, localAnchorB;
-    public readonly f32 normalMass, tangentMass, penetrationDepth;
+    public readonly Vector3S point, normal, localAnchorA, localAnchorB, ra, rb;
+    public readonly f32 penetrationDepth;
     public readonly byte featureId;
 
-    public readonly Vector3S ra, rb;
+    //Runtime
+    public Vector3S tangent, prevTangent;
+    public f32 normalMass, tangentMass;
     public f32 accumulatedImpulse, accumulatedFriction;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -22,44 +24,44 @@ public struct ContactS
         this.featureId = featureId;
 
         //This needs to be rechecked, we must compute this dir as a local dir
-        this.localAnchorA = a.transform.ToLocalPoint(this.point);
-        this.localAnchorB = b.transform.ToLocalPoint(this.point);
-
         //Then we transform rb and ra every iteratation into world directions!
         //We dont need to transform the initial
+        this.localAnchorA = a.transform.ToLocalPoint(this.point);
+        this.localAnchorB = b.transform.ToLocalPoint(this.point);
         this.ra = this.point - a.transform.position;
         this.rb = this.point - b.transform.position;
 
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
+        this.prevTangent = Vector3S.zero;
         this.tangentMass = f32.zero;
         this.accumulatedFriction = f32.zero;
         this.accumulatedImpulse = f32.zero;
+    }
 
-        var ab = (RigidbodyS)a;
-        var bb = b.isDynamic ? (RigidbodyS)b : null;
-        CalculateMassNormal(ab, bb, out this.normalMass);
-        CalculateTangentAndMass(ab, bb, out this.tangent, out this.tangentMass);
-
+    public void CalculatePrestep(Collidable a, Collidable b)
+    {
+        if (a.isDynamic || b.isDynamic)
+        {
+            var ab = (RigidbodyS)a;
+            var bb = b.isDynamic ? (RigidbodyS)b : null;
+            CalculateMassNormal(ab, bb, out this.normalMass);
+            CalculateTangentAndMass(ab, bb, out this.tangent, out this.tangentMass);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void CalculateMassNormal(RigidbodyS ab, RigidbodyS bb, out f32 normalMass)
     {
-        f32 invMassA = ab.inverseMass;
-        f32 invMassB = bb != null ? bb.inverseMass : f32.zero;
-
-        f32 effectiveMass = invMassA + invMassB;
-
         Vector3S raCrossNormal = Vector3S.Cross(this.ra, this.normal);
         f32 angularMassA = Vector3S.Dot(raCrossNormal, ab.tensor.inertiaWorld * raCrossNormal);
-        effectiveMass += angularMassA;
+        f32 effectiveMass = ab.inverseMass + angularMassA;
 
         if (bb != null)
         {
             Vector3S rbCrossNormal = Vector3S.Cross(this.rb, this.normal);
             f32 angularMassB = Vector3S.Dot(rbCrossNormal, bb.tensor.inertiaWorld * rbCrossNormal);
-            effectiveMass += angularMassB;
+            effectiveMass += bb.inverseMass + angularMassB;
         }
 
         normalMass = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
@@ -74,19 +76,21 @@ public struct ContactS
         // Project the contact velocity onto the plane perpendicular to the normal (get the tangential velocity)
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-        tangent = tangentialVelocity.Normalize();
+
+        if (tangentialVelocity.sqrMagnitude < f32.epsilon)
+        {
+            tangent = prevTangent;
+        }
+        else
+        {
+            tangent = tangentialVelocity.Normalize();
+        }
 
         // Calculate effective mass along the first tangent (t1)
         tangentMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
         if (b != null) tangentMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
 
         tangentMass = tangentMass > f32.zero ? f32.one / tangentMass : f32.zero;  // Invert the mass to get the effective mass
-    }
-
-    public void SubtickUpdate(in Collidable a, in Collidable b)
-    {
-        //  this.ra = a.transform.TransformDirection(this.localAnchorA);
-        // if (b.isDynamic) this.rb = b.transform.TransformDirection(this.localAnchorB);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

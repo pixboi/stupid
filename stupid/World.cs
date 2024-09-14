@@ -106,9 +106,13 @@ namespace stupid
                     {
                         if (ManifoldMap.TryGetValue(pair, out var oldM))
                         {
+                            //This retains data
                             manifold.PrepareWarmup(oldM);
                         }
                     }
+
+                    //Then we calc the mass
+                    manifold.CalculatePrestep();
 
                     ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);
@@ -160,7 +164,7 @@ namespace stupid
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
                     var m = _currentManifolds[i];
-                    m.SubtickUpdate();
+                    // m.SubtickUpdate();
                     _currentManifolds[i] = m;
                 }
 
@@ -180,7 +184,7 @@ namespace stupid
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
                     var m = _currentManifolds[i];
-                    m.SubtickUpdate();
+                    //m.SubtickUpdate();
                     _currentManifolds[i] = m;
                 }
 
