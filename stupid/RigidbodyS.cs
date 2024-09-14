@@ -91,13 +91,8 @@ namespace stupid
             // Exit early if the object is kinematic, as no integration is needed.
             if (isKinematic) return;
 
-            // Update the object's position based on the current velocity.
-            if (velocity.sqrMagnitude > f32.zero)
-            {
-                var delta = velocity * dt;
-                //if (delta.sqrMagnitude > f32.zero)
-                    transform.deltaPosition += delta;
-            }
+            var delta = velocity * dt;
+            transform.deltaPosition += delta;
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
@@ -111,16 +106,13 @@ namespace stupid
                 transform.rotation = (dq * transform.rotation).Normalize();
                 transform.UpdateRotationMatrix();
             }
+
         }
 
         public void FinalizePosition()
         {
-            if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
-            {
-                this.transform.position += this.transform.deltaPosition;
-                this.transform.deltaPosition = Vector3S.zero;
-            }
-
+            this.transform.position += this.transform.deltaPosition;
+            this.transform.deltaPosition = Vector3S.zero;
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
