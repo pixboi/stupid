@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using stupid.Colliders;
 using stupid.Maths;
 
@@ -221,6 +222,8 @@ namespace stupid
             _currentManifolds.Clear();
             foreach (var p in pairs)
                 _currentManifolds.Add(ManifoldMap[p]);
+
+            //_currentManifolds = _currentManifolds.OrderByDescending(x => x.c1.penetrationDepth).ToList();
 
             if (WorldSettings.Warmup)
                 foreach (var m in _currentManifolds) m.Warmup();

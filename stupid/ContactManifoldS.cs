@@ -74,20 +74,44 @@ namespace stupid.Colliders
 
         public void PrepareWarmup(in ContactManifoldS old)
         {
+            //if (old.contactCount != this.contactCount) return;
+            
+            /*
+            for (int i = 0; i < contactCount; i++)
+            {
+                var c = GetContact(i);
+                for (int j = 0; j < old.contactCount; j++)
+                {
+                    var o = old.GetContact(j);
+                    var ok = TransferOldImpulse(ref c, o);
+
+                    if (ok)
+                    {
+                        SetContact(i, c);
+                    }
+                }
+            }
+
+            return;
+            */
             TransferOldImpulse(ref c1, old.c1);
             TransferOldImpulse(ref c2, old.c2);
             TransferOldImpulse(ref c3, old.c3);
             TransferOldImpulse(ref c4, old.c4);
         }
 
-        void TransferOldImpulse(ref ContactS c, in ContactS old)
+        bool TransferOldImpulse(ref ContactS c, in ContactS old)
         {
             if (c.featureId == old.featureId)
             {
                 c.accumulatedImpulse = old.accumulatedImpulse;
                 c.accumulatedFriction = old.accumulatedFriction;
                 c.prevTangent = old.tangent;
+                c.prevTangentMass = old.tangentMass;
+                return true;
             }
+
+            return false;
         }
 
         public void CalculatePrestep()

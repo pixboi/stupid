@@ -75,7 +75,7 @@ namespace stupid.Colliders
         public bool ContainsPoint(in Vector3S worldPoint)
         {
             var absLocal = Vector3S.Abs(_collidable.transform.ToLocalPoint(worldPoint));
-            var fat = f32.small;
+            var fat = f32.epsilon;
 
             return absLocal.x <= halfSize.x + fat &&
                    absLocal.y <= halfSize.y + fat &&

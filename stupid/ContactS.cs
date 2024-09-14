@@ -11,7 +11,7 @@ public struct ContactS
 
     //Runtime
     public Vector3S tangent, prevTangent;
-    public f32 normalMass, tangentMass;
+    public f32 normalMass, tangentMass, prevTangentMass;
     public f32 accumulatedImpulse, accumulatedFriction;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -34,6 +34,7 @@ public struct ContactS
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
         this.prevTangent = Vector3S.zero;
+        this.prevTangentMass = f32.zero;
         this.tangentMass = f32.zero;
         this.accumulatedFriction = f32.zero;
         this.accumulatedImpulse = f32.zero;
@@ -77,9 +78,9 @@ public struct ContactS
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
-        if (tangentialVelocity.sqrMagnitude < f32.epsilon)
+        if (tangentialVelocity.sqrMagnitude <= f32.epsilon)
         {
-            tangent = prevTangent.Normalize();
+            tangent = this.prevTangent;
         }
         else
         {
@@ -89,7 +90,6 @@ public struct ContactS
         // Calculate effective mass along the first tangent (t1)
         tangentMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
         if (b != null) tangentMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
-
         tangentMass = tangentMass > f32.zero ? f32.one / tangentMass : f32.zero;  // Invert the mass to get the effective mass
     }
 
