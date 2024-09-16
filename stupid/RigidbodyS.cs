@@ -100,23 +100,21 @@ namespace stupid
 
             var angle = angularVelocity * dt;
 
-            if (angle.sqrMagnitude > f32.zero)
-            {
-                var axis = angle.NormalizeWithMagnitude(out var mag);
 
-                var dq = QuaternionS.FromAxisAngle(axis, mag);
-                transform.rotation = (dq * transform.rotation).Normalize();
+            var axis = angle.NormalizeWithMagnitude(out var mag);
 
-                transform.UpdateRotationMatrix();
-                this.tensor.UpdateInertiaTensor(this.transform);
-            }
+            var dq = QuaternionS.FromAxisAngle(axis, mag);
+            transform.rotation = (dq * transform.rotation).Normalize();
+
+            transform.UpdateRotationMatrix();
+            this.tensor.UpdateInertiaTensor(this.transform);
+
         }
 
         public void FinalizePosition()
         {
-            if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
-                this.transform.position += this.transform.deltaPosition;
-
+            //if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
+            this.transform.position += this.transform.deltaPosition;
             this.transform.deltaPosition.Reset();
         }
 

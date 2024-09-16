@@ -86,7 +86,6 @@ public struct ContactS
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
-
         if (tangentialVelocity.sqrMagnitude <= f32.small)
         {
             tangent = this.prevTangent;

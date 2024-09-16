@@ -195,6 +195,34 @@ namespace stupid
             }
         }
 
+        // In-place rotation method
+        private void RotateListInPlace(List<ContactManifoldS> list, int offset)
+        {
+            int n = list.Count;
+
+            // Reverse the first part (0 to offset-1)
+            ReverseList(list, 0, offset - 1);
+
+            // Reverse the second part (offset to n-1)
+            ReverseList(list, offset, n - 1);
+
+            // Reverse the whole list (0 to n-1)
+            ReverseList(list, 0, n - 1);
+        }
+
+        // Helper method to reverse a portion of the list in place
+        private void ReverseList(List<ContactManifoldS> list, int start, int end)
+        {
+            while (start < end)
+            {
+                var temp = list[start];
+                list[start] = list[end];
+                list[end] = temp;
+                start++;
+                end--;
+            }
+        }
+
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
@@ -203,23 +231,24 @@ namespace stupid
             _currentManifolds.Clear();
             foreach (var p in pairs)
                 _currentManifolds.Add(ManifoldMap[p]);
-
+            /*
             _currentManifolds = _currentManifolds
               .OrderByDescending(x => x.one.penetrationDepth)
               .ThenBy(x => x.a.index) // Assuming each manifold has a unique ID
               .ToList();
+            */
 
             //Add a the current .SimulationFrame as an offset to the list, like rotate it with that, should be kind of deterministic?
             // Rotate the _currentManifolds list based on the current simulation frame
-            /*
+
             int frameOffset = SimulationFrame % _currentManifolds.Count;
             if (frameOffset > 0)
             {
-                var rotatedList = new List<ContactManifoldS>(_currentManifolds.Count);
-                rotatedList.AddRange(_currentManifolds.Skip(frameOffset).Concat(_currentManifolds.Take(frameOffset)));
-                _currentManifolds = rotatedList;
+                // Perform in-place rotation
+                RotateListInPlace(_currentManifolds, frameOffset);
             }
-            */
+
+
 
 
             if (WorldSettings.Warmup)
