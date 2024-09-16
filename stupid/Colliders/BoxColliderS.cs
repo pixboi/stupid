@@ -95,11 +95,11 @@ namespace stupid.Colliders
         public bool ContainsPoint(in Vector3S worldPoint)
         {
             var absLocal = Vector3S.Abs(_collidable.transform.ToLocalPoint(worldPoint));
-            var fat = f32.epsilon;
+            var fat = f32.small;
 
-            return absLocal.x <= halfSize.x &&
-                   absLocal.y <= halfSize.y &&
-                   absLocal.z <= halfSize.z;
+            return absLocal.x <= halfSize.x + fat &&
+                   absLocal.y <= halfSize.y + fat &&
+                   absLocal.z <= halfSize.z + fat;
         }
 
         public BoundsS CalculateAABB(in TransformS t)

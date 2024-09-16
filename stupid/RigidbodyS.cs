@@ -100,14 +100,13 @@ namespace stupid
 
             var halfAngle = angularVelocity * dt * f32.half;
 
-            if (halfAngle.sqrMagnitude > f32.zero)
-            {
-                var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
-                transform.rotation = (dq * transform.rotation).Normalize();
 
-                transform.UpdateRotationMatrix();
-                this.tensor.UpdateInertiaTensor(this.transform);
-            }
+            var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
+            transform.rotation = (dq * transform.rotation).Normalize();
+
+            transform.UpdateRotationMatrix();
+            this.tensor.UpdateInertiaTensor(this.transform);
+
         }
 
         public void FinalizePosition()

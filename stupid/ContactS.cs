@@ -40,6 +40,7 @@ public struct ContactS
         this.accumulatedImpulse = f32.zero;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void CalculatePrestep(Collidable a, Collidable b)
     {
         if (a.isDynamic || b.isDynamic)
@@ -51,6 +52,7 @@ public struct ContactS
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SubtickUpdate(Collidable a, Collidable b)
     {
         this.ra = a.transform.TransformDirection(this.localAnchorA);
@@ -75,7 +77,6 @@ public struct ContactS
 
         normalMass = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
     }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S tangent, out f32 tangentMass)
     {
@@ -86,22 +87,36 @@ public struct ContactS
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
-        // tangent = tangentialVelocity.Normalize();
+        // Precompute tangential velocity magnitude and small threshold comparison
+        var tangentialVelocitySqMag = tangentialVelocity.sqrMagnitude;
+        bool usePrevTangent = tangentialVelocitySqMag < f32.small && this.prevTangent != Vector3S.zero;
 
-        if (tangentialVelocity.sqrMagnitude < f32.small)
+        if (usePrevTangent)
         {
-            tangent = this.prevTangent;
+            // Blend factor between previous tangent and current tangential velocity
+            f32 blendFactor = tangentialVelocitySqMag / (tangentialVelocitySqMag + f32.small);
+
+            // Use a linear interpolation between the previous tangent and the normalized tangential velocity
+            tangent = Vector3S.Lerp(this.prevTangent, tangentialVelocity.Normalize(), blendFactor);
         }
         else
         {
             tangent = tangentialVelocity.Normalize();
         }
 
-        // Calculate effective mass along the first tangent (t1)
-        tangentMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
-        if (b != null) tangentMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
-        tangentMass = tangentMass > f32.zero ? f32.one / tangentMass : f32.zero;  // Invert the mass to get the effective mass
+        // Precompute cross products for mass calculation
+        var raCrossTangent = Vector3S.Cross(this.ra, tangent);
+        tangentMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * raCrossTangent, this.ra), tangent);
+
+        if (b != null)
+        {
+            var rbCrossTangent = Vector3S.Cross(this.rb, tangent);
+            tangentMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * rbCrossTangent, this.rb), tangent);
+        }
+
+        tangentMass = tangentMass > f32.zero ? f32.one / tangentMass : f32.zero;
     }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WarmStart(in RigidbodyS a, in Collidable b)
@@ -175,7 +190,7 @@ public struct ContactS
         var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
 
         f32 bias = f32.zero;
-        if (useBias) bias = settings.Baumgartner * separation * inverseDt;
+        //if (useBias) bias = settings.Baumgartner * separation * inverseDt;
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent);
         var incrementalFriction = -this.tangentMass * (vt + bias);

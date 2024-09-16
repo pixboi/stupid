@@ -5,6 +5,21 @@ namespace stupid.Maths
 {
     public partial struct Vector3S : IEquatable<Vector3S>
     {
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3S Lerp(in Vector3S a, in Vector3S b, f32 t)
+        {
+            // Clamp the interpolation factor to the range [0, 1]
+            t = MathS.Clamp(t, f32.zero, f32.one);
+
+            // Perform linear interpolation
+            return new Vector3S(
+                a.x + (b.x - a.x) * t,
+                a.y + (b.y - a.y) * t,
+                a.z + (b.z - a.z) * t
+            );
+        }
+
         #region MAGNITUDE
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

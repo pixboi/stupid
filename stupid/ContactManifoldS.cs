@@ -93,8 +93,6 @@ namespace stupid.Colliders
         ///Its good to account for some change, we can handle a bit of noise for more accurate things
         public void RetainData(in ContactManifoldS old)
         {
-            //if (contactCount != old.contactCount) return;
-
             for (int i = 0; i < contactCount; i++)
             {
                 var c = GetContact(i);
@@ -103,10 +101,7 @@ namespace stupid.Colliders
                     var o = old.GetContact(j);
                     var ok = Transfer(ref c, o);
 
-                    if (ok)
-                    {
-                        SetContact(i, c);
-                    }
+                    if (ok) SetContact(i, c);
                 }
             }
         }
@@ -164,19 +159,19 @@ namespace stupid.Colliders
                 throw new System.ArgumentException("No contacts in manifold?");
             }
 
-            f32 accumSum = f32.zero;
+            f32 sumAccumulatedImpulses = f32.zero;
             for (int i = 0; i < this.contactCount; i++)
             {
                 var contact = GetContact(i);
                 contact.SolveImpulse(ab, b, inverseDt, settings, bias);
-                accumSum += contact.accumulatedImpulse;
+                sumAccumulatedImpulses += contact.accumulatedImpulse;
                 SetContact(i, contact);
             }
 
             for (int i = 0; i < this.contactCount; i++)
             {
                 var contact = GetContact(i);
-                contact.SolveFriction(ab, b, inverseDt, friction, settings, accumSum, bias);
+                contact.SolveFriction(ab, b, inverseDt, friction, settings, sumAccumulatedImpulses, bias);
                 SetContact(i, contact);
             }
 
