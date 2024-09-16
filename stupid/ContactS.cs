@@ -86,9 +86,11 @@ public struct ContactS
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
+
+        // Normalize the tangential velocity
         if (tangentialVelocity.sqrMagnitude <= f32.small)
         {
-            tangent = this.prevTangent;
+            tangent = this.prevTangent;  // Retain previous tangent if the new tangent is aligned with the normal or too small
         }
         else
         {
@@ -124,7 +126,7 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        //return MathS.Min(f32.zero, this.penetrationDepth + slop);
+        return MathS.Min(f32.zero, this.penetrationDepth + slop);
 
         var ds = b.transientPosition + this.rb - a.transientPosition - this.ra;
         f32 separation = Vector3S.Dot(ds, this.normal) + this.penetrationDepth;

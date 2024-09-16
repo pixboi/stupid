@@ -239,17 +239,12 @@ namespace stupid
             */
 
             //Add a the current .SimulationFrame as an offset to the list, like rotate it with that, should be kind of deterministic?
-            // Rotate the _currentManifolds list based on the current simulation frame
-
             int frameOffset = SimulationFrame % _currentManifolds.Count;
             if (frameOffset > 0)
             {
                 // Perform in-place rotation
                 RotateListInPlace(_currentManifolds, frameOffset);
             }
-
-
-
 
             if (WorldSettings.Warmup)
                 foreach (var m in _currentManifolds) m.Warmup();

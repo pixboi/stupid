@@ -98,22 +98,22 @@ namespace stupid
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
                 angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
-            var angle = angularVelocity * dt;
+            var halfAngle = angularVelocity * dt * f32.half;
 
+            if (halfAngle.sqrMagnitude > f32.zero)
+            {
+                var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
+                transform.rotation = (dq * transform.rotation).Normalize();
 
-            var axis = angle.NormalizeWithMagnitude(out var mag);
-
-            var dq = QuaternionS.FromAxisAngle(axis, mag);
-            transform.rotation = (dq * transform.rotation).Normalize();
-
-            transform.UpdateRotationMatrix();
-            this.tensor.UpdateInertiaTensor(this.transform);
-
+                transform.UpdateRotationMatrix();
+                this.tensor.UpdateInertiaTensor(this.transform);
+            }
         }
 
         public void FinalizePosition()
         {
             //if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
+
             this.transform.position += this.transform.deltaPosition;
             this.transform.deltaPosition.Reset();
         }

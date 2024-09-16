@@ -11,7 +11,7 @@ namespace stupid
             this.dynamicFriction = dynamicFriction;
             this.restitution = bounciness;
         }
-        public static readonly PhysicsMaterialS DEFAULT_MATERIAL1 = new PhysicsMaterialS(f32.two, f32.two, f32.zero);
-        public static readonly PhysicsMaterialS DEFAULT_MATERIAL = new PhysicsMaterialS((f32)0.6, (f32)0.6, f32.zero);
+        public static readonly PhysicsMaterialS DEFAULT_MATERIAL = new PhysicsMaterialS(f32.one, f32.one, f32.zero);
+        public static readonly PhysicsMaterialS DEFAULT_MATERIAL1 = new PhysicsMaterialS((f32)0.6, (f32)0.6, f32.zero);
     }
 }
