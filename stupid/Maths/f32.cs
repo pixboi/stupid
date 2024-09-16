@@ -6,7 +6,7 @@ namespace stupid.Maths
     public struct f32 : IEquatable<f32>, IComparable<f32>
     {
         public long rawValue;
-        public const int FractionalBits = 24;
+        public const byte FractionalBits = 24;
         public const long One = 1L << FractionalBits;
         public const long Two = 2L << FractionalBits;
 

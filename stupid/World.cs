@@ -14,7 +14,7 @@ namespace stupid
         public DumbList<Collidable> Collidables { get; private set; }
 
         List<RigidbodyS> Bodies = new List<RigidbodyS>();
-        public uint SimulationFrame { get; private set; }
+        public int SimulationFrame { get; private set; }
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
 
@@ -77,7 +77,7 @@ namespace stupid
 
                 c.CalculateBounds();
 
-                if (c is RigidbodyS rb) rb.tensor.CalculateInverseInertiaTensor(c.transform);
+                if (c is RigidbodyS rb) rb.tensor.UpdateInertiaTensor(c.transform);
             }
         }
 
@@ -108,7 +108,7 @@ namespace stupid
                         if (ManifoldMap.TryGetValue(pair, out var oldM))
                         {
                             //This retains data
-                            manifold.PrepareWarmup(oldM);
+                            manifold.RetainData(oldM);
                         }
                     }
 
@@ -132,23 +132,11 @@ namespace stupid
                 ManifoldMap.Remove(key);
                 pairs.Remove(key);
             }
-
-        }
-
-        public void Warmup(HashSet<IntPair> pairs)
-        {
-            if (WorldSettings.Warmup)
-            {
-                foreach (var pair in pairs)
-                {
-                    ManifoldMap[pair].Warmup();
-                }
-            }
         }
 
         List<ContactManifoldS> _currentManifolds = new List<ContactManifoldS>(1000);
 
-        private void NarrowPhase(HashSet<IntPair> pairs)
+        private void NarrowPhase1(HashSet<IntPair> pairs)
         {
             var dt = SubDelta;
             var inverseDt = InverseSubDelta;
@@ -159,13 +147,6 @@ namespace stupid
 
             for (int substep = 0; substep < WorldSettings.DefaultSolverIterations; substep++)
             {
-                for (int i = 0; i < _currentManifolds.Count; i++)
-                {
-                    var m = _currentManifolds[i];
-                    m.SubtickUpdate();
-                    _currentManifolds[i] = m;
-                }
-
                 foreach (var rb in Bodies)
                     rb.IntegrateForces(dt, WorldSettings);
 
@@ -195,6 +176,12 @@ namespace stupid
                     }
                 }
 
+                for (int i = 0; i < _currentManifolds.Count; i++)
+                {
+                    var m = _currentManifolds[i];
+                    m.SubtickUpdate();
+                    _currentManifolds[i] = m;
+                }
 
             }
 
@@ -208,7 +195,7 @@ namespace stupid
             }
         }
 
-        private void NarrowPhase1(HashSet<IntPair> pairs)
+        private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
@@ -217,7 +204,23 @@ namespace stupid
             foreach (var p in pairs)
                 _currentManifolds.Add(ManifoldMap[p]);
 
-            // _currentManifolds = _currentManifolds.OrderByDescending(x => x.c1.penetrationDepth).ToList();
+            _currentManifolds = _currentManifolds
+              .OrderByDescending(x => x.one.penetrationDepth)
+              .ThenBy(x => x.a.index) // Assuming each manifold has a unique ID
+              .ToList();
+
+            //Add a the current .SimulationFrame as an offset to the list, like rotate it with that, should be kind of deterministic?
+            // Rotate the _currentManifolds list based on the current simulation frame
+            /*
+            int frameOffset = SimulationFrame % _currentManifolds.Count;
+            if (frameOffset > 0)
+            {
+                var rotatedList = new List<ContactManifoldS>(_currentManifolds.Count);
+                rotatedList.AddRange(_currentManifolds.Skip(frameOffset).Concat(_currentManifolds.Take(frameOffset)));
+                _currentManifolds = rotatedList;
+            }
+            */
+
 
             if (WorldSettings.Warmup)
                 foreach (var m in _currentManifolds) m.Warmup();

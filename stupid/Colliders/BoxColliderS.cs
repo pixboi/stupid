@@ -4,11 +4,27 @@ namespace stupid.Colliders
 {
     public struct BoxColliderS : IShape
     {
+        // Static array of vertex positions relative to the box center
+        private static readonly Vector3S[] predefinedVertices = new Vector3S[8]
+        {
+        new Vector3S(1, 1, 1),
+        new Vector3S(1, 1, -1),
+        new Vector3S(1, -1, 1),
+        new Vector3S(1, -1, -1),
+        new Vector3S(-1, 1, 1),
+        new Vector3S(-1, 1, -1),
+        new Vector3S(-1, -1, 1),
+        new Vector3S(-1, -1, -1),
+        };
+
         public readonly Vector3S halfSize;
         public Vector3S size => this.halfSize * f32.two;
 
         public readonly Vector3S[] localVertices;
-        public Vector3S[] vertices, axes;
+        public Vector3S[] vertices;
+        public Vector3S rightAxis;
+        public Vector3S upAxis;
+        public Vector3S forwardAxis;
 
         private Collidable _collidable;
         public Collidable collidable => _collidable;
@@ -26,9 +42,6 @@ namespace stupid.Colliders
             // Initialize world vertices array
             this.vertices = new Vector3S[8];
 
-            // Initialize axes array
-            this.axes = new Vector3S[3];
-
             // Initialize other fields
             this._collidable = null;
             this._bounds = new BoundsS();
@@ -42,6 +55,17 @@ namespace stupid.Colliders
             this.localVertices[5] = new Vector3S(-halfSize.x, halfSize.y, -halfSize.z);
             this.localVertices[6] = new Vector3S(-halfSize.x, -halfSize.y, halfSize.z);
             this.localVertices[7] = new Vector3S(-halfSize.x, -halfSize.y, -halfSize.z);
+
+            this.rightAxis = Vector3S.right;
+            this.upAxis = Vector3S.up;
+            this.forwardAxis = Vector3S.forward;
+        }
+
+        void UpdateAxis()
+        {
+            this.rightAxis = this._collidable.transform.rotationMatrix.GetColumn(0).Normalize();
+            this.upAxis = this._collidable.transform.rotationMatrix.GetColumn(1).Normalize();
+            this.forwardAxis = this._collidable.transform.rotationMatrix.GetColumn(2).Normalize();
         }
 
         public void Attach(Collidable body)
@@ -64,11 +88,7 @@ namespace stupid.Colliders
                 vertices[i] = this._collidable.transform.ToWorldPoint(localVertices[i]);
             }
 
-            var rotMat = this._collidable.transform.rotationMatrix;
-            // Update axes (rotated local axes)
-            axes[0] = rotMat.GetColumn(0).Normalize();  // Local X axis
-            axes[1] = rotMat.GetColumn(1).Normalize();  // Local Y axis
-            axes[2] = rotMat.GetColumn(2).Normalize();  // Local Z axis
+            UpdateAxis();
         }
 
 
@@ -77,9 +97,9 @@ namespace stupid.Colliders
             var absLocal = Vector3S.Abs(_collidable.transform.ToLocalPoint(worldPoint));
             var fat = f32.epsilon;
 
-            return absLocal.x <= halfSize.x + fat &&
-                   absLocal.y <= halfSize.y + fat &&
-                   absLocal.z <= halfSize.z + fat;
+            return absLocal.x <= halfSize.x &&
+                   absLocal.y <= halfSize.y &&
+                   absLocal.z <= halfSize.z;
         }
 
         public BoundsS CalculateAABB(in TransformS t)

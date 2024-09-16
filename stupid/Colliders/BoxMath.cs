@@ -17,27 +17,27 @@ namespace stupid.Colliders
 
             // Check for overlaps on the primary axes of both boxes
             //These are normalized on UpdateBox()
-            if (!TryAxis(relativePosition, a.axes[0], a, b, 0, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, a.axes[1], a, b, 1, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, a.axes[2], a, b, 2, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, a.rightAxis, a, b, 0, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, a.upAxis, a, b, 1, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, a.forwardAxis, a, b, 2, ref minPenRaw, ref minAxis, ref best)) return 0;
 
-            if (!TryAxis(relativePosition, b.axes[0], a, b, 3, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, b.axes[1], a, b, 4, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, b.axes[2], a, b, 5, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, b.rightAxis, a, b, 3, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, b.upAxis, a, b, 4, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, b.forwardAxis, a, b, 5, ref minPenRaw, ref minAxis, ref best)) return 0;
 
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[0]).NormalizeInPlace(), a, b, 6, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[1]).NormalizeInPlace(), a, b, 7, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[0], b.axes[2]).NormalizeInPlace(), a, b, 8, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.rightAxis).NormalizeInPlace(), a, b, 6, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.upAxis).NormalizeInPlace(), a, b, 7, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.forwardAxis).NormalizeInPlace(), a, b, 8, ref minPenRaw, ref minAxis, ref best)) return 0;
 
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[0]).NormalizeInPlace(), a, b, 9, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[1]).NormalizeInPlace(), a, b, 10, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[1], b.axes[2]).NormalizeInPlace(), a, b, 11, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.rightAxis).NormalizeInPlace(), a, b, 9, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.upAxis).NormalizeInPlace(), a, b, 10, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.forwardAxis).NormalizeInPlace(), a, b, 11, ref minPenRaw, ref minAxis, ref best)) return 0;
 
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[0]).NormalizeInPlace(), a, b, 12, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[1]).NormalizeInPlace(), a, b, 13, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.axes[2], b.axes[2]).NormalizeInPlace(), a, b, 14, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.rightAxis).NormalizeInPlace(), a, b, 12, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.upAxis).NormalizeInPlace(), a, b, 13, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.forwardAxis).NormalizeInPlace(), a, b, 14, ref minPenRaw, ref minAxis, ref best)) return 0;
 
             if (best == -1)
             {
@@ -135,9 +135,9 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static long ProjectBoxRaw(in Vector3S axis, in BoxColliderS box)
         {
-            long absDot0 = Vector3S.RawAbsDot(axis, box.axes[0]);
-            long absDot1 = Vector3S.RawAbsDot(axis, box.axes[1]);
-            long absDot2 = Vector3S.RawAbsDot(axis, box.axes[2]);
+            long absDot0 = Vector3S.RawAbsDot(axis, box.rightAxis);
+            long absDot1 = Vector3S.RawAbsDot(axis, box.upAxis);
+            long absDot2 = Vector3S.RawAbsDot(axis, box.forwardAxis);
 
             var halfSize = box.halfSize;
 

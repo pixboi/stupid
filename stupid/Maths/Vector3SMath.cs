@@ -182,6 +182,14 @@ namespace stupid.Maths
             MathS.Clamp(v.z, min, max)
         );
 
+        public void ClampEpsilon()
+        {
+            if (this.x <= f32.epsilon) this.x = f32.zero;
+            if (this.y <= f32.epsilon) this.y = f32.zero;
+            if (this.z <= f32.epsilon) this.z = f32.zero;
+        }
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S ClampMagnitude(f32 min, f32 max) => ClampMagnitude(this, min, max);
 

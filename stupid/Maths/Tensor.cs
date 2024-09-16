@@ -13,11 +13,11 @@ namespace stupid.Maths
             // Precompute the inverse of the local inertia tensor
             this.inertiaInverse = inertia.Inverse();
             this.inertiaWorld = Matrix3S.identity; // Initial value, updated in the next step
-            CalculateInverseInertiaTensor(t);
+            UpdateInertiaTensor(t);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculateInverseInertiaTensor(in TransformS t)
+        public void UpdateInertiaTensor(in TransformS t)
         {
             // Use the transform's rotation matrix to calculate the world space inertia tensor
             // Perform R * I (rotation matrix multiplied by local inertia tensor)

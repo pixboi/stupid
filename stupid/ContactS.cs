@@ -55,6 +55,8 @@ public struct ContactS
     {
         this.ra = a.transform.TransformDirection(this.localAnchorA);
         this.rb = b.transform.TransformDirection(this.localAnchorB);
+
+        // CalculatePrestep(a, b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -84,7 +86,8 @@ public struct ContactS
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
-        if (tangentialVelocity.sqrMagnitude <= f32.epsilon)
+
+        if (tangentialVelocity.sqrMagnitude <= f32.small)
         {
             tangent = this.prevTangent;
         }
@@ -97,7 +100,6 @@ public struct ContactS
         tangentMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * Vector3S.Cross(this.ra, tangent), this.ra), tangent);
         if (b != null) tangentMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * Vector3S.Cross(this.rb, tangent), this.rb), tangent);
         tangentMass = tangentMass > f32.zero ? f32.one / tangentMass : f32.zero;  // Invert the mass to get the effective mass
-
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -138,8 +140,8 @@ public struct ContactS
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-        var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
         var bias = f32.zero;
+        var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
 
         if (separation > f32.zero)
         {
@@ -147,6 +149,7 @@ public struct ContactS
         }
         else if (useBias)
         {
+
             bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 

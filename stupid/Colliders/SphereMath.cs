@@ -56,9 +56,9 @@ namespace stupid.Colliders
 
                 Vector3S worldNormal;
 
-                var right = box.axes[0];
-                var up = box.axes[1];
-                var forward = box.axes[2];
+                var right = box.rightAxis;
+                var up = box.upAxis;
+                var forward = box.forwardAxis;
 
                 if (minPenetration == dx)
                 {

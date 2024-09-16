@@ -92,27 +92,37 @@ namespace stupid
             if (isKinematic) return;
 
             var delta = velocity * dt;
-            transform.deltaPosition += delta;
+            if (delta.sqrMagnitude > f32.zero)
+                transform.deltaPosition += delta;
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
                 angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
-            //This had a mag check
-            if (angularVelocity.sqrMagnitude > f32.zero)
-            {
-                var halfAngle = angularVelocity * dt * f32.half;
-                var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
-                transform.rotation = (dq * transform.rotation).Normalize();
-                transform.UpdateRotationMatrix();
-            }
+            var angle = angularVelocity * dt;
 
+            if (angle.sqrMagnitude > f32.zero)
+            {
+                var axis = angle.NormalizeWithMagnitude(out var mag);
+
+                if (mag > f32.zero)
+                {
+                    var dq = QuaternionS.FromAxisAngle(axis, mag);
+                    transform.rotation = (dq * transform.rotation).Normalize();
+
+                    transform.UpdateRotationMatrix();
+                    this.tensor.UpdateInertiaTensor(this.transform);
+                }
+
+            }
         }
 
         public void FinalizePosition()
         {
-            this.transform.position += this.transform.deltaPosition;
-            this.transform.deltaPosition = Vector3S.zero;
+            if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
+                this.transform.position += this.transform.deltaPosition;
+
+            this.transform.deltaPosition.Reset();
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
