@@ -49,7 +49,7 @@ namespace stupid
                 DeltaTime = deltaTime;
                 InverseDeltaTime = f32.one / deltaTime;
                 SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
-                InverseSubDelta = f32.one / SubDelta;
+                InverseSubDelta = InverseDeltaTime * (f32)WorldSettings.DefaultSolverIterations;
             }
 
             //Broadphase
@@ -145,8 +145,18 @@ namespace stupid
             foreach (var p in pairs)
                 _currentManifolds.Add(ManifoldMap[p]);
 
+            //Add a the current .SimulationFrame as an offset to the list, like rotate it with that, should be kind of deterministic?
+            int frameOffset = SimulationFrame % _currentManifolds.Count;
+            if (frameOffset > 0)
+            {
+                // Perform in-place rotation
+                RotateListInPlace(_currentManifolds, frameOffset);
+            }
+
             for (int substep = 0; substep < WorldSettings.DefaultSolverIterations; substep++)
             {
+
+
                 foreach (var rb in Bodies)
                     rb.IntegrateForces(dt, WorldSettings);
 
@@ -163,19 +173,6 @@ namespace stupid
                 foreach (var rb in Bodies)
                     rb.IntegrateVelocity(dt, WorldSettings);
 
-                if (WorldSettings.Relaxation)
-                {
-                    for (int relax = 0; relax < WorldSettings.DefaultSolverVelocityIterations; relax++)
-                    {
-                        for (int i = 0; i < _currentManifolds.Count; i++)
-                        {
-                            var m = _currentManifolds[i];
-                            m.Resolve(inverseDt, WorldSettings, false);
-                            _currentManifolds[i] = m;
-                        }
-                    }
-                }
-
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
                     var m = _currentManifolds[i];
@@ -183,6 +180,15 @@ namespace stupid
                     _currentManifolds[i] = m;
                 }
 
+                if (WorldSettings.Relaxation)
+                {
+                    for (int i = 0; i < _currentManifolds.Count; i++)
+                    {
+                        var m = _currentManifolds[i];
+                        m.Resolve(inverseDt, WorldSettings, false);
+                        _currentManifolds[i] = m;
+                    }
+                }
             }
 
             foreach (var rb in Bodies) rb.FinalizePosition();
@@ -231,12 +237,6 @@ namespace stupid
             _currentManifolds.Clear();
             foreach (var p in pairs)
                 _currentManifolds.Add(ManifoldMap[p]);
-            /*
-            _currentManifolds = _currentManifolds
-              .OrderByDescending(x => x.one.penetrationDepth)
-              .ThenBy(x => x.a.index) // Assuming each manifold has a unique ID
-              .ToList();
-            */
 
             //Add a the current .SimulationFrame as an offset to the list, like rotate it with that, should be kind of deterministic?
             int frameOffset = SimulationFrame % _currentManifolds.Count;

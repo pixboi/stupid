@@ -1,6 +1,7 @@
 ﻿using stupid.Maths;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
@@ -59,8 +60,7 @@ namespace stupid.Colliders
                     var feature = p.Item2;
                     var pen = minPen;
 
-                    //Now with fat, this can overflow
-                    //if (b.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance)) pen = distance;
+                    if (b.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 
                     contacts[count++] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
                 }
@@ -77,7 +77,7 @@ namespace stupid.Colliders
                         var feature = p.Item2;
                         var pen = minPen;
 
-                        // if (a.RayTest(vertex, normalV, minPen, out var pointInBox, out var distance)) pen = distance;
+                        if (a.RayTest(vertex, normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 
                         contacts[count++] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
                     }

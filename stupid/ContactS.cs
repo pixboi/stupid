@@ -56,7 +56,7 @@ public struct ContactS
         this.ra = a.transform.TransformDirection(this.localAnchorA);
         this.rb = b.transform.TransformDirection(this.localAnchorB);
 
-        // CalculatePrestep(a, b);
+        CalculatePrestep(a, b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,10 +86,11 @@ public struct ContactS
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
         Vector3S tangentialVelocity = contactVelocity - normalVelocity;
 
-        // Normalize the tangential velocity, there must be some kind of treshold for TV, so that it cant be normalized into a healthy value
-        if (tangentialVelocity.sqrMagnitude <= f32.small)
+        // tangent = tangentialVelocity.Normalize();
+
+        if (tangentialVelocity.sqrMagnitude < f32.small)
         {
-            tangent = this.prevTangent;  // Retain previous tangent if the new tangent is aligned with the normal or too small
+            tangent = this.prevTangent;
         }
         else
         {
@@ -125,7 +126,7 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        // return MathS.Min(f32.zero, this.penetrationDepth + slop);
+        return MathS.Min(f32.zero, this.penetrationDepth + slop);
 
         var ds = b.transientPosition + this.rb - a.transientPosition - this.ra;
         f32 separation = Vector3S.Dot(ds, this.normal) + this.penetrationDepth;
@@ -149,7 +150,6 @@ public struct ContactS
         }
         else if (useBias)
         {
-
             bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 
@@ -167,16 +167,20 @@ public struct ContactS
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SolveFriction(in RigidbodyS a, in Collidable b, in f32 friction)
+    public void SolveFriction(in RigidbodyS a, in Collidable b, in f32 inverseDt, in f32 friction, in WorldSettings settings, in f32 sumAccum, bool useBias = true)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
         var contactVelocity = CalculateContactVelocity(a, bb);
+        var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+
+        f32 bias = f32.zero;
+        if (useBias) bias = settings.Baumgartner * separation * inverseDt;
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent);
-        var incrementalFriction = -this.tangentMass * vt;
+        var incrementalFriction = -this.tangentMass * (vt + bias);
 
-        var couloumbMax = this.accumulatedImpulse * friction;
+        var couloumbMax = sumAccum * friction;
         var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);
         incrementalFriction = newImpulse - this.accumulatedFriction;
         this.accumulatedFriction = newImpulse;

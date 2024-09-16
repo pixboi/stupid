@@ -202,43 +202,50 @@ namespace stupid.Colliders
             Vector3S localDirection = _collidable.transform.InverseTransformDirection(direction).Normalize();
             Vector3S localOrigin = _collidable.transform.ToLocalPoint(origin);
 
-            f32 tMin = f32.minValue;
+            // Initialize tMin and tMax
+            f32 tMin = -f32.maxValue;
             f32 tMax = f32.maxValue;
 
+            // Function to update tMin and tMax based on ray direction and box half-size
             void UpdateTValues(f32 localDirComponent, f32 localOriginComponent, f32 halfSizeComponent)
             {
-                if (localDirComponent != f32.zero)
+                if (MathS.Abs(localDirComponent) > f32.epsilon) // Avoid division by zero
                 {
-                    f32 t1 = (halfSizeComponent - localOriginComponent);
-                    t1.Divide(localDirComponent);
+                    f32 invDir = f32.one / localDirComponent; // Inverse direction
+                    f32 t1 = (halfSizeComponent - localOriginComponent) * invDir;
+                    f32 t2 = (-halfSizeComponent - localOriginComponent) * invDir;
 
-                    f32 t2 = (-halfSizeComponent - localOriginComponent) / localDirComponent;
-                    t2.Divide(localDirComponent);
+                    // Ensure t1 is the minimum and t2 is the maximum
                     if (t1 > t2)
                     {
                         var temp = t1;
                         t1 = t2;
                         t2 = temp;
                     }
+
                     tMin = MathS.Max(tMin, t1);
                     tMax = MathS.Min(tMax, t2);
                 }
                 else if (localOriginComponent < -halfSizeComponent || localOriginComponent > halfSizeComponent)
                 {
+                    // Ray is parallel to the slab and outside the bounds
                     tMin = f32.maxValue;
                     tMax = f32.minValue;
                 }
             }
 
+            // Update tMin and tMax for each axis
             UpdateTValues(localDirection.x, localOrigin.x, halfSize.x);
             UpdateTValues(localDirection.y, localOrigin.y, halfSize.y);
             UpdateTValues(localDirection.z, localOrigin.z, halfSize.z);
 
+            // Check if the ray intersects the box
             if (tMax < tMin || tMin > maxDistance || tMax < f32.zero)
             {
                 return false;
             }
 
+            // Calculate the closest intersection point within bounds
             f32 t = tMin >= f32.zero ? tMin : tMax;
             if (t > maxDistance || t < f32.zero)
             {
@@ -251,6 +258,7 @@ namespace stupid.Colliders
 
             return true;
         }
+
 
 
     }
