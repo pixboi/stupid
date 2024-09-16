@@ -11,7 +11,7 @@ namespace stupid.Maths
         public const long Two = 2L << FractionalBits;
 
         public static readonly f32 epsilon = new f32(1L);
-        public static readonly f32 small = FromFloat(0.01f);
+        public static readonly f32 small = FromFloat(0.001f);
         public static readonly f32 quarter = FromFloat(0.25f);
         public static readonly f32 half = new f32(One >> 1);
         public static readonly f32 zero = new f32(0L);

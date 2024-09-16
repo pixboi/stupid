@@ -92,8 +92,7 @@ namespace stupid
             if (isKinematic) return;
 
             var delta = velocity * dt;
-            if (delta.sqrMagnitude > f32.zero)
-                transform.deltaPosition += delta;
+            transform.deltaPosition += delta;
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
@@ -105,15 +104,11 @@ namespace stupid
             {
                 var axis = angle.NormalizeWithMagnitude(out var mag);
 
-                if (mag > f32.zero)
-                {
-                    var dq = QuaternionS.FromAxisAngle(axis, mag);
-                    transform.rotation = (dq * transform.rotation).Normalize();
+                var dq = QuaternionS.FromAxisAngle(axis, mag);
+                transform.rotation = (dq * transform.rotation).Normalize();
 
-                    transform.UpdateRotationMatrix();
-                    this.tensor.UpdateInertiaTensor(this.transform);
-                }
-
+                transform.UpdateRotationMatrix();
+                this.tensor.UpdateInertiaTensor(this.transform);
             }
         }
 
