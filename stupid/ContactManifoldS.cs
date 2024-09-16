@@ -1,4 +1,5 @@
 ﻿using stupid.Maths;
+using System.Runtime;
 
 namespace stupid.Colliders
 {
@@ -7,9 +8,9 @@ namespace stupid.Colliders
         public readonly Collidable a, b;
         public readonly RigidbodyS ab, bb;
         public readonly f32 friction, restitution;
+        public readonly byte contactCount;
 
         public ContactS one, two, three, four;
-        public readonly byte contactCount;
         public ContactManifoldS(Collidable a, Collidable b, byte contactCount, in ContactS[] contacts)
         {
             this.a = a;
@@ -92,8 +93,6 @@ namespace stupid.Colliders
         ///Its good to account for some change, we can handle a bit of noise for more accurate things
         public void RetainData(in ContactManifoldS old)
         {
-            //if (old.contactCount != this.contactCount) return;
-
             for (int i = 0; i < contactCount; i++)
             {
                 var c = GetContact(i);
@@ -108,15 +107,6 @@ namespace stupid.Colliders
                     }
                 }
             }
-
-            return;
-
-
-            Transfer(ref one, old.one);
-            Transfer(ref two, old.two);
-            Transfer(ref three, old.three);
-            Transfer(ref four, old.four);
-
         }
 
         bool Transfer(ref ContactS c, in ContactS old)
@@ -127,6 +117,7 @@ namespace stupid.Colliders
                 c.accumulatedFriction = old.accumulatedFriction;
                 c.prevTangent = old.tangent;
                 c.prevTangentMass = old.tangentMass;
+
                 return true;
             }
 
@@ -135,18 +126,23 @@ namespace stupid.Colliders
 
         public void CalculatePrestep()
         {
-            if (contactCount >= 1) one.CalculatePrestep(ab, b);
-            if (contactCount >= 2) two.CalculatePrestep(ab, b);
-            if (contactCount >= 3) three.CalculatePrestep(ab, b);
-            if (contactCount >= 4) four.CalculatePrestep(ab, b);
+            for (int i = 0; i < this.contactCount; i++)
+            {
+                var contact = GetContact(i);
+                contact.CalculatePrestep(a, b);
+                SetContact(i, contact);
+            }
+
         }
 
         public void SubtickUpdate()
         {
-            if (contactCount >= 1) one.SubtickUpdate(a, b);
-            if (contactCount >= 2) two.SubtickUpdate(a, b);
-            if (contactCount >= 3) three.SubtickUpdate(a, b);
-            if (contactCount >= 4) four.SubtickUpdate(a, b);
+            for (int i = 0; i < this.contactCount; i++)
+            {
+                var contact = GetContact(i);
+                contact.SubtickUpdate(a, b);
+                SetContact(i, contact);
+            }
         }
 
 

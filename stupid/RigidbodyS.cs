@@ -112,7 +112,7 @@ namespace stupid
 
         public void FinalizePosition()
         {
-            //if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
+            // if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
 
             this.transform.position += this.transform.deltaPosition;
             this.transform.deltaPosition.Reset();
