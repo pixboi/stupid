@@ -10,6 +10,23 @@ namespace stupid.Colliders
 
         public ContactS one, two, three, four;
         public readonly byte contactCount;
+        public ContactManifoldS(Collidable a, Collidable b, byte contactCount, in ContactS[] contacts)
+        {
+            this.a = a;
+            this.b = b;
+            this.ab = a.isDynamic ? (RigidbodyS)a : null;
+            this.bb = b.isDynamic ? (RigidbodyS)b : null;
+
+            this.friction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
+            this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
+
+            this.contactCount = contactCount;
+            this.one = contacts[0];
+            this.two = contacts[1];
+            this.three = contacts[2];
+            this.four = contacts[3];
+        }
+
 
         public IntPair ToPair() => new IntPair(a.index, b.index);
         public ContactS GetContact(int index)
@@ -135,28 +152,12 @@ namespace stupid.Colliders
 
         public void Warmup()
         {
-            if (contactCount >= 1) one.WarmStart(ab, b);
-            if (contactCount >= 2) two.WarmStart(ab, b);
-            if (contactCount >= 3) three.WarmStart(ab, b);
-            if (contactCount >= 4) four.WarmStart(ab, b);
+            for (int i = 0; i < this.contactCount; i++)
+            {
+                GetContact(i).WarmStart(ab, b);
+            }
         }
 
-        public ContactManifoldS(Collidable a, Collidable b, byte contactCount, in ContactS[] contacts)
-        {
-            this.a = a;
-            this.b = b;
-            this.ab = a.isDynamic ? (RigidbodyS)a : null;
-            this.bb = b.isDynamic ? (RigidbodyS)b : null;
-
-            this.friction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
-            this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
-
-            this.contactCount = contactCount;
-            this.one = contacts[0];
-            this.two = contacts[1];
-            this.three = contacts[2];
-            this.four = contacts[3];
-        }
 
         public void Resolve(in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
@@ -165,51 +166,18 @@ namespace stupid.Colliders
                 throw new System.ArgumentException("No contacts in manifold?");
             }
 
-            //Impulses
-            if (contactCount >= 1)
+            for (int i = 0; i < this.contactCount; i++)
             {
-                one.SolveImpulse(ab, b, inverseDt, settings, bias);
-
+                var contact = GetContact(i);
+                contact.SolveImpulse(ab, b, inverseDt, settings, bias);
+                SetContact(i, contact);
             }
 
-            if (contactCount >= 2)
+            for (int i = 0; i < this.contactCount; i++)
             {
-                two.SolveImpulse(ab, b, inverseDt, settings, bias);
-
-            }
-
-            if (contactCount >= 3)
-            {
-                three.SolveImpulse(ab, b, inverseDt, settings, bias);
-
-            }
-
-            if (contactCount >= 4)
-            {
-                four.SolveImpulse(ab, b, inverseDt, settings, bias);
-
-
-            }
-
-            //Impulses
-            if (contactCount >= 1)
-            {
-                one.SolveFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 2)
-            {
-                two.SolveFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 3)
-            {
-                three.SolveFriction(ab, b, friction);
-            }
-
-            if (contactCount >= 4)
-            {
-                four.SolveFriction(ab, b, friction);
+                var contact = GetContact(i);
+                contact.SolveFriction(ab, b, friction);
+                SetContact(i, contact);
             }
 
         }
