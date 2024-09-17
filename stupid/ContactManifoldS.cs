@@ -188,7 +188,8 @@ namespace stupid.Colliders
             for (int i = 0; i < this.contactCount; i++)
             {
                 var contact = GetContact(i);
-                contact.SolveFriction(ab, b, inverseDt, friction, settings, contact.accumulatedImpulse, bias);
+                //This sumAccum is cool because it sort of lends weight to those taht are on bottom of stacks
+                contact.SolveFriction(ab, b, inverseDt, friction, settings, sumAccumulatedImpulses, bias);
                 SetContact(i, contact);
             }
 
