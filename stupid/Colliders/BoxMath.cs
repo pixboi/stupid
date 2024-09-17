@@ -90,7 +90,7 @@ namespace stupid.Colliders
 
             if (count == 0)
             {
-                int feature = 0;
+                int feature = 16;
 
                 var edges = BoxColliderS.BOX_EDGES;
 
@@ -102,15 +102,21 @@ namespace stupid.Colliders
 
                     if (b.RaycastBox(start, dir, out var p1, out var m1))
                     {
+                        contacts[count++] = new ContactS(p1, normalV, minPen, a.collidable, b.collidable, feature++);
+                        if (count == contacts.Length) return count; // Early exit if max contacts reached
+
                         if (b.RaycastBox(start, -dir, out var p2, out var m2))
                         {
-                            contacts[count++] = new ContactS((p1 + p2) * f32.half, normalV, minPen, a.collidable, b.collidable, feature + 16);
+                            contacts[count++] = new ContactS(p2, normalV, minPen, a.collidable, b.collidable, feature++);
                             if (count == contacts.Length) return count; // Early exit if max contacts reached
-
+                            feature++;
                         }
                     }
+                    else
+                    {
+                        feature += 2;
+                    }
 
-                    feature++;
                 }
             }
 
