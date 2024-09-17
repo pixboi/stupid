@@ -1,4 +1,5 @@
 ﻿using stupid.Maths;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
@@ -299,6 +300,65 @@ namespace stupid.Colliders
 
             return true;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool RaycastBox(Vector3S rayOrigin, Vector3S rayDirection, out Vector3S intersectionPoint, out f32 tMin)
+        {
+            // Transform the ray to the local space of the box
+            Vector3S localOrigin = collidable.transform.ToLocalPoint(rayOrigin);
+            Vector3S localDirection = collidable.transform.InverseTransformDirection(rayDirection).Normalize();
+
+            // Initialize intersection parameters
+            tMin = -f32.maxValue;
+            f32 tMax = f32.maxValue;
+
+            // Iterate over the three axes of the box
+            for (int i = 0; i < 3; i++)
+            {
+                // Get the ray's direction component for the current axis
+                f32 dirComponent = localDirection[i];
+                f32 originComponent = localOrigin[i];
+                f32 halfSizeComponent = halfSize[i];
+
+                // Check if the ray is parallel to the axis
+                if (MathS.Abs(dirComponent) > f32.epsilon)
+                {
+                    f32 t1 = (-halfSizeComponent - originComponent) / dirComponent;
+                    f32 t2 = (halfSizeComponent - originComponent) / dirComponent;
+
+                    if (t1 > t2)
+                    {
+                        var temp = t1;
+                        t1 = t2;
+                        t2 = temp;
+                    }
+
+                    tMin = MathS.Max(tMin, t1);
+                    tMax = MathS.Min(tMax, t2);
+
+                    // If the intervals do not overlap, there is no intersection
+                    if (tMax < tMin)
+                    {
+                        intersectionPoint = Vector3S.zero;
+                        return false;
+                    }
+                }
+                else if (originComponent < -halfSizeComponent || originComponent > halfSizeComponent)
+                {
+                    // Ray is parallel to the axis and outside the box
+                    intersectionPoint = Vector3S.zero;
+                    return false;
+                }
+            }
+
+            // Calculate the intersection point in local space
+            intersectionPoint = localOrigin + localDirection * tMin;
+
+            // Transform the intersection point back to world space
+            intersectionPoint = collidable.transform.ToWorldPoint(intersectionPoint);
+            return true;
+        }
+
 
 
 

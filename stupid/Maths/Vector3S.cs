@@ -18,6 +18,20 @@ namespace stupid.Maths
         // Fields
         public f32 x, y, z;
 
+        public f32 this[int i]
+        {
+            get
+            {
+                switch (i)
+                {
+                    case 0: return x;
+                    case 1: return y;
+                    case 2: return z;
+                    default: throw new System.ArgumentOutOfRangeException();
+                }
+            }
+        }
+
         // Constructors
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S(f32 x, f32 y, f32 z)

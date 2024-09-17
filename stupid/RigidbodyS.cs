@@ -98,19 +98,20 @@ namespace stupid
 
 
             //This seems to work pretty well, even without the > f32.zero
+            //In fact, it increased stack stability, wonder why...
             var halfAngle = angularVelocity * dt * f32.half;
             var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
             transform.rotation = (dq * transform.rotation).Normalize();
 
             transform.UpdateRotationMatrix();
             this.tensor.UpdateInertiaTensor(this.transform);
+
+
         }
 
         public void FinalizePosition()
         {
             transform.ActuateDelta();
-            //  this.transform.position += this.transform.deltaPosition;
-            //  this.transform.deltaPosition.Reset();
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)

@@ -1,6 +1,7 @@
 ﻿using stupid.Maths;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
@@ -28,7 +29,6 @@ namespace stupid.Colliders
 
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
-
             if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.rightAxis).NormalizeInPlace(), a, b, 6, ref minPenRaw, ref minAxis, ref best)) return 0; //0,0
             if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.upAxis).NormalizeInPlace(), a, b, 7, ref minPenRaw, ref minAxis, ref best)) return 0; //0,1
             if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.forwardAxis).NormalizeInPlace(), a, b, 8, ref minPenRaw, ref minAxis, ref best)) return 0; //0,2
@@ -65,7 +65,6 @@ namespace stupid.Colliders
                     // if (b.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 
                     contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
-
                     if (count == contacts.Length) return count; // Early exit if max contacts reached
                 }
             }
@@ -89,24 +88,48 @@ namespace stupid.Colliders
                 }
             }
 
+            if (count == 0)
+            {
+                int feature = 0;
+
+                var edges = BoxColliderS.BOX_EDGES;
+
+                for (int i = 0; i < edges.Length; i++)
+                {
+                    var start = a.vertices[edges[i].a];
+                    var end = a.vertices[edges[i].b];
+                    var dir = end - start;
+
+                    if (b.RaycastBox(start, dir, out var p1, out var m1))
+                    {
+                        if (b.RaycastBox(start, -dir, out var p2, out var m2))
+                        {
+                            contacts[count++] = new ContactS((p1 + p2) * f32.half, normalV, minPen, a.collidable, b.collidable, feature + 16);
+                            if (count == contacts.Length) return count; // Early exit if max contacts reached
+
+                        }
+                    }
+
+                    feature++;
+                }
+            }
+
+            /*
             // Edge-to-edge contact points
             if (count == 0)
             {
-                var edgesA = BoxColliderS.BOX_EDGES;
-                var edgesB = BoxColliderS.BOX_EDGES;
+                var edges = BoxColliderS.BOX_EDGES;
+                int feature = 0;
 
-                // Temporary list to hold all potential contacts
-                var potentialContacts = new List<ContactS>();
-
-                for (int i = 0; i < edgesA.Length; i++)
+                for (int i = 0; i < edges.Length; i++)
                 {
-                    var startA = a.vertices[edgesA[i].a];
-                    var endA = a.vertices[edgesA[i].b];
+                    var startA = a.vertices[edges[i].a];
+                    var endA = a.vertices[edges[i].b];
 
-                    for (int j = 0; j < edgesB.Length; j++)
+                    for (int j = 0; j < edges.Length; j++)
                     {
-                        var startB = b.vertices[edgesB[j].a];
-                        var endB = b.vertices[edgesB[j].b];
+                        var startB = b.vertices[edges[j].a];
+                        var endB = b.vertices[edges[j].b];
 
                         // Calculate closest point between the edges
                         var contactPoint = FindClosestPointBetweenEdges(startA, endA, startB, endB, out var edgeDistance);
@@ -114,20 +137,14 @@ namespace stupid.Colliders
                         // Add the contact if the distance is valid and within the penetration threshold
                         if (edgeDistance <= MathS.Abs(minPen))
                         {
-                            potentialContacts.Add(new ContactS(contactPoint, normalV, -edgeDistance, a.collidable, b.collidable, potentialContacts.Count + 16));
+                            contacts[count++] = (new ContactS(contactPoint, normalV, -edgeDistance, a.collidable, b.collidable, feature + 16));
+                            if (count == contacts.Length) return count; // Early exit if max contacts reached
                         }
                     }
-                }
 
-                // Sort the contacts by penetration (smallest to largest)
-                potentialContacts.Sort((c1, c2) => c1.penetrationDepth.CompareTo(c2.penetrationDepth));
-
-                // Pick the best 4 contacts
-                for (int i = 0; i < Math.Min(4, potentialContacts.Count); i++)
-                {
-                    contacts[count++] = potentialContacts[i];
+                    feature++;
                 }
-            }
+            }*/
 
             return count;
         }

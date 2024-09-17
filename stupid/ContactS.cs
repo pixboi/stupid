@@ -143,11 +143,11 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        /*
+
         var s = this.penetrationDepth;
         s.Add(slop);
         return MathS.Min(f32.zero, s);
-        */
+
 
         var ds = b.transientPosition + this.rb - a.transientPosition - this.ra;
         //var ds = b.transientPosition;
@@ -197,17 +197,18 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
         var contactVelocity = CalculateContactVelocity(a, bb);
-        var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+        //var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
 
-        f32 bias = f32.zero;
-        if (useBias) bias = settings.Baumgartner * separation * inverseDt;
+        //f32 bias = f32.zero;
+        // if (useBias) bias = settings.Baumgartner * separation * inverseDt;
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent);
+        var incrementalFriction = -this.tangentMass;
+        incrementalFriction.Multiply(vt);
 
         //var incrementalFriction = -this.tangentMass * (vt + bias);
-        var incrementalFriction = vt;
-        incrementalFriction.Add(bias);
-        incrementalFriction.Multiply(-this.tangentMass);
+        //incrementalFriction.Add(bias);
+        //incrementalFriction.Multiply(-this.tangentMass);
 
         var couloumbMax = sumAccum * friction;
         var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);
