@@ -81,7 +81,7 @@ namespace stupid
             }
         }
 
-        ContactS[] contactVectorCache = new ContactS[8];
+        ContactS[] contactVectorCache = new ContactS[4];
         void PrepareContacts(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();

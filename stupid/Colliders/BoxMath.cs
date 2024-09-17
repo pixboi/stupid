@@ -65,6 +65,8 @@ namespace stupid.Colliders
                     // if (b.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 
                     contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
+
+                    if (count == 4) return count;
                 }
             }
 
@@ -81,6 +83,8 @@ namespace stupid.Colliders
                         //if (a.RayTest(vertex, normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 
                         contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
+
+                        if (count == 4) return count;
                     }
                 }
             }
@@ -88,18 +92,17 @@ namespace stupid.Colliders
             // Edge-to-edge contact points
             if (count == 0)
             {
-                var edgesA = BoxColliderS.BOX_EDGES;
-                var edgesB = BoxColliderS.BOX_EDGES;
+                var edges = BoxColliderS.BOX_EDGES;
 
-                foreach (var edgeA in edgesA)
+                foreach (var ea in edges)
                 {
-                    var startA = a.vertices[edgeA.a];
-                    var endA = a.vertices[edgeA.b];
+                    var startA = a.vertices[ea.a];
+                    var endA = a.vertices[ea.b];
 
-                    foreach (var edgeB in edgesB)
+                    foreach (var eb in edges)
                     {
-                        var startB = b.vertices[edgeB.a];
-                        var endB = b.vertices[edgeB.b];
+                        var startB = b.vertices[eb.a];
+                        var endB = b.vertices[eb.b];
 
                         // Calculate closest point between the edges
                         var contactPoint = FindClosestPointBetweenEdges(startA, endA, startB, endB, out var edgeDistance);
@@ -108,7 +111,7 @@ namespace stupid.Colliders
                         if (edgeDistance <= MathS.Abs(minPen))
                         {
                             contacts[count++] = new ContactS(contactPoint, normalV, minPen, a.collidable, b.collidable, (byte)(9 + count));
-                            if (count >= contacts.Length) break; // Avoid overflow in the contacts array
+                            if (count == 4) return count;
                         }
                     }
                 }
@@ -117,65 +120,6 @@ namespace stupid.Colliders
             return count;
 
         }
-
-        static List<(Vector3S, byte)> pointCache = new List<(Vector3S, byte)>();
-
-        //A vertex on B
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b)
-        {
-            pointCache.Clear();
-
-            for (int i = 0; i < 8; i++)
-            {
-                var v = a.vertices[i];
-                if (b.ContainsPoint(v)) pointCache.Add((v, (byte)i));
-            }
-
-            if (pointCache.Count == 0) return false;
-
-            return true;
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool TryAxis(in Vector3S relativePosition, in Vector3S axis, in BoxColliderS a, in BoxColliderS b, int index, ref long minOverlap, ref Vector3S minAxis, ref int best)
-        {
-            if (axis.sqrMagnitude <= f32.epsilon) return true; // Skip zero-length axes
-
-            // Calculate projection and overlap using raw values
-            long pA = ProjectBoxRaw(axis, a);
-            long pB = ProjectBoxRaw(axis, b);
-
-            long distance = Vector3S.RawAbsDot(relativePosition, axis);
-            long penetration = (pA + pB) - distance;
-
-            if (penetration < 0) return false;
-
-            if (penetration < minOverlap)
-            {
-                minOverlap = penetration;
-                minAxis = axis;
-                best = index;
-            }
-
-            return true;
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static long ProjectBoxRaw(in Vector3S axis, in BoxColliderS box)
-        {
-            long absDot0 = Vector3S.RawAbsDot(axis, box.rightAxis);
-            long absDot1 = Vector3S.RawAbsDot(axis, box.upAxis);
-            long absDot2 = Vector3S.RawAbsDot(axis, box.forwardAxis);
-
-            return ((box.halfSize.x.rawValue * absDot0) +
-                    (box.halfSize.y.rawValue * absDot1) +
-                    (box.halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
-        }
-
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3S FindClosestPointBetweenEdges(Vector3S startA, Vector3S endA, Vector3S startB, Vector3S endB, out f32 edgeDistance)
@@ -250,6 +194,67 @@ namespace stupid.Colliders
             edgeDistance = (closestPointA - closestPointB).Magnitude();
             return (closestPointA + closestPointB) * f32.half;
         }
+
+        static List<(Vector3S, byte)> pointCache = new List<(Vector3S, byte)>();
+
+        //A vertex on B
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b)
+        {
+            pointCache.Clear();
+
+            for (int i = 0; i < 8; i++)
+            {
+                var v = a.vertices[i];
+                if (b.ContainsPoint(v)) pointCache.Add((v, (byte)i));
+            }
+
+            if (pointCache.Count == 0) return false;
+
+            return true;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryAxis(in Vector3S relativePosition, in Vector3S axis, in BoxColliderS a, in BoxColliderS b, int index, ref long minOverlap, ref Vector3S minAxis, ref int best)
+        {
+            if (axis.sqrMagnitude <= f32.epsilon) return true; // Skip zero-length axes
+
+            // Calculate projection and overlap using raw values
+            long pA = ProjectBoxRaw(axis, a);
+            long pB = ProjectBoxRaw(axis, b);
+
+            long distance = Vector3S.RawAbsDot(relativePosition, axis);
+            long penetration = (pA + pB) - distance;
+
+            if (penetration < 0) return false;
+
+            if (penetration < minOverlap)
+            {
+                minOverlap = penetration;
+                minAxis = axis;
+                best = index;
+            }
+
+            return true;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long ProjectBoxRaw(in Vector3S axis, in BoxColliderS box)
+        {
+            long absDot0 = Vector3S.RawAbsDot(axis, box.rightAxis);
+            long absDot1 = Vector3S.RawAbsDot(axis, box.upAxis);
+            long absDot2 = Vector3S.RawAbsDot(axis, box.forwardAxis);
+
+            return ((box.halfSize.x.rawValue * absDot0) +
+                    (box.halfSize.y.rawValue * absDot1) +
+                    (box.halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
+        }
+
+
+
+
 
     }
 }
