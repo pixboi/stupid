@@ -7,7 +7,7 @@ public struct ContactS
 {
     public readonly Vector3S point, normal, localAnchorA, localAnchorB;
     public readonly f32 penetrationDepth;
-    public readonly byte featureId;
+    public readonly int featureId;
 
     //Runtime
     public Vector3S tangent, prevTangent, ra, rb;
@@ -15,7 +15,7 @@ public struct ContactS
     public f32 accumulatedImpulse, accumulatedFriction;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, in Collidable a, in Collidable b, byte featureId = byte.MaxValue)
+    public ContactS(Vector3S point, Vector3S normal, f32 penetrationDepth, in Collidable a, in Collidable b, int featureId = -1)
     {
         // Contact point on A, normal points towards B
         this.point = point;
@@ -152,7 +152,7 @@ public struct ContactS
         var ds = b.transientPosition + this.rb - a.transientPosition - this.ra;
         //var ds = b.transientPosition;
         //ds.Add(this.rb);
-       // ds.Subtract(a.transientPosition);
+        // ds.Subtract(a.transientPosition);
         //ds.Subtract(this.ra);
 
         f32 separation = Vector3S.Dot(ds, this.normal) + this.penetrationDepth;

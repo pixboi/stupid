@@ -66,7 +66,7 @@ namespace stupid.Colliders
 
                     contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
 
-                    if (count == 4) return count;
+                    if (count == contacts.Length) return count; // Early exit if max contacts reached
                 }
             }
 
@@ -82,9 +82,9 @@ namespace stupid.Colliders
 
                         //if (a.RayTest(vertex, normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 
-                        contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
+                        contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature + 8);
 
-                        if (count == 4) return count;
+                        if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
                 }
             }
@@ -92,33 +92,44 @@ namespace stupid.Colliders
             // Edge-to-edge contact points
             if (count == 0)
             {
-                var edges = BoxColliderS.BOX_EDGES;
+                var edgesA = BoxColliderS.BOX_EDGES;
+                var edgesB = BoxColliderS.BOX_EDGES;
 
-                foreach (var ea in edges)
+                // Temporary list to hold all potential contacts
+                var potentialContacts = new List<ContactS>();
+
+                for (int i = 0; i < edgesA.Length; i++)
                 {
-                    var startA = a.vertices[ea.a];
-                    var endA = a.vertices[ea.b];
+                    var startA = a.vertices[edgesA[i].a];
+                    var endA = a.vertices[edgesA[i].b];
 
-                    foreach (var eb in edges)
+                    for (int j = 0; j < edgesB.Length; j++)
                     {
-                        var startB = b.vertices[eb.a];
-                        var endB = b.vertices[eb.b];
+                        var startB = b.vertices[edgesB[j].a];
+                        var endB = b.vertices[edgesB[j].b];
 
                         // Calculate closest point between the edges
                         var contactPoint = FindClosestPointBetweenEdges(startA, endA, startB, endB, out var edgeDistance);
 
-                        // Add the contact if the distance is valid
+                        // Add the contact if the distance is valid and within the penetration threshold
                         if (edgeDistance <= MathS.Abs(minPen))
                         {
-                            contacts[count++] = new ContactS(contactPoint, normalV, minPen, a.collidable, b.collidable, (byte)(9 + count));
-                            if (count == 4) return count;
+                            potentialContacts.Add(new ContactS(contactPoint, normalV, -edgeDistance, a.collidable, b.collidable, potentialContacts.Count + 16));
                         }
                     }
+                }
+
+                // Sort the contacts by penetration (smallest to largest)
+                potentialContacts.Sort((c1, c2) => c1.penetrationDepth.CompareTo(c2.penetrationDepth));
+
+                // Pick the best 4 contacts
+                for (int i = 0; i < Math.Min(4, potentialContacts.Count); i++)
+                {
+                    contacts[count++] = potentialContacts[i];
                 }
             }
 
             return count;
-
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,20 +144,18 @@ namespace stupid.Colliders
             f32 e = Vector3S.Dot(d2, d2); // Length of edge B squared
             f32 f = Vector3S.Dot(d2, r);
 
-            f32 s, t;
+            f32 s = f32.zero, t = f32.zero; // Parameters for closest points
 
             if (a <= f32.epsilon && e <= f32.epsilon)
             {
                 // Both edges degenerate into points
-                s = f32.zero;
-                t = f32.zero;
                 edgeDistance = (startA - startB).Magnitude();
                 return startA;
             }
+
             if (a <= f32.epsilon)
             {
                 // First edge degenerates into a point
-                s = f32.zero;
                 t = MathS.Clamp(f / e, f32.zero, f32.one);
             }
             else
@@ -155,7 +164,6 @@ namespace stupid.Colliders
                 if (e <= f32.epsilon)
                 {
                     // Second edge degenerates into a point
-                    t = f32.zero;
                     s = MathS.Clamp(-c / a, f32.zero, f32.one);
                 }
                 else
@@ -167,10 +175,6 @@ namespace stupid.Colliders
                     if (denom != f32.zero)
                     {
                         s = MathS.Clamp((b * f - c * e) / denom, f32.zero, f32.one);
-                    }
-                    else
-                    {
-                        s = f32.zero;
                     }
 
                     t = (b * s + f) / e;
@@ -195,7 +199,7 @@ namespace stupid.Colliders
             return (closestPointA + closestPointB) * f32.half;
         }
 
-        static List<(Vector3S, byte)> pointCache = new List<(Vector3S, byte)>();
+        static List<(Vector3S, int)> pointCache = new List<(Vector3S, int)>();
 
         //A vertex on B
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -206,7 +210,7 @@ namespace stupid.Colliders
             for (int i = 0; i < 8; i++)
             {
                 var v = a.vertices[i];
-                if (b.ContainsPoint(v)) pointCache.Add((v, (byte)i));
+                if (b.ContainsPoint(v)) pointCache.Add((v, i));
             }
 
             if (pointCache.Count == 0) return false;
