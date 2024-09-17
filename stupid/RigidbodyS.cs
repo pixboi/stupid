@@ -84,37 +84,33 @@ namespace stupid
             ClearBuckets();
         }
 
-
-        const bool CLAMP_SMALL = false;
         public void IntegrateVelocity(in f32 dt, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
             if (isKinematic) return;
 
             var delta = velocity * dt;
-            transform.deltaPosition += delta;
+            transform.AddDelta(delta);
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
                 angularVelocity = angularVelocity.ClampMagnitude(-settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
+
+            //This seems to work pretty well, even without the > f32.zero
             var halfAngle = angularVelocity * dt * f32.half;
-
-
             var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
             transform.rotation = (dq * transform.rotation).Normalize();
 
             transform.UpdateRotationMatrix();
             this.tensor.UpdateInertiaTensor(this.transform);
-
         }
 
         public void FinalizePosition()
         {
-            // if (this.transform.deltaPosition.sqrMagnitude > f32.zero)
-
-            this.transform.position += this.transform.deltaPosition;
-            this.transform.deltaPosition.Reset();
+            transform.ActuateDelta();
+            //  this.transform.position += this.transform.deltaPosition;
+            //  this.transform.deltaPosition.Reset();
         }
 
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)

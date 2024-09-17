@@ -58,7 +58,7 @@ public struct ContactS
         this.ra = a.transform.TransformDirection(this.localAnchorA);
         this.rb = b.transform.TransformDirection(this.localAnchorB);
 
-        CalculatePrestep(a, b);
+        //CalculatePrestep(a, b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -122,10 +122,12 @@ public struct ContactS
     public void WarmStart(in RigidbodyS a, in Collidable b)
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
-        Vector3S warmImpulse = (this.normal * this.accumulatedImpulse) + (this.tangent * this.accumulatedFriction);
-        ApplyImpulse(a, bb, warmImpulse);
 
         /*
+        Vector3S warmImpulse = (this.normal * this.accumulatedImpulse) + (this.tangent * this.accumulatedFriction);
+        ApplyImpulse(a, bb, warmImpulse);
+        */
+
         var ni = this.normal;
         ni.Multiply(this.accumulatedImpulse);
 
@@ -135,18 +137,26 @@ public struct ContactS
         ni.Add(ti);
 
         ApplyImpulse(a, bb, ni);
-        */
+
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-        return MathS.Min(f32.zero, this.penetrationDepth + slop);
+        /*
+        var s = this.penetrationDepth;
+        s.Add(slop);
+        return MathS.Min(f32.zero, s);
+        */
 
         var ds = b.transientPosition + this.rb - a.transientPosition - this.ra;
+        //var ds = b.transientPosition;
+        //ds.Add(this.rb);
+       // ds.Subtract(a.transientPosition);
+        //ds.Subtract(this.ra);
+
         f32 separation = Vector3S.Dot(ds, this.normal) + this.penetrationDepth;
 
-        //return separation;
         return MathS.Min(f32.zero, separation + slop);
     }
 
@@ -190,10 +200,14 @@ public struct ContactS
         var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
 
         f32 bias = f32.zero;
-        //if (useBias) bias = settings.Baumgartner * separation * inverseDt;
+        if (useBias) bias = settings.Baumgartner * separation * inverseDt;
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent);
-        var incrementalFriction = -this.tangentMass * (vt + bias);
+
+        //var incrementalFriction = -this.tangentMass * (vt + bias);
+        var incrementalFriction = vt;
+        incrementalFriction.Add(bias);
+        incrementalFriction.Multiply(-this.tangentMass);
 
         var couloumbMax = sumAccum * friction;
         var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);
@@ -208,11 +222,12 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
     {
+        /*
         var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
         var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
         return bv - av;
+        */
 
-        /*
         var ai = a.velocity;
         var ac = a.angularVelocity;
         ac.CrossInPlace(this.ra);// Vector3S.Cross(a.angularVelocity, this.ra);
@@ -229,12 +244,13 @@ public struct ContactS
 
         bi.Subtract(ai);
         return bi;
-        */
+
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
     {
+        /*
         a.velocity -= impulse * a.inverseMass; // A moves away
         a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(this.ra, impulse);
 
@@ -244,7 +260,7 @@ public struct ContactS
             bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, impulse);
         }
 
-        /*
+        */
         // Update linear velocity for 'a'
         Vector3S ai = impulse;
         ai.Multiply(a.inverseMass); // ai = impulse * a.inverseMass
@@ -270,7 +286,7 @@ public struct ContactS
             rbCrossImpulse.Multiply(bb.tensor.inertiaWorld); // rbCrossImpulse = bb.tensor.inertiaWorld * rbCrossImpulse
             bb.angularVelocity.Add(rbCrossImpulse); // bb.angularVelocity += rbCrossImpulse
         }
-        */
+
 
     }
 

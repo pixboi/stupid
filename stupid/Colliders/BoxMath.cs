@@ -17,7 +17,6 @@ namespace stupid.Colliders
             int best = -1;
 
             // Check for overlaps on the primary axes of both boxes
-            //These are normalized on UpdateBox()
             if (!TryAxis(relativePosition, a.rightAxis, a, b, 0, ref minPenRaw, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, a.upAxis, a, b, 1, ref minPenRaw, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, a.forwardAxis, a, b, 2, ref minPenRaw, ref minAxis, ref best)) return 0;
@@ -25,6 +24,8 @@ namespace stupid.Colliders
             if (!TryAxis(relativePosition, b.rightAxis, a, b, 3, ref minPenRaw, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, b.upAxis, a, b, 4, ref minPenRaw, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, b.forwardAxis, a, b, 5, ref minPenRaw, ref minAxis, ref best)) return 0;
+
+            int bestSingle = best;
 
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
@@ -50,6 +51,7 @@ namespace stupid.Colliders
 
             int count = 0;
             f32 minPen = new f32(minPenRaw);
+            minPen = -MathS.Abs(minPen);
 
             //A vert on b
             if (GetContactPoint(a, b))
@@ -60,13 +62,12 @@ namespace stupid.Colliders
                     var feature = p.Item2;
                     var pen = minPen;
 
-                    //if (b.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance)) pen = distance;
+                    // if (b.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 
-                    contacts[count++] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
+                    contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
                 }
             }
 
-            //B vert on a
             if (count == 0)
             {
                 if (GetContactPoint(b, a))
@@ -77,14 +78,15 @@ namespace stupid.Colliders
                         var feature = p.Item2;
                         var pen = minPen;
 
-                        // if (a.RayTest(vertex, normalV, minPen, out var pointInBox, out var distance)) pen = distance;
+                        //if (a.RayTest(vertex, normalV, minPen, out var pointInBox, out var distance)) pen = distance;
 
-                        contacts[count++] = new ContactS(vertex, normalV, -pen, a.collidable, b.collidable, feature);
+                        contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
                     }
                 }
             }
 
             return count;
+
         }
 
         static List<(Vector3S, byte)> pointCache = new List<(Vector3S, byte)>();
@@ -110,20 +112,20 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryAxis(in Vector3S relativePosition, in Vector3S axis, in BoxColliderS a, in BoxColliderS b, int index, ref long minOverlap, ref Vector3S minAxis, ref int best)
         {
-            if (axis.sqrMagnitude < f32.epsilon) return true; // Skip zero-length axes
+            if (axis.sqrMagnitude <= f32.epsilon) return true; // Skip zero-length axes
 
             // Calculate projection and overlap using raw values
             long pA = ProjectBoxRaw(axis, a);
             long pB = ProjectBoxRaw(axis, b);
+
             long distance = Vector3S.RawAbsDot(relativePosition, axis);
+            long penetration = (pA + pB) - distance;
 
-            long overlap = (pA + pB) - distance;
+            if (penetration < 0) return false;
 
-            if (overlap < 0) return false;
-
-            if (overlap < minOverlap)
+            if (penetration < minOverlap)
             {
-                minOverlap = overlap;
+                minOverlap = penetration;
                 minAxis = axis;
                 best = index;
             }
@@ -139,11 +141,9 @@ namespace stupid.Colliders
             long absDot1 = Vector3S.RawAbsDot(axis, box.upAxis);
             long absDot2 = Vector3S.RawAbsDot(axis, box.forwardAxis);
 
-            var halfSize = box.halfSize;
-
-            return ((halfSize.x.rawValue * absDot0) +
-                    (halfSize.y.rawValue * absDot1) +
-                    (halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
+            return ((box.halfSize.x.rawValue * absDot0) +
+                    (box.halfSize.y.rawValue * absDot1) +
+                    (box.halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
         }
 
 

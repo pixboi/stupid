@@ -1,5 +1,7 @@
 ﻿using stupid.Maths;
+using System;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
@@ -8,10 +10,12 @@ namespace stupid.Colliders
         public readonly Collidable a, b;
         public readonly RigidbodyS ab, bb;
         public readonly f32 friction, restitution;
-        public readonly byte contactCount;
+        public readonly int contactCount;
 
         public ContactS one, two, three, four;
-        public ContactManifoldS(Collidable a, Collidable b, byte contactCount, in ContactS[] contacts)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ContactManifoldS(Collidable a, Collidable b, int contactCount, in ContactS[] contacts)
         {
             this.a = a;
             this.b = b;
@@ -28,10 +32,14 @@ namespace stupid.Colliders
             this.four = contacts[3];
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IntPair ToPair() => new IntPair(a.index, b.index);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactS GetContact(int index)
         {
+            index = Math.Clamp(index, 0, contactCount);
+
             switch (index)
             {
                 case 0: return one;
@@ -43,6 +51,7 @@ namespace stupid.Colliders
             return default;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetContact(int index, ContactS c)
         {
             switch (index)
@@ -63,6 +72,8 @@ namespace stupid.Colliders
             }
 
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         public void CopyToArray(ref ContactS[] array)
         {
@@ -90,7 +101,9 @@ namespace stupid.Colliders
             }
         }
 
-        ///Its good to account for some change, we can handle a bit of noise for more accurate things
+        ///Its good to account for some change, we can handle a bit of noise for more accurate things <summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public void RetainData(in ContactManifoldS old)
         {
             for (int i = 0; i < contactCount; i++)
@@ -105,6 +118,8 @@ namespace stupid.Colliders
                 }
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         bool Transfer(ref ContactS c, in ContactS old)
         {
@@ -121,6 +136,7 @@ namespace stupid.Colliders
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep()
         {
             for (int i = 0; i < this.contactCount; i++)
@@ -132,6 +148,7 @@ namespace stupid.Colliders
 
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SubtickUpdate()
         {
             for (int i = 0; i < this.contactCount; i++)
@@ -142,7 +159,7 @@ namespace stupid.Colliders
             }
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Warmup()
         {
             for (int i = 0; i < this.contactCount; i++)
@@ -151,7 +168,7 @@ namespace stupid.Colliders
             }
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resolve(in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
             if (contactCount == 0)

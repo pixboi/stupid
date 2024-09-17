@@ -5,8 +5,7 @@ namespace stupid
     public struct TransformS
     {
         // Transform properties
-        public Vector3S position, deltaPosition;
-        public Vector3S transientPosition => position + deltaPosition;
+        public Vector3S position, deltaPosition, transientPosition;
         public QuaternionS rotation;
         public Vector3S localScale;
         public Matrix3S rotationMatrix;
@@ -17,8 +16,22 @@ namespace stupid
             this.position = position;
             this.rotation = rotation;
             this.deltaPosition = Vector3S.zero;
+            this.transientPosition = position;
             this.localScale = localScale;
             this.rotationMatrix = Matrix3S.Rotate(this.rotation);
+        }
+
+        public void AddDelta(Vector3S amount)
+        {
+            this.deltaPosition += amount;
+            this.transientPosition = position + deltaPosition;
+        }
+
+        public void ActuateDelta()
+        {
+            this.position += this.deltaPosition;
+            this.deltaPosition.Reset();
+            this.transientPosition = this.position;
         }
 
         // Updates rotation matrix

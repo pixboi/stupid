@@ -136,6 +136,7 @@ namespace stupid
 
         List<ContactManifoldS> _currentManifolds = new List<ContactManifoldS>(1000);
 
+        //Maybe there just enough accuracy in fixed point to support tgs?
         private void NarrowPhase1(HashSet<IntPair> pairs)
         {
             var dt = SubDelta;
@@ -189,6 +190,8 @@ namespace stupid
                         _currentManifolds[i] = m;
                     }
                 }
+
+
             }
 
             foreach (var rb in Bodies) rb.FinalizePosition();
