@@ -26,10 +26,10 @@ public struct ContactS
         //This needs to be rechecked, we must compute this dir as a local dir
         //Then we transform rb and ra every iteratation into world directions!
         //We dont need to transform the initial
-        this.localAnchorA = a.transform.ToLocalPoint(this.point);
-        this.localAnchorB = b.transform.ToLocalPoint(this.point);
-        this.ra = a.transform.TransformDirection(this.localAnchorA);
-        this.rb = b.transform.TransformDirection(this.localAnchorB);
+        this.localAnchorA = Vector3S.zero; //a.transform.ToLocalPoint(this.point);
+        this.localAnchorB = Vector3S.zero;//b.transform.ToLocalPoint(this.point);
+        this.ra = this.point - a.transform.position; //a.transform.TransformDirection(this.localAnchorA);
+        this.rb = this.point - b.transform.position; //b.transform.TransformDirection(this.localAnchorB);
 
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
@@ -143,12 +143,11 @@ public struct ContactS
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
     {
-
         var s = this.penetrationDepth;
         s.Add(slop);
         return MathS.Min(f32.zero, s);
 
-
+        /*
         var ds = b.transientPosition + this.rb - a.transientPosition - this.ra;
         //var ds = b.transientPosition;
         //ds.Add(this.rb);
@@ -158,6 +157,7 @@ public struct ContactS
         f32 separation = Vector3S.Dot(ds, this.normal) + this.penetrationDepth;
 
         return MathS.Min(f32.zero, separation + slop);
+        */
     }
 
 
@@ -197,18 +197,16 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
         var contactVelocity = CalculateContactVelocity(a, bb);
-        //var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
 
+        /*
+        //var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
         //f32 bias = f32.zero;
         // if (useBias) bias = settings.Baumgartner * separation * inverseDt;
+        */
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent);
         var incrementalFriction = -this.tangentMass;
         incrementalFriction.Multiply(vt);
-
-        //var incrementalFriction = -this.tangentMass * (vt + bias);
-        //incrementalFriction.Add(bias);
-        //incrementalFriction.Multiply(-this.tangentMass);
 
         var couloumbMax = sumAccum * friction;
         var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);

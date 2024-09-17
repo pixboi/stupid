@@ -116,13 +116,12 @@ namespace stupid.Colliders
 
 
         static List<(Vector3S, int)> pointCache = new List<(Vector3S, int)>();
-
-        //A vertex on B
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b)
         {
-            pointCache.Clear();
 
+            pointCache.Clear();
+            //A vertex on B
             for (int i = 0; i < 8; i++)
             {
                 var v = a.vertices[i];
