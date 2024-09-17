@@ -149,11 +149,11 @@ namespace stupid.Colliders
         public bool ContainsPoint(in Vector3S worldPoint)
         {
             var absLocal = Vector3S.Abs(_collidable.transform.ToLocalPoint(worldPoint));
-            //var fat = f32.small;
+            var fat = f32.epsilon;
 
-            return absLocal.x <= halfSize.x &&
-                   absLocal.y <= halfSize.y &&
-                   absLocal.z <= halfSize.z;
+            return absLocal.x <= halfSize.x + fat &&
+                   absLocal.y <= halfSize.y + fat &&
+                   absLocal.z <= halfSize.z + fat;
         }
 
         public BoundsS CalculateAABB(in TransformS t)
@@ -234,71 +234,6 @@ namespace stupid.Colliders
             );
 
             return _collidable.transform.ToWorldPoint(localSupportPoint);
-        }
-
-        public bool RayTest(in Vector3S origin, in Vector3S direction, in f32 maxDistance, out Vector3S point, out f32 distance)
-        {
-            point = Vector3S.zero;
-            distance = f32.maxValue; // Start with max value
-
-            Vector3S localDirection = _collidable.transform.InverseTransformDirection(direction).Normalize();
-            Vector3S localOrigin = _collidable.transform.ToLocalPoint(origin);
-
-            // Initialize tMin and tMax
-            f32 tMin = -f32.maxValue;
-            f32 tMax = f32.maxValue;
-
-            // Function to update tMin and tMax based on ray direction and box half-size
-            void UpdateTValues(f32 localDirComponent, f32 localOriginComponent, f32 halfSizeComponent)
-            {
-                if (MathS.Abs(localDirComponent) > f32.epsilon) // Avoid division by zero
-                {
-                    f32 invDir = f32.one / localDirComponent; // Inverse direction
-                    f32 t1 = (halfSizeComponent - localOriginComponent) * invDir;
-                    f32 t2 = (-halfSizeComponent - localOriginComponent) * invDir;
-
-                    // Ensure t1 is the minimum and t2 is the maximum
-                    if (t1 > t2)
-                    {
-                        var temp = t1;
-                        t1 = t2;
-                        t2 = temp;
-                    }
-
-                    tMin = MathS.Max(tMin, t1);
-                    tMax = MathS.Min(tMax, t2);
-                }
-                else if (localOriginComponent < -halfSizeComponent || localOriginComponent > halfSizeComponent)
-                {
-                    // Ray is parallel to the slab and outside the bounds
-                    tMin = f32.maxValue;
-                    tMax = f32.minValue;
-                }
-            }
-
-            // Update tMin and tMax for each axis
-            UpdateTValues(localDirection.x, localOrigin.x, halfSize.x);
-            UpdateTValues(localDirection.y, localOrigin.y, halfSize.y);
-            UpdateTValues(localDirection.z, localOrigin.z, halfSize.z);
-
-            // Check if the ray intersects the box
-            if (tMax < tMin || tMin > maxDistance || tMax < f32.zero)
-            {
-                return false;
-            }
-
-            // Calculate the closest intersection point within bounds
-            f32 t = tMin >= f32.zero ? tMin : tMax;
-            if (t > maxDistance || t < f32.zero)
-            {
-                return false;
-            }
-
-            Vector3S localIntersectionPoint = localOrigin + localDirection * t;
-            point = _collidable.transform.ToWorldPoint(localIntersectionPoint);
-            distance = t; // The distance from the ray's origin to the intersection point
-
-            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

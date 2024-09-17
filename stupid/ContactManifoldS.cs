@@ -1,4 +1,5 @@
 ﻿using stupid.Maths;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
@@ -10,6 +11,7 @@ namespace stupid.Colliders
         public readonly f32 friction, restitution;
         public readonly int contactCount;
 
+        public int iterationCount;
         public ContactS one, two, three, four;
 
         public ContactS this[int i]
@@ -51,6 +53,8 @@ namespace stupid.Colliders
             this.two = contactCount > 1 ? contactCache[1] : default;
             this.three = contactCount > 2 ? contactCache[2] : default;
             this.four = contactCount > 3 ? contactCache[3] : default;
+
+            this.iterationCount = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -97,7 +101,6 @@ namespace stupid.Colliders
                 c.accumulatedImpulse = old.accumulatedImpulse;
                 c.accumulatedFriction = old.accumulatedFriction;
                 c.prevTangent = old.tangent;
-                c.prevTangentMass = old.tangentMass;
                 return true;
             }
 
@@ -129,10 +132,7 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Warmup()
         {
-            for (int i = 0; i < this.contactCount; i++)
-            {
-                this[i].WarmStart(ab, b);
-            }
+            for (int i = 0; i < this.contactCount; i++) this[i].WarmStart(ab, b);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,22 +143,38 @@ namespace stupid.Colliders
                 throw new System.ArgumentException("ContactManifoldS: Attempted to resolve with no contacts in manifold.");
             }
 
-            f32 sumAccumulatedImpulses = f32.zero;
-            for (int i = 0; i < this.contactCount; i++)
+            if (contactCount == 1)
             {
-                var contact = this[i];
+                one.SolveImpulse(ab, b, inverseDt, settings, bias);
+                one.SolveFriction(ab, b, inverseDt, friction, settings, one.accumulatedImpulse, bias);
+                return;
+            }
+
+            //f32 sumAccumulatedImpulses = f32.zero; //For that extra sticky feel
+            // Determine the starting offset based on iterationCount
+            int offset = iterationCount % contactCount;
+
+            // Solve impulses with offset
+            for (int i = 0; i < contactCount; i++)
+            {
+                int index = (i + offset) % contactCount;
+                var contact = this[index];
                 contact.SolveImpulse(ab, b, inverseDt, settings, bias);
-                this[i] = contact;
+                this[index] = contact;
 
-                sumAccumulatedImpulses.Add(contact.accumulatedImpulse);
             }
 
-            for (int i = 0; i < this.contactCount; i++)
+            // Solve friction with offset
+            for (int i = 0; i < contactCount; i++)
             {
-                var contact = this[i];
-                contact.SolveFriction(ab, b, inverseDt, friction, settings, sumAccumulatedImpulses, bias);
-                this[i] = contact;
+                int index = (i + offset) % contactCount;
+                var contact = this[index];
+                contact.SolveFriction(ab, b, inverseDt, friction, settings, contact.accumulatedImpulse, bias);
+                this[index] = contact;
             }
+
+            this.iterationCount++;
         }
+
     }
 }

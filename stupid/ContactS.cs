@@ -11,7 +11,7 @@ public struct ContactS
 
     //Runtime
     public Vector3S tangent, prevTangent, ra, rb;
-    public f32 normalMass, tangentMass, prevTangentMass;
+    public f32 normalMass, tangentMass;
     public f32 accumulatedImpulse, accumulatedFriction;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -26,15 +26,14 @@ public struct ContactS
         //This needs to be rechecked, we must compute this dir as a local dir
         //Then we transform rb and ra every iteratation into world directions!
         //We dont need to transform the initial
-        this.localAnchorA = Vector3S.zero; //a.transform.ToLocalPoint(this.point);
-        this.localAnchorB = Vector3S.zero;//b.transform.ToLocalPoint(this.point);
-        this.ra = this.point - a.transform.position; //a.transform.TransformDirection(this.localAnchorA);
-        this.rb = this.point - b.transform.position; //b.transform.TransformDirection(this.localAnchorB);
+        this.localAnchorA = a.transform.ToLocalPoint(this.point);
+        this.localAnchorB = b.transform.ToLocalPoint(this.point);
+        this.ra = a.transform.TransformDirection(this.localAnchorA);
+        this.rb = b.transform.TransformDirection(this.localAnchorB);
 
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;
         this.prevTangent = Vector3S.zero;
-        this.prevTangentMass = f32.zero;
         this.tangentMass = f32.zero;
         this.accumulatedFriction = f32.zero;
         this.accumulatedImpulse = f32.zero;
@@ -81,7 +80,7 @@ public struct ContactS
     void CalculateTangentAndMass(in RigidbodyS a, in RigidbodyS b, out Vector3S tangent, out f32 tangentMass)
     {
         // Calculate relative velocity at the contact point
-        var contactVelocity = CalculateContactVelocity(a, b);
+        var contactVelocity = CalculateContactVelocity(a, b, this.ra, this.rb);
 
         // Project the contact velocity onto the plane perpendicular to the normal (get the tangential velocity)
         Vector3S normalVelocity = this.normal * Vector3S.Dot(contactVelocity, this.normal);
@@ -136,7 +135,7 @@ public struct ContactS
 
         ni.Add(ti);
 
-        ApplyImpulse(a, bb, ni);
+        ApplyImpulse(a, bb, ni, this.ra, this.rb);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -177,7 +176,7 @@ public struct ContactS
             bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
         }
 
-        var contactVelocity = CalculateContactVelocity(a, bb);
+        var contactVelocity = CalculateContactVelocity(a, bb, this.ra, this.rb);
         var vn = Vector3S.Dot(contactVelocity, this.normal);
 
         var impulse = -this.normalMass * (vn + bias);
@@ -186,7 +185,7 @@ public struct ContactS
         this.accumulatedImpulse = newImpulse;
 
         var normalImpulse = this.normal * impulse;
-        ApplyImpulse(a, bb, normalImpulse);
+        ApplyImpulse(a, bb, normalImpulse, this.ra, this.rb);
     }
 
 
@@ -195,7 +194,7 @@ public struct ContactS
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-        var contactVelocity = CalculateContactVelocity(a, bb);
+        var contactVelocity = CalculateContactVelocity(a, bb, this.ra, this.rb);
 
         /*
         //var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
@@ -213,12 +212,12 @@ public struct ContactS
         this.accumulatedFriction = newImpulse;
 
         var tangentImpulse = this.tangent * incrementalFriction;
-        ApplyImpulse(a, bb, tangentImpulse);
+        ApplyImpulse(a, bb, tangentImpulse, this.ra, this.rb);
     }
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb)
+    Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb, in Vector3S ra, in Vector3S rb)
     {
         /*
         var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
@@ -228,7 +227,7 @@ public struct ContactS
 
         var ai = a.velocity;
         var ac = a.angularVelocity;
-        ac.CrossInPlace(this.ra);// Vector3S.Cross(a.angularVelocity, this.ra);
+        ac.CrossInPlace(ra);// Vector3S.Cross(a.angularVelocity, this.ra);
         ai.Add(ac);
 
         var bi = Vector3S.zero;
@@ -236,7 +235,7 @@ public struct ContactS
         {
             bi = bb.velocity;
             var bc = bb.angularVelocity; //Vector3S.Cross(bb.angularVelocity, this.rb);
-            bc.CrossInPlace(this.rb);
+            bc.CrossInPlace(rb);
             bi.Add(bc);
         }
 
@@ -246,7 +245,7 @@ public struct ContactS
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse)
+    void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
     {
         /*
         a.velocity -= impulse * a.inverseMass; // A moves away
@@ -265,7 +264,7 @@ public struct ContactS
         a.velocity.Subtract(ai); // a.velocity += ai
 
         // Update angular velocity for 'a'
-        Vector3S raCrossImpulse = this.ra;
+        Vector3S raCrossImpulse = ra;
         raCrossImpulse.CrossInPlace(impulse);// Vector3S.Cross(this.ra, impulse); // raCrossImpulse = Cross(ra, impulse)
         raCrossImpulse.Multiply(a.tensor.inertiaWorld); // raCrossImpulse = a.tensor.inertiaWorld * raCrossImpulse
         a.angularVelocity.Subtract(raCrossImpulse); // a.angularVelocity -= raCrossImpulse
@@ -279,7 +278,7 @@ public struct ContactS
             bb.velocity.Add(bi); // bb.velocity += bi
 
             // Update angular velocity for 'bb'
-            Vector3S rbCrossImpulse = this.rb;
+            Vector3S rbCrossImpulse = rb;
             rbCrossImpulse.CrossInPlace(impulse);//Vector3S.Cross(this.rb, impulse); // rbCrossImpulse = Cross(rb, impulse)
             rbCrossImpulse.Multiply(bb.tensor.inertiaWorld); // rbCrossImpulse = bb.tensor.inertiaWorld * rbCrossImpulse
             bb.angularVelocity.Add(rbCrossImpulse); // bb.angularVelocity += rbCrossImpulse

@@ -105,8 +105,6 @@ namespace stupid
 
             transform.UpdateRotationMatrix();
             this.tensor.UpdateInertiaTensor(this.transform);
-
-
         }
 
         public void FinalizePosition()
