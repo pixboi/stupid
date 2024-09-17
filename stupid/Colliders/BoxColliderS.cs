@@ -15,6 +15,23 @@ namespace stupid.Colliders
             new EdgeS(7, 6), new EdgeS(5, 4), new EdgeS(1, 0), new EdgeS(3, 2),
 };
 
+        public static readonly EdgeS[] BOX_EDGES_RIGHT = new EdgeS[]
+        {
+                        //Aligned on X LOCAL
+            new EdgeS(4, 0), new EdgeS(5, 1), new EdgeS(7, 3), new EdgeS(6, 2),
+        };
+
+        public static readonly EdgeS[] BOX_EDGES_UP = new EdgeS[]
+{
+            //Aligned on Y
+            new EdgeS(6, 4), new EdgeS(2, 0), new EdgeS(7, 5), new EdgeS(3, 1),
+};
+        public static readonly EdgeS[] BOX_EDGES_FORWARD = new EdgeS[]
+{
+            //Aligned on Z
+            new EdgeS(7, 6), new EdgeS(5, 4), new EdgeS(1, 0), new EdgeS(3, 2),
+};
+
         public static readonly Vector3S[] BOX_NORMALS = new Vector3S[]
 {
             //Aligned on X LOCAL
@@ -25,6 +42,22 @@ namespace stupid.Colliders
             new Vector3S(-1,-1,0).Normalize(), new Vector3S(-1,1,0).Normalize(),new Vector3S(1,1,0).Normalize(), new Vector3S(1,-1,0).Normalize(),
 };
 
+        public static EdgeS[] GetEdges(int axis)
+        {
+            if (axis == 0)
+            {
+                return BOX_EDGES_RIGHT;
+            }
+            else if (axis == 1)
+            {
+                return BOX_EDGES_UP;
+            }
+            else
+            {
+                return BOX_EDGES_FORWARD;
+            }
+        }
+
         public readonly Vector3S halfSize;
         public Vector3S size => this.halfSize * f32.two;
 
@@ -34,6 +67,18 @@ namespace stupid.Colliders
         public Vector3S rightAxis;
         public Vector3S upAxis;
         public Vector3S forwardAxis;
+
+        public Vector3S GetAxis(int index)
+        {
+            switch (index)
+            {
+                case 0: return rightAxis;
+                case 1: return upAxis;
+                case 2: return forwardAxis;
+            }
+
+            return default;
+        }
 
         private Collidable _collidable;
         public Collidable collidable => _collidable;

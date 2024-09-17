@@ -58,7 +58,7 @@ public struct ContactS
         this.ra = a.transform.TransformDirection(this.localAnchorA);
         this.rb = b.transform.TransformDirection(this.localAnchorB);
 
-        //CalculatePrestep(a, b);
+        CalculatePrestep(a, b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
