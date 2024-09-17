@@ -137,7 +137,6 @@ public struct ContactS
         ni.Add(ti);
 
         ApplyImpulse(a, bb, ni);
-
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
