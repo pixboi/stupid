@@ -25,8 +25,6 @@ namespace stupid.Colliders
             if (!TryAxis(relativePosition, b.upAxis, a, b, 4, ref minPenRaw, ref minAxis, ref best)) return 0;
             if (!TryAxis(relativePosition, b.forwardAxis, a, b, 5, ref minPenRaw, ref minAxis, ref best)) return 0;
 
-            int bestSingle = best;
-
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
             if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.rightAxis).NormalizeInPlace(), a, b, 6, ref minPenRaw, ref minAxis, ref best)) return 0; //0,0
@@ -62,8 +60,6 @@ namespace stupid.Colliders
                     var feature = p.Item2;
                     var pen = minPen;
 
-                    // if (b.RayTest(vertex, -normalV, minPen, out var pointInBox, out var distance)) pen = distance;
-
                     contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
                     if (count == contacts.Length) return count; // Early exit if max contacts reached
                 }
@@ -79,10 +75,7 @@ namespace stupid.Colliders
                         var feature = p.Item2;
                         var pen = minPen;
 
-                        //if (a.RayTest(vertex, normalV, minPen, out var pointInBox, out var distance)) pen = distance;
-
                         contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature + 8);
-
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
                 }
@@ -90,8 +83,6 @@ namespace stupid.Colliders
 
             if (count == 0)
             {
-                int feature = 16;
-
                 var edges = BoxColliderS.BOX_EDGES;
 
                 for (int i = 0; i < edges.Length; i++)
@@ -100,127 +91,29 @@ namespace stupid.Colliders
                     var end = a.vertices[edges[i].b];
                     var dir = end - start;
 
+                    // Create a base feature ID using the edge index (i)
+                    int baseFeatureID = 16 + (i * 2); // Each edge has 2 potential directions to check
+
+                    // Check in the positive direction
                     if (b.RaycastBox(start, dir, out var p1, out var m1))
                     {
-                        contacts[count++] = new ContactS(p1, normalV, minPen, a.collidable, b.collidable, feature++);
+                        contacts[count++] = new ContactS(p1, normalV, minPen, a.collidable, b.collidable, baseFeatureID);
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
-
-                        if (b.RaycastBox(start, -dir, out var p2, out var m2))
-                        {
-                            contacts[count++] = new ContactS(p2, normalV, minPen, a.collidable, b.collidable, feature++);
-                            if (count == contacts.Length) return count; // Early exit if max contacts reached
-                            feature++;
-                        }
                     }
-                    else
+
+                    // Check in the negative direction
+                    if (b.RaycastBox(start, -dir, out var p2, out var m2))
                     {
-                        feature += 2;
+                        contacts[count++] = new ContactS(p2, normalV, minPen, a.collidable, b.collidable, baseFeatureID + 1);
+                        if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
-
                 }
             }
 
-            /*
-            // Edge-to-edge contact points
-            if (count == 0)
-            {
-                var edges = BoxColliderS.BOX_EDGES;
-                int feature = 0;
-
-                for (int i = 0; i < edges.Length; i++)
-                {
-                    var startA = a.vertices[edges[i].a];
-                    var endA = a.vertices[edges[i].b];
-
-                    for (int j = 0; j < edges.Length; j++)
-                    {
-                        var startB = b.vertices[edges[j].a];
-                        var endB = b.vertices[edges[j].b];
-
-                        // Calculate closest point between the edges
-                        var contactPoint = FindClosestPointBetweenEdges(startA, endA, startB, endB, out var edgeDistance);
-
-                        // Add the contact if the distance is valid and within the penetration threshold
-                        if (edgeDistance <= MathS.Abs(minPen))
-                        {
-                            contacts[count++] = (new ContactS(contactPoint, normalV, -edgeDistance, a.collidable, b.collidable, feature + 16));
-                            if (count == contacts.Length) return count; // Early exit if max contacts reached
-                        }
-                    }
-
-                    feature++;
-                }
-            }*/
 
             return count;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Vector3S FindClosestPointBetweenEdges(Vector3S startA, Vector3S endA, Vector3S startB, Vector3S endB, out f32 edgeDistance)
-        {
-            // Edge vectors
-            var d1 = endA - startA;
-            var d2 = endB - startB;
-            var r = startA - startB;
-
-            f32 a = Vector3S.Dot(d1, d1); // Length of edge A squared
-            f32 e = Vector3S.Dot(d2, d2); // Length of edge B squared
-            f32 f = Vector3S.Dot(d2, r);
-
-            f32 s = f32.zero, t = f32.zero; // Parameters for closest points
-
-            if (a <= f32.epsilon && e <= f32.epsilon)
-            {
-                // Both edges degenerate into points
-                edgeDistance = (startA - startB).Magnitude();
-                return startA;
-            }
-
-            if (a <= f32.epsilon)
-            {
-                // First edge degenerates into a point
-                t = MathS.Clamp(f / e, f32.zero, f32.one);
-            }
-            else
-            {
-                f32 c = Vector3S.Dot(d1, r);
-                if (e <= f32.epsilon)
-                {
-                    // Second edge degenerates into a point
-                    s = MathS.Clamp(-c / a, f32.zero, f32.one);
-                }
-                else
-                {
-                    // The general case
-                    f32 b = Vector3S.Dot(d1, d2);
-                    f32 denom = a * e - b * b;
-
-                    if (denom != f32.zero)
-                    {
-                        s = MathS.Clamp((b * f - c * e) / denom, f32.zero, f32.one);
-                    }
-
-                    t = (b * s + f) / e;
-
-                    if (t < f32.zero)
-                    {
-                        t = f32.zero;
-                        s = MathS.Clamp(-c / a, f32.zero, f32.one);
-                    }
-                    else if (t > f32.one)
-                    {
-                        t = f32.one;
-                        s = MathS.Clamp((b - c) / a, f32.zero, f32.one);
-                    }
-                }
-            }
-
-            Vector3S closestPointA = startA + d1 * s;
-            Vector3S closestPointB = startB + d2 * t;
-
-            edgeDistance = (closestPointA - closestPointB).Magnitude();
-            return (closestPointA + closestPointB) * f32.half;
-        }
 
         static List<(Vector3S, int)> pointCache = new List<(Vector3S, int)>();
 
