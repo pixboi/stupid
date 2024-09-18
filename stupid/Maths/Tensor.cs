@@ -2,7 +2,8 @@
 
 namespace stupid.Maths
 {
-    public struct Tensor
+    //The life time of this object => were never creating a new tensor, just updating it
+    public class Tensor
     {
         // Only the inverse of the local inertia tensor is stored
         public readonly Matrix3S inertiaInverse;
@@ -12,7 +13,6 @@ namespace stupid.Maths
         {
             // Precompute the inverse of the local inertia tensor
             this.inertiaInverse = inertia.Inverse();
-            this.inertiaWorld = Matrix3S.identity; // Initial value, updated in the next step
             UpdateInertiaTensor(t);
         }
 
@@ -23,7 +23,9 @@ namespace stupid.Maths
             // Perform R * I (rotation matrix multiplied by local inertia tensor)
             var ri = t.rotationMatrix * inertiaInverse;
             // Perform the final multiplication with the transpose of R
-            inertiaWorld = ri * t.rotationMatrix.Transpose();
+
+            //Make sure the ROTATION MATRIX IS UPDATED!!!
+            inertiaWorld = ri * t.rotationMatrixTranspose; //t.rotationMatrix.Transpose();
         }
 
     }

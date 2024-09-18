@@ -3,9 +3,8 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
-    public struct BoxColliderS : IShape
+    public class BoxColliderS : Shape
     {
-
         public static readonly EdgeS[] BOX_EDGES = new EdgeS[]
 {
             //Aligned on X LOCAL
@@ -15,13 +14,11 @@ namespace stupid.Colliders
             //Aligned on Z
             new EdgeS(7, 6), new EdgeS(5, 4), new EdgeS(1, 0), new EdgeS(3, 2),
 };
-
         public static readonly EdgeS[] BOX_EDGES_RIGHT = new EdgeS[]
         {
                         //Aligned on X LOCAL
             new EdgeS(4, 0), new EdgeS(5, 1), new EdgeS(7, 3), new EdgeS(6, 2),
         };
-
         public static readonly EdgeS[] BOX_EDGES_UP = new EdgeS[]
 {
             //Aligned on Y
@@ -32,7 +29,6 @@ namespace stupid.Colliders
             //Aligned on Z
             new EdgeS(7, 6), new EdgeS(5, 4), new EdgeS(1, 0), new EdgeS(3, 2),
 };
-
         public static readonly Vector3S[] BOX_NORMALS = new Vector3S[]
 {
             //Aligned on X LOCAL
@@ -42,7 +38,6 @@ namespace stupid.Colliders
             //Aligned on Z
             new Vector3S(-1,-1,0).Normalize(), new Vector3S(-1,1,0).Normalize(),new Vector3S(1,1,0).Normalize(), new Vector3S(1,-1,0).Normalize(),
 };
-
         public static EdgeS[] GetEdges(int axis)
         {
             if (axis == 0)
@@ -58,16 +53,41 @@ namespace stupid.Colliders
                 return BOX_EDGES_FORWARD;
             }
         }
+        public BoxColliderS(Vector3S size)
+        {
+            this.size = size;
+            this.halfSize = size * f32.half;
 
+            // Initialize local vertices array
+            this.localVertices = new Vector3S[8]
+            {
+                 new Vector3S(halfSize.x, halfSize.y, halfSize.z),
+                 new Vector3S(halfSize.x, halfSize.y, -halfSize.z),
+                 new Vector3S(halfSize.x, -halfSize.y, halfSize.z),
+                 new Vector3S(halfSize.x, -halfSize.y, -halfSize.z),
+                 new Vector3S(-halfSize.x, halfSize.y, halfSize.z),
+                 new Vector3S(-halfSize.x, halfSize.y, -halfSize.z),
+                 new Vector3S(-halfSize.x, -halfSize.y, halfSize.z),
+                 new Vector3S(-halfSize.x, -halfSize.y, -halfSize.z)
+            };
+
+            // Initialize world vertices array
+            this.vertices = new Vector3S[8];
+
+            this.rightAxis = Vector3S.right;
+            this.upAxis = Vector3S.up;
+            this.forwardAxis = Vector3S.forward;
+        }
+
+        //Init
+        public readonly Vector3S size;
         public readonly Vector3S halfSize;
-        public Vector3S size => this.halfSize * f32.two;
-
         public readonly Vector3S[] localVertices;
 
+
+        //Runtime
+        public Vector3S rightAxis, upAxis, forwardAxis;
         public Vector3S[] vertices;
-        public Vector3S rightAxis;
-        public Vector3S upAxis;
-        public Vector3S forwardAxis;
 
         public Vector3S GetAxis(int index)
         {
@@ -78,77 +98,26 @@ namespace stupid.Colliders
                 case 2: return forwardAxis;
             }
 
-            return default;
+            throw new System.ArgumentOutOfRangeException(index.ToString());
         }
 
-        private Collidable _collidable;
-        public Collidable collidable => _collidable;
-
-        private BoundsS _bounds;
-        public BoundsS bounds => _bounds;
-
-        public BoxColliderS(Vector3S size)
-        {
-            this.halfSize = size * f32.half;
-
-            // Initialize local vertices array
-            this.localVertices = new Vector3S[8];
-
-            // Initialize world vertices array
-            this.vertices = new Vector3S[8];
-
-            // Initialize other fields
-            this._collidable = null;
-            this._bounds = new BoundsS();
-
-            // Define the local vertices (fixed, relative to the box center)
-            this.localVertices[0] = new Vector3S(halfSize.x, halfSize.y, halfSize.z);
-            this.localVertices[1] = new Vector3S(halfSize.x, halfSize.y, -halfSize.z);
-            this.localVertices[2] = new Vector3S(halfSize.x, -halfSize.y, halfSize.z);
-            this.localVertices[3] = new Vector3S(halfSize.x, -halfSize.y, -halfSize.z);
-            this.localVertices[4] = new Vector3S(-halfSize.x, halfSize.y, halfSize.z);
-            this.localVertices[5] = new Vector3S(-halfSize.x, halfSize.y, -halfSize.z);
-            this.localVertices[6] = new Vector3S(-halfSize.x, -halfSize.y, halfSize.z);
-            this.localVertices[7] = new Vector3S(-halfSize.x, -halfSize.y, -halfSize.z);
-
-            this.rightAxis = Vector3S.right;
-            this.upAxis = Vector3S.up;
-            this.forwardAxis = Vector3S.forward;
-        }
-
-        public void Attach(Collidable body)
-        {
-            this._collidable = body;
-        }
-
-        public bool NeedsRotationUpdate => true;
-        public void OnRotationUpdate()
-        {
-            UpdateBox();
-        }
-
-        private void UpdateBox()
+        public override bool NeedsRotationUpdate => true;
+        public override void OnRotationUpdate()
         {
             // Update vertex positions based on rotation and translation
             for (int i = 0; i < 8; i++)
             {
-                vertices[i] = this._collidable.transform.ToWorldPoint(localVertices[i]);
+                vertices[i] = this.collidable.transform.ToWorldPoint(localVertices[i]);
             }
 
-            UpdateAxis();
+            this.rightAxis = this.collidable.transform.rotationMatrix.GetColumn(0).Normalize();
+            this.upAxis = this.collidable.transform.rotationMatrix.GetColumn(1).Normalize();
+            this.forwardAxis = this.collidable.transform.rotationMatrix.GetColumn(2).Normalize();
         }
-
-        void UpdateAxis()
-        {
-            this.rightAxis = this._collidable.transform.rotationMatrix.GetColumn(0).Normalize();
-            this.upAxis = this._collidable.transform.rotationMatrix.GetColumn(1).Normalize();
-            this.forwardAxis = this._collidable.transform.rotationMatrix.GetColumn(2).Normalize();
-        }
-
 
         public bool ContainsPoint(in Vector3S worldPoint)
         {
-            var absLocal = Vector3S.Abs(_collidable.transform.ToLocalPoint(worldPoint));
+            var absLocal = Vector3S.Abs(collidable.transform.ToLocalPoint(worldPoint));
             var fat = f32.epsilon;
 
             return absLocal.x <= halfSize.x + fat &&
@@ -156,7 +125,7 @@ namespace stupid.Colliders
                    absLocal.z <= halfSize.z + fat;
         }
 
-        public BoundsS CalculateAABB(in TransformS t)
+        public override BoundsS GetBounds(TransformS t)
         {
             Vector3S rotatedHalfSize = new Vector3S(
     MathS.Abs(t.rotationMatrix.m00) * halfSize.x + MathS.Abs(t.rotationMatrix.m01) * halfSize.y + MathS.Abs(t.rotationMatrix.m02) * halfSize.z,
@@ -165,27 +134,10 @@ namespace stupid.Colliders
 );
             var min = t.position - rotatedHalfSize;
             var max = t.position + rotatedHalfSize;
-            _bounds = new BoundsS(min, max);
-            return _bounds;
+            return new BoundsS(min, max);
         }
 
-        public BoundsS CalculateAABB(in Vector3S position, in QuaternionS rotation)
-        {
-            var rotationMatrix = Matrix3S.Rotate(rotation);
-
-            Vector3S rotatedHalfSize = new Vector3S(
-                MathS.Abs(rotationMatrix.m00) * halfSize.x + MathS.Abs(rotationMatrix.m01) * halfSize.y + MathS.Abs(rotationMatrix.m02) * halfSize.z,
-                MathS.Abs(rotationMatrix.m10) * halfSize.x + MathS.Abs(rotationMatrix.m11) * halfSize.y + MathS.Abs(rotationMatrix.m12) * halfSize.z,
-                MathS.Abs(rotationMatrix.m20) * halfSize.x + MathS.Abs(rotationMatrix.m21) * halfSize.y + MathS.Abs(rotationMatrix.m22) * halfSize.z
-            );
-
-            var min = position - rotatedHalfSize;
-            var max = position + rotatedHalfSize;
-            _bounds = new BoundsS(min, max);
-            return _bounds;
-        }
-
-        public int Intersects(Collidable other, ref ContactS[] contact)
+        public override int Intersects(Collidable other, ref ContactS[] contact)
         {
             if (other.collider is BoxColliderS otherBox)
             {
@@ -202,7 +154,7 @@ namespace stupid.Colliders
 
 
         static f32 boxConst = (f32)(1f / 12f);
-        public Matrix3S CalculateInertiaTensor(f32 mass)
+        public override Matrix3S CalculateInertiaTensor(in f32 mass)
         {
             // Precompute constants and squares to minimize redundant calculations
             var massConst = boxConst * mass;
@@ -223,19 +175,6 @@ namespace stupid.Colliders
             );
         }
 
-        public Vector3S Support(Vector3S direction)
-        {
-            Vector3S localDirection = _collidable.transform.InverseTransformDirection(direction);
-
-            Vector3S localSupportPoint = new Vector3S(
-                localDirection.x >= f32.zero ? halfSize.x : -halfSize.x,
-                localDirection.y >= f32.zero ? halfSize.y : -halfSize.y,
-                localDirection.z >= f32.zero ? halfSize.z : -halfSize.z
-            );
-
-            return _collidable.transform.ToWorldPoint(localSupportPoint);
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool RaycastBox(Vector3S rayOrigin, Vector3S rayDirection, out Vector3S intersectionPoint, out f32 tMin)
         {
@@ -244,7 +183,7 @@ namespace stupid.Colliders
             Vector3S localDirection = collidable.transform.InverseTransformDirection(rayDirection).Normalize();
 
             // Initialize intersection parameters
-            tMin = -f32.maxValue;
+            tMin = f32.minValue;
             f32 tMax = f32.maxValue;
 
             // Iterate over the three axes of the box
@@ -293,9 +232,6 @@ namespace stupid.Colliders
             intersectionPoint = collidable.transform.ToWorldPoint(intersectionPoint);
             return true;
         }
-
-
-
 
     }
 }

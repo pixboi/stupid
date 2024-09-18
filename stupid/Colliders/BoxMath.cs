@@ -110,7 +110,6 @@ namespace stupid.Colliders
                 }
             }
 
-
             return count;
         }
 

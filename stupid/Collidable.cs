@@ -10,13 +10,13 @@ namespace stupid
         public void Register(int index) => this.index = index;
 
         public bool isDynamic = false;
-        public IShape collider { get; private set; }
+        public Shape collider { get; private set; }
 
         public TransformS transform = new TransformS(Vector3S.zero, QuaternionS.identity, Vector3S.one);
 
         public PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL;
 
-        public Collidable(int index, IShape collider, TransformS transform, bool isDynamic = false)
+        public Collidable(int index, Shape collider, TransformS transform, bool isDynamic = false)
         {
             this.index = index;
             this.isDynamic = isDynamic;
@@ -28,8 +28,13 @@ namespace stupid
             this.material = PhysicsMaterialS.DEFAULT_MATERIAL;
         }
 
-        public BoundsS GetBounds() => this.collider.bounds;
-        public BoundsS CalculateBounds() => this.collider.CalculateAABB(this.transform);
+        public BoundsS _bounds;
+        public BoundsS CalculateBounds()
+        {
+            this._bounds = this.collider.GetBounds(this.transform);
+            return this._bounds;
+        }
+
         public override bool Equals(object? obj)
         {
             return Equals(obj as Collidable);

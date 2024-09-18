@@ -49,10 +49,10 @@ namespace stupid.Colliders
             this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
 
             this.contactCount = contactCount;
-            this.one = contactCount > 0 ? contactCache[0] : default;
-            this.two = contactCount > 1 ? contactCache[1] : default;
-            this.three = contactCount > 2 ? contactCache[2] : default;
-            this.four = contactCount > 3 ? contactCache[3] : default;
+            this.one = contactCache[0];
+            this.two = contactCache[1];
+            this.three = contactCache[2];
+            this.four = contactCache[3];
 
             this.iterationCount = 0;
         }

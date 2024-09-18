@@ -4,7 +4,7 @@ using stupid.Colliders;
 
 namespace stupid
 {
-    public struct WorldSettings
+    public class WorldSettings
     {
         public Vector3S Gravity;
         public PhysicsMaterialS DefaultMaterial;

@@ -1,7 +1,5 @@
 ﻿using stupid.Colliders;
 using stupid.Maths;
-using System;
-using System.Runtime;
 
 namespace stupid
 {
@@ -34,7 +32,7 @@ namespace stupid
         public bool useGravity = true;
         public bool isKinematic = false;
 
-        public RigidbodyS(int index, IShape collider, bool isDynamic = true, TransformS transform = default,
+        public RigidbodyS(int index, Shape collider, bool isDynamic = true, TransformS transform = default,
             Vector3S velocity = default,
             Vector3S angularVelocity = default,
             f32 mass = default,

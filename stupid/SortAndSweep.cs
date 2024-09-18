@@ -45,7 +45,7 @@ namespace stupid
             for (int i = 0; i < rigidbodies.Count; i++)
             {
                 var body = rigidbodies[i];
-                var bounds = body.collider.bounds;
+                var bounds = body._bounds;
                 endpointsX[i * 2] = new AxisEndpoint { Value = bounds.min.x, IsMin = true, Body = body };
                 endpointsX[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.x, IsMin = false, Body = body };
                 endpointsY[i * 2] = new AxisEndpoint { Value = bounds.min.y, IsMin = true, Body = body };
@@ -95,8 +95,8 @@ namespace stupid
                     //Skip static + static
                     if (!bodyA.isDynamic && !bodyB.isDynamic) continue;
 
-                    var ab = bodyA.GetBounds();
-                    var bb = bodyB.GetBounds();
+                    var ab = bodyA._bounds;
+                    var bb = bodyB._bounds;
 
                     if (ab.Intersects(bb))
                     {
@@ -158,7 +158,7 @@ namespace stupid
             {
                 var endpoint = endpoints[i];
 
-                var bounds = endpoint.Body.collider.bounds;
+                var bounds = endpoint.Body._bounds;
                 switch (axis)
                 {
                     case 0:

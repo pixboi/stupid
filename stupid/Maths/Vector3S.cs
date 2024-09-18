@@ -5,16 +5,6 @@ namespace stupid.Maths
 {
     public partial struct Vector3S : IEquatable<Vector3S>
     {
-        // Static readonly vectors
-        public static readonly Vector3S zero = new Vector3S(0f, 0f, 0f);
-        public static readonly Vector3S one = new Vector3S(1f, 1f, 1f);
-        public static readonly Vector3S up = new Vector3S(0f, 1f, 0f);
-        public static readonly Vector3S down = new Vector3S(0f, -1f, 0f);
-        public static readonly Vector3S left = new Vector3S(-1f, 0f, 0f);
-        public static readonly Vector3S right = new Vector3S(1f, 0f, 0f);
-        public static readonly Vector3S forward = new Vector3S(0f, 0f, 1f);
-        public static readonly Vector3S back = new Vector3S(0f, 0f, -1f);
-
         // Fields
         public f32 x, y, z;
 

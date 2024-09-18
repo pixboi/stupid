@@ -15,6 +15,17 @@ namespace stupid.Maths
         public static f32 Avg(in f32 a, in f32 b) => (a + b) * f32.half;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static f32 Lerp(in f32 a, in f32 b, in f32 t)
+        {
+            var x = b;
+            x.Subtract(a);
+            x.Multiply(t);
+            x.Add(a);
+            return x;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Clamp(in f32 value, in f32 min, in f32 max)
         {
             if (value < min) return min;
