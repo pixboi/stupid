@@ -7,17 +7,19 @@ namespace stupid.Maths
     {
         // Fields
         public f32 x, y, z;
-
         public f32 this[int i]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                switch (i)
+                unsafe
                 {
-                    case 0: return x;
-                    case 1: return y;
-                    case 2: return z;
-                    default: throw new System.ArgumentOutOfRangeException();
+                    fixed (f32* ptr = &x)
+                    {
+                        if (i < 0 || i > 2)
+                            throw new ArgumentOutOfRangeException();
+                        return *(ptr + i);
+                    }
                 }
             }
         }
@@ -130,14 +132,6 @@ namespace stupid.Maths
             this.x.rawValue = (this.x.rawValue * b.rawValue) >> f32.FractionalBits;
             this.y.rawValue = (this.y.rawValue * b.rawValue) >> f32.FractionalBits;
             this.z.rawValue = (this.z.rawValue * b.rawValue) >> f32.FractionalBits;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Multiply(in Vector3S b)
-        {
-            this.x.rawValue = (this.x.rawValue * b.x.rawValue) >> f32.FractionalBits;
-            this.y.rawValue = (this.y.rawValue * b.y.rawValue) >> f32.FractionalBits;
-            this.z.rawValue = (this.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

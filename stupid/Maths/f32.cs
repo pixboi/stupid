@@ -11,7 +11,7 @@ namespace stupid.Maths
         public const long Two = 2L << FractionalBits;
 
         public static readonly f32 epsilon = new f32(1L);
-        public static readonly f32 small = FromFloat(0.01f);
+        public static readonly f32 small = FromFloat(0.01f); //These are not guaranteed to be same on diff machines, Quantum uses string parsing, which is deterministic :O
         public static readonly f32 quarter = FromFloat(0.25f);
         public static readonly f32 half = new f32(One >> 1);
         public static readonly f32 zero = new f32(0L);
@@ -31,10 +31,6 @@ namespace stupid.Maths
         {
             rawValue = value;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public long ToRaw() => rawValue;
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 FromFloat(float value) => new f32((long)(value * One));
@@ -83,7 +79,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Abs()
+        public void AbsInPlace()
         {
             long mask = rawValue >> 63;  // This creates a mask that is 0xFFFFFFFFFFFFFFFF if rawValue is negative, or 0x0000000000000000 if positive.
             rawValue = (rawValue + mask) ^ mask;

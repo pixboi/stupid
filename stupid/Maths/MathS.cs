@@ -34,12 +34,12 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Sign(in f32 value) => value < f32.zero ? f32.negativeOne : f32.one;
+        public static f32 Sign(in f32 value) => value < f32.zero ? -f32.one : f32.one;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Floor(in f32 value)
         {
-            long raw = value.ToRaw();
+            long raw = value.rawValue;
             long fractionalPart = raw & ((1L << f32.FractionalBits) - 1);
             return new f32(raw - fractionalPart);
         }

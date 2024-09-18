@@ -12,7 +12,7 @@ namespace stupid.Maths
         public Tensor(in Matrix3S inertia, in TransformS t)
         {
             // Precompute the inverse of the local inertia tensor
-            this.inertiaInverse = inertia.Inverse();
+            this.inertiaInverse = Matrix3S.Inverse(inertia);
             UpdateInertiaTensor(t);
         }
 

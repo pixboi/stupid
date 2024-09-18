@@ -149,39 +149,45 @@ namespace stupid.Maths
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Matrix3S Inverse()
+        public static Matrix3S Inverse(Matrix3S matrix)
         {
-            // Temporary variables for intermediate calculations
-            f32 a = m00 * (m11 * m22 - m12 * m21);
-            f32 b = m01 * (m10 * m22 - m12 * m20);
-            f32 c = m02 * (m10 * m21 - m11 * m20);
+            // Calculate the determinant with safe scaling to prevent overflow
+            f32 a = matrix.m00 * (matrix.m11 * matrix.m22 - matrix.m12 * matrix.m21);
+            f32 b = matrix.m01 * (matrix.m10 * matrix.m22 - matrix.m12 * matrix.m20);
+            f32 c = matrix.m02 * (matrix.m10 * matrix.m21 - matrix.m11 * matrix.m20);
 
-            // Calculate the determinant
             f32 determinant = a - b + c;
 
-            // Check if the matrix is invertible
+            // Check for very small or zero determinant
             if (MathS.Abs(determinant) < f32.epsilon)
             {
-                throw new InvalidOperationException("Matrix is not invertible.");
+                throw new InvalidOperationException("Matrix is not invertible due to near-zero determinant.");
             }
 
-            // Calculate the inverse of the determinant
+            // Inverse of the determinant, using a scaling technique to manage precision
             f32 invDet = f32.one / determinant;
 
-            // Compute the inverse matrix elements
-            f32 invM00 = invDet * (m11 * m22 - m12 * m21);
-            f32 invM01 = invDet * (m02 * m21 - m01 * m22);
-            f32 invM02 = invDet * (m01 * m12 - m02 * m11);
-            f32 invM10 = invDet * (m12 * m20 - m10 * m22);
-            f32 invM11 = invDet * (m00 * m22 - m02 * m20);
-            f32 invM12 = invDet * (m02 * m10 - m00 * m12);
-            f32 invM20 = invDet * (m10 * m21 - m11 * m20);
-            f32 invM21 = invDet * (m01 * m20 - m00 * m21);
-            f32 invM22 = invDet * (m00 * m11 - m01 * m10);
+            // Calculate the inverse matrix elements
+            f32 invM00 = invDet * (matrix.m11 * matrix.m22 - matrix.m12 * matrix.m21);
+            f32 invM01 = invDet * (matrix.m02 * matrix.m21 - matrix.m01 * matrix.m22);
+            f32 invM02 = invDet * (matrix.m01 * matrix.m12 - matrix.m02 * matrix.m11);
 
-            // Return the new matrix with the inverse values
-            return new Matrix3S(invM00, invM01, invM02, invM10, invM11, invM12, invM20, invM21, invM22);
+            f32 invM10 = invDet * (matrix.m12 * matrix.m20 - matrix.m10 * matrix.m22);
+            f32 invM11 = invDet * (matrix.m00 * matrix.m22 - matrix.m02 * matrix.m20);
+            f32 invM12 = invDet * (matrix.m02 * matrix.m10 - matrix.m00 * matrix.m12);
+
+            f32 invM20 = invDet * (matrix.m10 * matrix.m21 - matrix.m11 * matrix.m20);
+            f32 invM21 = invDet * (matrix.m01 * matrix.m20 - matrix.m00 * matrix.m21);
+            f32 invM22 = invDet * (matrix.m00 * matrix.m11 - matrix.m01 * matrix.m10);
+
+            // Return the inverted matrix
+            return new Matrix3S(
+                invM00, invM01, invM02,
+                invM10, invM11, invM12,
+                invM20, invM21, invM22
+            );
         }
+
 
     }
 }

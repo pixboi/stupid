@@ -258,6 +258,7 @@ public struct ContactS
         }
 
         */
+
         // Update linear velocity for 'a'
         Vector3S ai = impulse;
         ai.Multiply(a.inverseMass); // ai = impulse * a.inverseMass

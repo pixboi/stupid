@@ -170,6 +170,13 @@ namespace stupid.Maths
             MathS.Abs(a.z)
         );
 
+        public void AbsInPlace()
+        {
+            this.x.AbsInPlace();
+            this.y.AbsInPlace();
+            this.z.AbsInPlace();
+        }
+
         #endregion
 
         #region NORMALIZATION

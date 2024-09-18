@@ -114,7 +114,6 @@ namespace stupidtests
 
         List<Vector3S> s = new List<Vector3S>(100000);
 
-        [TestMethod]
         public void IterateForEach()
         {
             Vector3S sum = Vector3S.zero;
@@ -128,7 +127,6 @@ namespace stupidtests
             Console.WriteLine(sum.ToString());
         }
 
-        [TestMethod]
         public void IterateForEachInPlace()
         {
             Vector3S sum = Vector3S.zero;
@@ -141,6 +139,61 @@ namespace stupidtests
 
             Console.WriteLine(sum.ToString());
         }
+
+        public struct HugeStruct
+        {
+            public f32 a, b, c, d, f, g, h, k, l, m;
+            public f32 sum;
+        }
+
+        public class HugeClass
+        {
+            public f32 a, b, c, d, f, g, h, k, l, m;
+            public f32 sum;
+        }
+
+        int cap = 10000000;
+
+
+        public void IterationTest()
+        {
+            var structs = new List<HugeStruct>(cap);
+            var classes = new List<HugeClass>(cap);
+
+            // Initialize lists with dummy data
+            for (int i = 0; i < cap; i++)
+            {
+                f32 index = f32.one;
+                structs.Add(new HugeStruct { a = index, b = index, c = index, d = index, f = index, g = index, h = index, k = index, l = index, m = index });
+                classes.Add(new HugeClass { a = index, b = index, c = index, d = index, f = index, g = index, h = index, k = index, l = index, m = index });
+            }
+
+            var sw = new Stopwatch();
+
+            // Iterating through structs
+            sw.Start();
+            for (int i = 0; i < structs.Count; i++)
+            {
+                var s = structs[i];
+                s.sum = s.a + s.b + s.c + s.d + s.f + s.g + s.h + s.k + s.l + s.m;
+                structs[i] = s; // Retain the updated struct in the list
+            }
+            sw.Stop();
+            Console.WriteLine($"Struct iteration time: {sw.ElapsedMilliseconds} ms");
+
+            // Reset stopwatch
+            sw.Reset();
+
+            // Iterating through classes
+            sw.Start();
+            foreach (var c in classes)
+            {
+                c.sum = c.a + c.b + c.c + c.d + c.f + c.g + c.h + c.k + c.l + c.m;
+            }
+            sw.Stop();
+            Console.WriteLine($"Class iteration time: {sw.ElapsedMilliseconds} ms");
+        }
+
 
     }
 }

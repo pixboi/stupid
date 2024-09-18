@@ -22,6 +22,11 @@ namespace stupid
         Dictionary<IntPair, ContactManifoldS> ManifoldMap = new Dictionary<IntPair, ContactManifoldS>();
         List<IntPair> _removeCache = new List<IntPair>();
 
+        ContactS[] contactVectorCache = new ContactS[4];
+
+        List<ContactManifoldS> _currentManifolds = new List<ContactManifoldS>(1000);
+
+
         public event Action<ContactManifoldS> OnContact;
 
         public World(WorldSettings worldSettings, int startSize = 1000)
@@ -81,7 +86,6 @@ namespace stupid
             }
         }
 
-        ContactS[] contactVectorCache = new ContactS[4];
         void PrepareContacts(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();
@@ -134,7 +138,6 @@ namespace stupid
             }
         }
 
-        List<ContactManifoldS> _currentManifolds = new List<ContactManifoldS>(1000);
 
         //Maybe there just enough accuracy in fixed point to support tgs?
         private void NarrowPhase1(HashSet<IntPair> pairs)

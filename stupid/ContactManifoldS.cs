@@ -14,31 +14,9 @@ namespace stupid.Colliders
         public int iterationCount;
         public ContactS one, two, three, four;
 
-        public ContactS this[int i]
-        {
-            get => i switch
-            {
-                0 => one,
-                1 => two,
-                2 => three,
-                3 => four,
-                _ => throw new System.ArgumentOutOfRangeException()
-            };
-            set
-            {
-                switch (i)
-                {
-                    case 0: one = value; break;
-                    case 1: two = value; break;
-                    case 2: three = value; break;
-                    case 3: four = value; break;
-                    default: throw new System.ArgumentOutOfRangeException();
-                }
-            }
-        }
-
+        // Constructor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContactManifoldS(Collidable a, Collidable b, int contactCount, in ContactS[] contactCache)
+        public ContactManifoldS(in Collidable a, in Collidable b, int contactCount, in ContactS[] contactCache)
         {
             this.a = a;
             this.b = b;
@@ -57,9 +35,28 @@ namespace stupid.Colliders
             this.iterationCount = 0;
         }
 
+        // Indexer with a direct array-like access pattern using unsafe pointers
+        public ref ContactS this[int i]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if (i < 0 || i >= 4) throw new System.ArgumentOutOfRangeException();
+                unsafe
+                {
+                    fixed (ContactS* ptr = &one)
+                    {
+                        return ref *(ptr + i);
+                    }
+                }
+            }
+        }
+
+        // Returns an IntPair for indexing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IntPair ToPair() => new IntPair(a.index, b.index);
 
+        // Copy contacts to an array
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CopyToArray(ref ContactS[] array)
         {
@@ -74,27 +71,28 @@ namespace stupid.Colliders
             }
         }
 
+        // Retain impulse data from the old manifold
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RetainData(in ContactManifoldS old)
         {
             for (int i = 0; i < this.contactCount; i++)
             {
-                var c = this[i];
+                ref var c = ref this[i];
 
                 for (int j = 0; j < old.contactCount; j++)
                 {
                     var o = old[j];
                     if (Transfer(ref c, o))
                     {
-                        this[i] = c;
                         break; // Exit the inner loop once a match is found
                     }
                 }
             }
         }
 
+        // Transfer impulse data from an old contact to a new one
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool Transfer(ref ContactS c, in ContactS old)
+        private bool Transfer(ref ContactS c, in ContactS old)
         {
             if (c.featureId == old.featureId)
             {
@@ -103,38 +101,42 @@ namespace stupid.Colliders
                 c.prevTangent = old.tangent;
                 return true;
             }
-
             return false;
         }
 
+        // Prestep calculations for all contacts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep()
         {
             for (int i = 0; i < this.contactCount; i++)
             {
-                var contact = this[i];
+                ref var contact = ref this[i];
                 contact.CalculatePrestep(a, b);
-                this[i] = contact;
             }
         }
 
+        // Update contact data for each subtick
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SubtickUpdate()
         {
             for (int i = 0; i < this.contactCount; i++)
             {
-                var contact = this[i];
+                ref var contact = ref this[i];
                 contact.SubtickUpdate(a, b);
-                this[i] = contact;
             }
         }
 
+        // Warmup for iterative solvers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Warmup()
         {
-            for (int i = 0; i < this.contactCount; i++) this[i].WarmStart(ab, b);
+            for (int i = 0; i < this.contactCount; i++)
+            {
+                this[i].WarmStart(ab, b);
+            }
         }
 
+        // Resolve impulses and friction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resolve(in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
@@ -143,38 +145,23 @@ namespace stupid.Colliders
                 throw new System.ArgumentException("ContactManifoldS: Attempted to resolve with no contacts in manifold.");
             }
 
-            if (contactCount == 1)
-            {
-                one.SolveImpulse(ab, b, inverseDt, settings, bias);
-                one.SolveFriction(ab, b, inverseDt, friction, settings, one.accumulatedImpulse, bias);
-                return;
-            }
-
-            //f32 sumAccumulatedImpulses = f32.zero; //For that extra sticky feel
-            // Determine the starting offset based on iterationCount
             int offset = iterationCount % contactCount;
 
             // Solve impulses with offset
             for (int i = 0; i < contactCount; i++)
             {
-                int index = (i + offset) % contactCount;
-                var contact = this[index];
+                ref var contact = ref this[(i + offset) % contactCount];
                 contact.SolveImpulse(ab, b, inverseDt, settings, bias);
-                this[index] = contact;
-
             }
 
             // Solve friction with offset
             for (int i = 0; i < contactCount; i++)
             {
-                int index = (i + offset) % contactCount;
-                var contact = this[index];
+                ref var contact = ref this[(i + offset) % contactCount];
                 contact.SolveFriction(ab, b, inverseDt, friction, settings, contact.accumulatedImpulse, bias);
-                this[index] = contact;
             }
 
             this.iterationCount++;
         }
-
     }
 }
