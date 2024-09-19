@@ -54,91 +54,6 @@ namespace stupidtests
             Console.WriteLine($"Standard deviation of simulation time: {stdDevTime} ms");
         }
 
-        public int it = 10000000;
-
-        public void Vector3SAdd()
-        {
-            var v = Vector3S.zero;
-
-            for (int i = 0; i < it; i++)
-            {
-                v += Vector3S.one;
-                v -= Vector3S.left;
-                v /= f32.two;
-            }
-
-            Console.WriteLine(v.ToString());
-
-        }
-
-
-        public void Vector3SAddFast()
-        {
-            var v = Vector3S.zero;
-
-            for (int i = 0; i < it; i++)
-            {
-                v.Add(Vector3S.one);
-                v.Subtract(Vector3S.left);
-                v.Divide(f32.two);
-            }
-
-            Console.WriteLine(v.ToString());
-        }
-
-
-        public void Vector3SDot()
-        {
-            var v = Vector3S.zero;
-
-            for (int i = 0; i < it; i++)
-            {
-                Vector3S.AbsDot(v, Vector3S.zero);
-            }
-
-            Console.WriteLine(v.ToString());
-        }
-
-
-        public void Vector3SDotRaw()
-        {
-            var v = Vector3S.zero;
-
-            for (int i = 0; i < it; i++)
-            {
-                Vector3S.RawAbsDot(v, Vector3S.zero);
-            }
-
-            Console.WriteLine(v.ToString());
-        }
-
-        List<Vector3S> s = new List<Vector3S>(100000);
-
-        public void IterateForEach()
-        {
-            Vector3S sum = Vector3S.zero;
-
-            foreach (var v in s)
-            {
-                var v1 = v + Vector3S.one;
-                sum += v1;
-            }
-
-            Console.WriteLine(sum.ToString());
-        }
-
-        public void IterateForEachInPlace()
-        {
-            Vector3S sum = Vector3S.zero;
-
-            foreach (var v in s)
-            {
-                v.Add(Vector3S.one);
-                sum.Add(v);
-            }
-
-            Console.WriteLine(sum.ToString());
-        }
 
         public struct HugeStruct
         {
@@ -152,9 +67,9 @@ namespace stupidtests
             public f32 sum;
         }
 
-        int cap = 10000000;
+        int cap = 1000000;
 
-
+        [TestMethod]
         public void IterationTest()
         {
             var structs = new List<HugeStruct>(cap);
@@ -163,14 +78,14 @@ namespace stupidtests
             // Initialize lists with dummy data
             for (int i = 0; i < cap; i++)
             {
-                f32 index = f32.one;
+                f32 index = f32.FromFloat(1.0f);
                 structs.Add(new HugeStruct { a = index, b = index, c = index, d = index, f = index, g = index, h = index, k = index, l = index, m = index });
                 classes.Add(new HugeClass { a = index, b = index, c = index, d = index, f = index, g = index, h = index, k = index, l = index, m = index });
             }
 
             var sw = new Stopwatch();
 
-            // Iterating through structs
+            // Normal iteration with structs
             sw.Start();
             for (int i = 0; i < structs.Count; i++)
             {
@@ -184,7 +99,7 @@ namespace stupidtests
             // Reset stopwatch
             sw.Reset();
 
-            // Iterating through classes
+            // Normal iteration with classes
             sw.Start();
             foreach (var c in classes)
             {
@@ -192,6 +107,27 @@ namespace stupidtests
             }
             sw.Stop();
             Console.WriteLine($"Class iteration time: {sw.ElapsedMilliseconds} ms");
+
+            // Reset stopwatch
+            sw.Reset();
+
+            // Super iteration with structs using unsafe pointers
+            sw.Start();
+            unsafe
+            {
+                fixed (HugeStruct* ptr = structs.ToArray())
+                {
+                    HugeStruct* current = ptr;
+                    HugeStruct* end = ptr + structs.Count;
+                    while (current < end)
+                    {
+                        current->sum = current->a + current->b + current->c + current->d + current->f + current->g + current->h + current->k + current->l + current->m;
+                        current++;
+                    }
+                }
+            }
+            sw.Stop();
+            Console.WriteLine($"Unsafe struct iteration time: {sw.ElapsedMilliseconds} ms");
         }
 
 

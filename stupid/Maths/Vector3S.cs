@@ -47,11 +47,13 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator +(in Vector3S a, in Vector3S b)
         {
-            return new Vector3S(
-                new f32(a.x.rawValue + b.x.rawValue),
-                new f32(a.y.rawValue + b.y.rawValue),
-                new f32(a.z.rawValue + b.z.rawValue)
-            );
+            Vector3S result;
+
+            result.x.rawValue = a.x.rawValue + b.x.rawValue;
+            result.y.rawValue = a.y.rawValue + b.y.rawValue;
+            result.z.rawValue = a.z.rawValue + b.z.rawValue;
+
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -66,11 +68,13 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator -(in Vector3S a, in Vector3S b)
         {
-            return new Vector3S(
-                new f32(a.x.rawValue - b.x.rawValue),
-                new f32(a.y.rawValue - b.y.rawValue),
-                new f32(a.z.rawValue - b.z.rawValue)
-            );
+            Vector3S result;
+
+            result.x.rawValue = a.x.rawValue - b.x.rawValue;
+            result.y.rawValue = a.y.rawValue - b.y.rawValue;
+            result.z.rawValue = a.z.rawValue - b.z.rawValue;
+
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -84,11 +88,13 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator -(in Vector3S a)
         {
-            return new Vector3S(
-                new f32(-a.x.rawValue),
-                new f32(-a.y.rawValue),
-                new f32(-a.z.rawValue)
-            );
+            Vector3S result;
+
+            result.x.rawValue = -a.x.rawValue;
+            result.y.rawValue = -a.y.rawValue;
+            result.z.rawValue = -a.z.rawValue;
+
+            return result;
         }
 
         public void Negate()
@@ -109,21 +115,25 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(in Vector3S a, f32 d)
         {
-            return new Vector3S(
-                new f32((a.x.rawValue * d.rawValue) >> f32.FractionalBits),
-                new f32((a.y.rawValue * d.rawValue) >> f32.FractionalBits),
-                new f32((a.z.rawValue * d.rawValue) >> f32.FractionalBits)
-            );
+            Vector3S result;
+
+            result.x.rawValue = (a.x.rawValue * d.rawValue) >> f32.FractionalBits;
+            result.y.rawValue = (a.y.rawValue * d.rawValue) >> f32.FractionalBits;
+            result.z.rawValue = (a.z.rawValue * d.rawValue) >> f32.FractionalBits;
+
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(f32 d, in Vector3S a)
         {
-            return new Vector3S(
-                new f32((d.rawValue * a.x.rawValue) >> f32.FractionalBits),
-                new f32((d.rawValue * a.y.rawValue) >> f32.FractionalBits),
-                new f32((d.rawValue * a.z.rawValue) >> f32.FractionalBits)
-            );
+            Vector3S result;
+
+            result.x.rawValue = (d.rawValue * a.x.rawValue) >> f32.FractionalBits;
+            result.y.rawValue = (d.rawValue * a.y.rawValue) >> f32.FractionalBits;
+            result.z.rawValue = (d.rawValue * a.z.rawValue) >> f32.FractionalBits;
+
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
