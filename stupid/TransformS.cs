@@ -55,6 +55,8 @@ namespace stupid
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S ToLocalPoint(in Vector3S worldPoint)
         {
+            Vector3S result;
+
             long dx = worldPoint.x.rawValue - position.x.rawValue;
             long dy = worldPoint.y.rawValue - position.y.rawValue;
             long dz = worldPoint.z.rawValue - position.z.rawValue;
@@ -63,7 +65,11 @@ namespace stupid
             long yRaw = (rotationMatrixTranspose.m10.rawValue * dx + rotationMatrixTranspose.m11.rawValue * dy + rotationMatrixTranspose.m12.rawValue * dz) >> f32.FractionalBits;
             long zRaw = (rotationMatrixTranspose.m20.rawValue * dx + rotationMatrixTranspose.m21.rawValue * dy + rotationMatrixTranspose.m22.rawValue * dz) >> f32.FractionalBits;
 
-            return new Vector3S(new f32(xRaw), new f32(yRaw), new f32(zRaw));
+            result.x.rawValue = xRaw;
+            result.y.rawValue = yRaw;
+            result.z.rawValue = zRaw;
+
+            return result;
         }
 
         // public Vector3S ToWorldPoint(in Vector3S localPoint) => (rotationMatrix * localPoint) + position;
@@ -71,11 +77,17 @@ namespace stupid
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S ToWorldPoint(in Vector3S localPoint)
         {
+            Vector3S result;
+
             long xRaw = ((rotationMatrix.m00.rawValue * localPoint.x.rawValue + rotationMatrix.m01.rawValue * localPoint.y.rawValue + rotationMatrix.m02.rawValue * localPoint.z.rawValue) >> f32.FractionalBits) + position.x.rawValue;
             long yRaw = ((rotationMatrix.m10.rawValue * localPoint.x.rawValue + rotationMatrix.m11.rawValue * localPoint.y.rawValue + rotationMatrix.m12.rawValue * localPoint.z.rawValue) >> f32.FractionalBits) + position.y.rawValue;
             long zRaw = ((rotationMatrix.m20.rawValue * localPoint.x.rawValue + rotationMatrix.m21.rawValue * localPoint.y.rawValue + rotationMatrix.m22.rawValue * localPoint.z.rawValue) >> f32.FractionalBits) + position.z.rawValue;
 
-            return new Vector3S(new f32(xRaw), new f32(yRaw), new f32(zRaw));
+            result.x.rawValue = xRaw;
+            result.y.rawValue = yRaw;
+            result.z.rawValue = zRaw;
+
+            return result;
         }
 
         //public Vector3S InverseTransformDirection(in Vector3S worldDirection) => this.rotationMatrixTranspose * worldDirection;
@@ -83,11 +95,17 @@ namespace stupid
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S InverseTransformDirection(in Vector3S worldDirection)
         {
+            Vector3S result;
+
             long xRaw = (rotationMatrixTranspose.m00.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m01.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m02.rawValue * worldDirection.z.rawValue) >> f32.FractionalBits;
             long yRaw = (rotationMatrixTranspose.m10.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m11.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m12.rawValue * worldDirection.z.rawValue) >> f32.FractionalBits;
             long zRaw = (rotationMatrixTranspose.m20.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m21.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m22.rawValue * worldDirection.z.rawValue) >> f32.FractionalBits;
 
-            return new Vector3S(new f32(xRaw), new f32(yRaw), new f32(zRaw));
+            result.x.rawValue = xRaw;
+            result.y.rawValue = yRaw;
+            result.z.rawValue = zRaw;
+
+            return result;
         }
 
         //public Vector3S TransformDirection(in Vector3S localDirection) => rotationMatrix * localDirection;
@@ -95,11 +113,18 @@ namespace stupid
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S TransformDirection(in Vector3S localDirection)
         {
+
+            Vector3S result;
             long xRaw = (rotationMatrix.m00.rawValue * localDirection.x.rawValue + rotationMatrix.m01.rawValue * localDirection.y.rawValue + rotationMatrix.m02.rawValue * localDirection.z.rawValue) >> f32.FractionalBits;
             long yRaw = (rotationMatrix.m10.rawValue * localDirection.x.rawValue + rotationMatrix.m11.rawValue * localDirection.y.rawValue + rotationMatrix.m12.rawValue * localDirection.z.rawValue) >> f32.FractionalBits;
             long zRaw = (rotationMatrix.m20.rawValue * localDirection.x.rawValue + rotationMatrix.m21.rawValue * localDirection.y.rawValue + rotationMatrix.m22.rawValue * localDirection.z.rawValue) >> f32.FractionalBits;
 
-            return new Vector3S(new f32(xRaw), new f32(yRaw), new f32(zRaw));
+
+            result.x.rawValue = xRaw;
+            result.y.rawValue = yRaw;
+            result.z.rawValue = zRaw;
+
+            return result;
         }
 
 

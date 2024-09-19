@@ -143,13 +143,13 @@ namespace stupid.Maths
         {
             Vector3S result;
 
-            //MAth abs deterministic?
-            result.x.rawValue = Math.Abs(a.x.rawValue);
-            result.y.rawValue = Math.Abs(a.y.rawValue);
-            result.z.rawValue = Math.Abs(a.z.rawValue);
+            result.x.rawValue = (a.x.rawValue >= 0) ? a.x.rawValue : -a.x.rawValue;
+            result.y.rawValue = (a.y.rawValue >= 0) ? a.y.rawValue : -a.y.rawValue;
+            result.z.rawValue = (a.z.rawValue >= 0) ? a.z.rawValue : -a.z.rawValue;
 
             return result;
         }
+
 
         #endregion
 
