@@ -11,7 +11,6 @@ namespace stupid.Colliders
         public readonly f32 friction, restitution;
         public readonly int contactCount;
 
-        public int iterationCount;
         public ContactS one, two, three, four;
 
         // Constructor
@@ -31,8 +30,6 @@ namespace stupid.Colliders
             this.two = contactCache[1];
             this.three = contactCache[2];
             this.four = contactCache[3];
-
-            this.iterationCount = 0;
         }
 
         // Indexer with a direct array-like access pattern using unsafe pointers
@@ -115,17 +112,6 @@ namespace stupid.Colliders
             }
         }
 
-        // Update contact data for each subtick
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SubtickUpdate()
-        {
-            for (int i = 0; i < this.contactCount; i++)
-            {
-                ref var contact = ref this[i];
-                contact.SubtickUpdate(a, b);
-            }
-        }
-
         // Warmup for iterative solvers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Warmup()
@@ -138,30 +124,70 @@ namespace stupid.Colliders
 
         // Resolve impulses and friction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Resolve(in f32 inverseDt, in WorldSettings settings, in bool bias)
+        public void ResolveAll(in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
             if (contactCount == 0)
             {
                 throw new System.ArgumentException("ContactManifoldS: Attempted to resolve with no contacts in manifold.");
             }
 
-            int offset = iterationCount % contactCount;
+            if (contactCount >= 1)
+            {
+                one.SolveImpulse(ab, b, inverseDt, settings, bias);
+            }
+
+            if (contactCount >= 2)
+            {
+                two.SolveImpulse(ab, b, inverseDt, settings, bias);
+            }
+
+            if (contactCount >= 3)
+            {
+                three.SolveImpulse(ab, b, inverseDt, settings, bias);
+            }
+
+            if (contactCount >= 4)
+            {
+                four.SolveImpulse(ab, b, inverseDt, settings, bias);
+            }
+
+
+            if (contactCount >= 1)
+            {
+                one.SolveFriction(ab, b, inverseDt, friction, settings, bias);
+            }
+
+            if (contactCount >= 2)
+            {
+                two.SolveFriction(ab, b, inverseDt, friction, settings, bias);
+            }
+
+            if (contactCount >= 3)
+            {
+                three.SolveFriction(ab, b, inverseDt, friction, settings, bias);
+            }
+
+            if (contactCount >= 4)
+            {
+                four.SolveFriction(ab, b, inverseDt, friction, settings, bias);
+            }
+
+            /*
 
             // Solve impulses with offset
             for (int i = 0; i < contactCount; i++)
             {
-                ref var contact = ref this[(i + offset) % contactCount];
+                ref var contact = ref this[(i) % contactCount];
                 contact.SolveImpulse(ab, b, inverseDt, settings, bias);
             }
 
             // Solve friction with offset
             for (int i = 0; i < contactCount; i++)
             {
-                ref var contact = ref this[(i + offset) % contactCount];
-                contact.SolveFriction(ab, b, inverseDt, friction, settings, contact.accumulatedImpulse, bias);
+                ref var contact = ref this[(i) % contactCount];
+                contact.SolveFriction(ab, b, inverseDt, friction, settings, bias);
             }
-
-            this.iterationCount++;
+            */
         }
     }
 }

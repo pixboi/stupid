@@ -118,8 +118,8 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b)
         {
-
             pointCache.Clear();
+
             //A vertex on B
             for (int i = 0; i < 8; i++)
             {

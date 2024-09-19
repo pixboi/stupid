@@ -170,26 +170,26 @@ namespace stupid
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
                     var m = _currentManifolds[i];
-                    m.Resolve(inverseDt, WorldSettings, true);
+                    m.ResolveAll(inverseDt, WorldSettings, true);
                     _currentManifolds[i] = m;
                 }
 
                 foreach (var rb in Bodies)
                     rb.IntegrateVelocity(dt, WorldSettings);
-
+                /*
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
                     var m = _currentManifolds[i];
                     m.SubtickUpdate();
                     _currentManifolds[i] = m;
                 }
-
+                */
                 if (WorldSettings.Relaxation)
                 {
                     for (int i = 0; i < _currentManifolds.Count; i++)
                     {
                         var m = _currentManifolds[i];
-                        m.Resolve(inverseDt, WorldSettings, false);
+                        m.ResolveAll(inverseDt, WorldSettings, false);
                         _currentManifolds[i] = m;
                     }
                 }
@@ -267,7 +267,7 @@ namespace stupid
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
                     var m = _currentManifolds[i];
-                    m.Resolve(inverseDt, WorldSettings, true);
+                    m.ResolveAll(inverseDt, WorldSettings, true);
                     _currentManifolds[i] = m;
                 }
             }
@@ -282,7 +282,7 @@ namespace stupid
                     for (int i = 0; i < _currentManifolds.Count; i++)
                     {
                         var m = _currentManifolds[i];
-                        m.Resolve(inverseDt, WorldSettings, false);
+                        m.ResolveAll(inverseDt, WorldSettings, false);
                         _currentManifolds[i] = m;
                     }
                 }
