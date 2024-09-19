@@ -64,6 +64,7 @@ namespace stupid.Maths
         public static f32 Dot(in Vector3S a, in Vector3S b)
         {
             f32 result;
+
             long dotX = a.x.rawValue * b.x.rawValue;
             long dotY = a.y.rawValue * b.y.rawValue;
             long dotZ = a.z.rawValue * b.z.rawValue;
@@ -75,7 +76,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 AbsDot(in Vector3S a, in Vector3S b)
         {
-            return MathS.Abs(Dot(a, b));
+            f32 result = Dot(a, b);
+            return MathS.Abs(result);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -106,6 +108,7 @@ namespace stupid.Maths
 
             return result;
         }
+
 
         #endregion
 

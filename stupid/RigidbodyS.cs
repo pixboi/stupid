@@ -95,7 +95,9 @@ namespace stupid
                 angularVelocity = Vector3S.ClampMagnitude(angularVelocity, -settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
 
-            //This seems to work pretty well, even without the > f32.zero            //In fact, it increased stack stability, wonder why...
+            //This seems to work pretty well, even without the > f32.zero 
+            //In fact, it increased stack stability, wonder why...
+
             var halfAngle = angularVelocity * dt * f32.half;
             var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
             transform.rotation = (dq * transform.rotation).Normalize();

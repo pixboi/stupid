@@ -63,7 +63,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS operator *(in QuaternionS a, in QuaternionS b)
         {
-           // QuaternionS result;
+            // QuaternionS result;
             long x = (a.w.rawValue * b.x.rawValue + a.x.rawValue * b.w.rawValue + a.y.rawValue * b.z.rawValue - a.z.rawValue * b.y.rawValue) >> f32.FractionalBits;
             long y = (a.w.rawValue * b.y.rawValue - a.x.rawValue * b.z.rawValue + a.y.rawValue * b.w.rawValue + a.z.rawValue * b.x.rawValue) >> f32.FractionalBits;
             long z = (a.w.rawValue * b.z.rawValue + a.x.rawValue * b.y.rawValue - a.y.rawValue * b.x.rawValue + a.z.rawValue * b.w.rawValue) >> f32.FractionalBits;

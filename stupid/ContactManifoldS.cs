@@ -8,7 +8,7 @@ namespace stupid.Colliders
     {
         public readonly RigidbodyS a;
         public readonly Collidable b;
-        public readonly byte contactCount;
+        public readonly int contactCount;
         public ContactS one, two, three, four;
 
         // Constructor
@@ -122,27 +122,40 @@ namespace stupid.Colliders
                 throw new System.ArgumentException("ContactManifoldS: Attempted to resolve with no contacts in manifold.");
             }
 
+            Vector3S avgPoint = Vector3S.zero;
+            f32 sumAccum = f32.zero;
+
             if (contactCount >= 1)
             {
                 one.SolveImpulse(a, b, inverseDt, settings, bias);
+                avgPoint += one.point;
+                sumAccum += one.accumulatedImpulse;
             }
 
             if (contactCount >= 2)
             {
                 two.SolveImpulse(a, b, inverseDt, settings, bias);
+                avgPoint += two.point;
+                sumAccum += two.accumulatedImpulse;
             }
 
             if (contactCount >= 3)
             {
                 three.SolveImpulse(a, b, inverseDt, settings, bias);
+                avgPoint += three.point;
+                sumAccum += three.accumulatedImpulse;
             }
 
             if (contactCount >= 4)
             {
                 four.SolveImpulse(a, b, inverseDt, settings, bias);
+                avgPoint += four.point;
+                sumAccum += four.accumulatedImpulse;
             }
 
             var friction = MathS.Sqrt((a.material.staticFriction * b.material.staticFriction));
+
+
 
             if (contactCount >= 1)
             {
@@ -163,6 +176,7 @@ namespace stupid.Colliders
             {
                 four.SolveFriction(a, b, inverseDt, friction, settings, bias);
             }
+
         }
     }
 }

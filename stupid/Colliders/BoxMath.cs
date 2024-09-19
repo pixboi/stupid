@@ -49,7 +49,7 @@ namespace stupid.Colliders
 
             int count = 0;
             f32 minPen = new f32(minPenRaw);
-            minPen = -MathS.Abs(minPen);
+            minPen = -minPen;
 
             //A vert on b
             if (GetContactPoint(a, b))
@@ -58,9 +58,8 @@ namespace stupid.Colliders
                 {
                     var vertex = p.Item1;
                     var feature = p.Item2;
-                    var pen = minPen;
 
-                    contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, (byte)feature);
+                    contacts[count++] = new ContactS(vertex, normalV, minPen, a.collidable, b.collidable, (byte)feature);
                     if (count == contacts.Length) return count; // Early exit if max contacts reached
                 }
             }
@@ -73,9 +72,8 @@ namespace stupid.Colliders
                     {
                         var vertex = p.Item1;
                         var feature = p.Item2;
-                        var pen = minPen;
 
-                        contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, (byte)(feature + 8));
+                        contacts[count++] = new ContactS(vertex, normalV, minPen, a.collidable, b.collidable, (byte)(feature + 8));
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
                 }
