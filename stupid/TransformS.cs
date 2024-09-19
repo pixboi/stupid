@@ -38,7 +38,6 @@ namespace stupid
         {
             this.position += this.deltaPosition;
             this.transientPosition = this.position;
-
             this.deltaPosition = Vector3S.zero;
         }
 

@@ -58,15 +58,11 @@ public struct ContactS
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void CalculatePrestep(Collidable a, Collidable b)
+    public void CalculatePrestep(RigidbodyS ab, Collidable b)
     {
-        if (a.isDynamic || b.isDynamic)
-        {
-            var ab = (RigidbodyS)a;
-            var bb = b.isDynamic ? (RigidbodyS)b : null;
-            CalculateMassNormal(ab, bb, out this.normalMass);
-            CalculateMassTangent(ab, bb, out this.tangent, out this.tangentMass);
-        }
+        var bb = b.isDynamic ? (RigidbodyS)b : null;
+        CalculateMassNormal(ab, bb, out this.normalMass);
+        CalculateMassTangent(ab, bb, out this.tangent, out this.tangentMass);
     }
 
 

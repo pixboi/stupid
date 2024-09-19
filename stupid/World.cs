@@ -105,7 +105,7 @@ namespace stupid
                 var count = a.collider.Intersects(b, ref contactVectorCache);
                 if (count > 0)
                 {
-                    var manifold = new ContactManifoldS(a, b, count, contactVectorCache);
+                    var manifold = new ContactManifoldS((RigidbodyS)a, b, count, contactVectorCache);
 
                     if (WorldSettings.Warmup)
                     {
@@ -135,75 +135,6 @@ namespace stupid
             {
                 ManifoldMap.Remove(key);
                 pairs.Remove(key);
-            }
-        }
-
-
-        //Maybe there just enough accuracy in fixed point to support tgs?
-        private void NarrowPhase1(HashSet<IntPair> pairs)
-        {
-            var dt = SubDelta;
-            var inverseDt = InverseSubDelta;
-
-            _currentManifolds.Clear();
-            foreach (var p in pairs)
-                _currentManifolds.Add(ManifoldMap[p]);
-
-            //Add a the current .SimulationFrame as an offset to the list, like rotate it with that, should be kind of deterministic?
-            int frameOffset = SimulationFrame % _currentManifolds.Count;
-            if (frameOffset > 0)
-            {
-                // Perform in-place rotation
-                RotateListInPlace(_currentManifolds, frameOffset);
-            }
-
-            for (int substep = 0; substep < WorldSettings.DefaultSolverIterations; substep++)
-            {
-
-
-                foreach (var rb in Bodies)
-                    rb.IntegrateForces(dt, WorldSettings);
-
-                if (WorldSettings.Warmup)
-                    foreach (var m in _currentManifolds) m.Warmup();
-
-                for (int i = 0; i < _currentManifolds.Count; i++)
-                {
-                    var m = _currentManifolds[i];
-                    m.ResolveAll(inverseDt, WorldSettings, true);
-                    _currentManifolds[i] = m;
-                }
-
-                foreach (var rb in Bodies)
-                    rb.IntegrateVelocity(dt, WorldSettings);
-                /*
-                for (int i = 0; i < _currentManifolds.Count; i++)
-                {
-                    var m = _currentManifolds[i];
-                    m.SubtickUpdate();
-                    _currentManifolds[i] = m;
-                }
-                */
-                if (WorldSettings.Relaxation)
-                {
-                    for (int i = 0; i < _currentManifolds.Count; i++)
-                    {
-                        var m = _currentManifolds[i];
-                        m.ResolveAll(inverseDt, WorldSettings, false);
-                        _currentManifolds[i] = m;
-                    }
-                }
-
-
-            }
-
-            foreach (var rb in Bodies) rb.FinalizePosition();
-
-            //Save changes
-            for (int i = 0; i < _currentManifolds.Count; i++)
-            {
-                var m = _currentManifolds[i];
-                ManifoldMap[m.ToPair()] = m;
             }
         }
 
@@ -294,7 +225,7 @@ namespace stupid
             for (int i = 0; i < _currentManifolds.Count; i++)
             {
                 var m = _currentManifolds[i];
-                ManifoldMap[m.ToPair()] = m;
+                ManifoldMap[m.ToPair] = m;
             }
         }
     }

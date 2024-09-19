@@ -6,32 +6,26 @@ namespace stupid.Colliders
 {
     public struct ContactManifoldS
     {
-        public readonly Collidable a, b;
-        public readonly RigidbodyS ab, bb;
-        public readonly f32 friction, restitution;
-
-
-        public readonly int contactCount;
+        public readonly RigidbodyS a;
+        public readonly Collidable b;
+        public readonly byte contactCount;
         public ContactS one, two, three, four;
 
         // Constructor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContactManifoldS(in Collidable a, in Collidable b, int contactCount, in ContactS[] contactCache)
+        public ContactManifoldS(RigidbodyS a, Collidable b, int contactCount, in ContactS[] contactCache)
         {
             this.a = a;
             this.b = b;
-            this.ab = a.isDynamic ? (RigidbodyS)a : null;
-            this.bb = b.isDynamic ? (RigidbodyS)b : null;
+            this.contactCount = (byte)contactCount;
 
-            this.friction = (a.material.staticFriction + b.material.staticFriction) * f32.half;
-            this.restitution = (a.material.restitution + b.material.restitution) * f32.half;
-
-            this.contactCount = contactCount;
             this.one = contactCache[0];
             this.two = contactCache[1];
             this.three = contactCache[2];
             this.four = contactCache[3];
         }
+
+        public IntPair ToPair => new IntPair(this.a.index, this.b.index);
 
         // Indexer with a direct array-like access pattern using unsafe pointers
         public ref ContactS this[int i]
@@ -49,10 +43,6 @@ namespace stupid.Colliders
                 }
             }
         }
-
-        // Returns an IntPair for indexing
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IntPair ToPair() => new IntPair(a.index, b.index);
 
         // Copy contacts to an array
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -119,7 +109,7 @@ namespace stupid.Colliders
         {
             for (int i = 0; i < this.contactCount; i++)
             {
-                this[i].WarmStart(ab, b);
+                this[i].WarmStart(a, b);
             }
         }
 
@@ -134,61 +124,45 @@ namespace stupid.Colliders
 
             if (contactCount >= 1)
             {
-                one.SolveImpulse(ab, b, inverseDt, settings, bias);
+                one.SolveImpulse(a, b, inverseDt, settings, bias);
             }
 
             if (contactCount >= 2)
             {
-                two.SolveImpulse(ab, b, inverseDt, settings, bias);
+                two.SolveImpulse(a, b, inverseDt, settings, bias);
             }
 
             if (contactCount >= 3)
             {
-                three.SolveImpulse(ab, b, inverseDt, settings, bias);
+                three.SolveImpulse(a, b, inverseDt, settings, bias);
             }
 
             if (contactCount >= 4)
             {
-                four.SolveImpulse(ab, b, inverseDt, settings, bias);
+                four.SolveImpulse(a, b, inverseDt, settings, bias);
             }
 
+            var friction = MathS.Sqrt((a.material.staticFriction * b.material.staticFriction));
 
             if (contactCount >= 1)
             {
-                one.SolveFriction(ab, b, inverseDt, friction, settings, bias);
+                one.SolveFriction(a, b, inverseDt, friction, settings, bias);
             }
 
             if (contactCount >= 2)
             {
-                two.SolveFriction(ab, b, inverseDt, friction, settings, bias);
+                two.SolveFriction(a, b, inverseDt, friction, settings, bias);
             }
 
             if (contactCount >= 3)
             {
-                three.SolveFriction(ab, b, inverseDt, friction, settings, bias);
+                three.SolveFriction(a, b, inverseDt, friction, settings, bias);
             }
 
             if (contactCount >= 4)
             {
-                four.SolveFriction(ab, b, inverseDt, friction, settings, bias);
+                four.SolveFriction(a, b, inverseDt, friction, settings, bias);
             }
-
-            /*
-
-            // Solve impulses with offset
-            for (int i = 0; i < contactCount; i++)
-            {
-                ref var contact = ref this[(i) % contactCount];
-                contact.SolveImpulse(ab, b, inverseDt, settings, bias);
-            }
-
-            // Solve friction with offset
-            for (int i = 0; i < contactCount; i++)
-            {
-                ref var contact = ref this[(i) % contactCount];
-                contact.SolveFriction(ab, b, inverseDt, friction, settings, bias);
-            }
-            */
         }
     }
 }

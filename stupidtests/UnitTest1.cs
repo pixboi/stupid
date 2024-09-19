@@ -72,26 +72,16 @@ namespace stupidtests
         [TestMethod]
         public void IterationTest()
         {
-            var structs = new List<HugeStruct>(cap);
-            var classes = new List<HugeClass>(cap);
-
-            // Initialize lists with dummy data
-            for (int i = 0; i < cap; i++)
-            {
-                f32 index = f32.FromFloat(1.0f);
-                structs.Add(new HugeStruct { a = index, b = index, c = index, d = index, f = index, g = index, h = index, k = index, l = index, m = index });
-                classes.Add(new HugeClass { a = index, b = index, c = index, d = index, f = index, g = index, h = index, k = index, l = index, m = index });
-            }
+            var manifolds = new List<ContactManifoldS>(cap);
+            var contacts = new List<ContactS>(cap);
 
             var sw = new Stopwatch();
 
             // Normal iteration with structs
             sw.Start();
-            for (int i = 0; i < structs.Count; i++)
+            foreach (var m in manifolds)
             {
-                var s = structs[i];
-                s.sum = s.a + s.b + s.c + s.d + s.f + s.g + s.h + s.k + s.l + s.m;
-                structs[i] = s; // Retain the updated struct in the list
+
             }
             sw.Stop();
             Console.WriteLine($"Struct iteration time: {sw.ElapsedMilliseconds} ms");
@@ -101,33 +91,12 @@ namespace stupidtests
 
             // Normal iteration with classes
             sw.Start();
-            foreach (var c in classes)
+            foreach (var c in contacts)
             {
-                c.sum = c.a + c.b + c.c + c.d + c.f + c.g + c.h + c.k + c.l + c.m;
+
             }
             sw.Stop();
             Console.WriteLine($"Class iteration time: {sw.ElapsedMilliseconds} ms");
-
-            // Reset stopwatch
-            sw.Reset();
-
-            // Super iteration with structs using unsafe pointers
-            sw.Start();
-            unsafe
-            {
-                fixed (HugeStruct* ptr = structs.ToArray())
-                {
-                    HugeStruct* current = ptr;
-                    HugeStruct* end = ptr + structs.Count;
-                    while (current < end)
-                    {
-                        current->sum = current->a + current->b + current->c + current->d + current->f + current->g + current->h + current->k + current->l + current->m;
-                        current++;
-                    }
-                }
-            }
-            sw.Stop();
-            Console.WriteLine($"Unsafe struct iteration time: {sw.ElapsedMilliseconds} ms");
         }
 
 
