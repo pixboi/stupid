@@ -62,11 +62,13 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(in Matrix3S m, in Vector3S v)
         {
-            long x = ((m.m00.rawValue * v.x.rawValue) + (m.m01.rawValue * v.y.rawValue) + (m.m02.rawValue * v.z.rawValue)) >> f32.FractionalBits;
-            long y = ((m.m10.rawValue * v.x.rawValue) + (m.m11.rawValue * v.y.rawValue) + (m.m12.rawValue * v.z.rawValue)) >> f32.FractionalBits;
-            long z = ((m.m20.rawValue * v.x.rawValue) + (m.m21.rawValue * v.y.rawValue) + (m.m22.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+            Vector3S result;
 
-            return new Vector3S(new f32(x), new f32(y), new f32(z));
+            result.x.rawValue = ((m.m00.rawValue * v.x.rawValue) + (m.m01.rawValue * v.y.rawValue) + (m.m02.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+            result.y.rawValue = ((m.m10.rawValue * v.x.rawValue) + (m.m11.rawValue * v.y.rawValue) + (m.m12.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+            result.z.rawValue = ((m.m20.rawValue * v.x.rawValue) + (m.m21.rawValue * v.y.rawValue) + (m.m22.rawValue * v.z.rawValue)) >> f32.FractionalBits;
+
+            return result;
         }
 
         // Multiply matrix by matrix

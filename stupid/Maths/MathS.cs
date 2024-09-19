@@ -6,22 +6,26 @@ namespace stupid.Maths
     public static class MathS
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Min(in f32 a, in f32 b) => a < b ? a : b;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Max(in f32 a, in f32 b) => a > b ? a : b;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Avg(in f32 a, in f32 b) => (a + b) * f32.half;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Lerp(in f32 a, in f32 b, in f32 t)
+        public static f32 Min(in f32 a, in f32 b)
         {
-            var x = b;
-            x.Subtract(a);
-            x.Multiply(t);
-            x.Add(a);
-            return x;
+            if (a.rawValue < b.rawValue)
+            {
+                return a;
+            }
+
+            return b;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static f32 Max(in f32 a, in f32 b)
+        {
+            if (a.rawValue > b.rawValue)
+            {
+                return a;
+            }
+
+            return b;
         }
 
 
@@ -105,6 +109,8 @@ namespace stupid.Maths
             if (value == f32.zero)
                 return f32.zero;
 
+            f32 result;
+
             long rawValue = value.rawValue;
             long xRaw = rawValue > f32.One ? rawValue : f32.One; // Initial guess in raw form
             const int iterations = 8; // Number of iterations can be adjusted
@@ -115,7 +121,9 @@ namespace stupid.Maths
                 xRaw = (xRaw + div) >> 1; // (x + value / x) / 2
             }
 
-            return new f32(xRaw);
+            result.rawValue = xRaw;
+
+            return result;
         }
 
         public static f32 Exp(in f32 value)

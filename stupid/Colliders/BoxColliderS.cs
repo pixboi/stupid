@@ -117,8 +117,7 @@ namespace stupid.Colliders
 
         public bool ContainsPoint(in Vector3S worldPoint)
         {
-            var absLocal = collidable.transform.ToLocalPoint(worldPoint);
-            absLocal.AbsInPlace();
+            var absLocal = Vector3S.Abs(collidable.transform.ToLocalPoint(worldPoint));
 
             var fat = f32.epsilon;
 
@@ -182,8 +181,8 @@ namespace stupid.Colliders
         {
             // Transform the ray to the local space of the box
             Vector3S localOrigin = collidable.transform.ToLocalPoint(rayOrigin);
-            Vector3S localDirection = collidable.transform.InverseTransformDirection(rayDirection);
-            localDirection.NormalizeInPlace();
+            Vector3S localDirection = collidable.transform.InverseTransformDirection(rayDirection).Normalize();
+
 
             // Initialize intersection parameters
             tMin = f32.minValue;

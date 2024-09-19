@@ -6,7 +6,7 @@ namespace stupid.Maths
     public struct f32 : IEquatable<f32>, IComparable<f32>
     {
         public long rawValue;
-        public const byte FractionalBits = 24;
+        public const int FractionalBits = 24;
         public const long One = 1L << FractionalBits;
         public const long Two = 2L << FractionalBits;
 
@@ -49,20 +49,12 @@ namespace stupid.Maths
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Add(in f32 b) { rawValue += b.rawValue; }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(in f32 a, in f32 b)
         {
             f32 result;
             result.rawValue = a.rawValue - b.rawValue;
             return result;
         }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Subtract(in f32 b) { rawValue -= b.rawValue; }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -73,8 +65,6 @@ namespace stupid.Maths
             return result;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Multiply(in f32 b) { rawValue = (rawValue * b.rawValue) >> FractionalBits; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator /(in f32 a, in f32 b)
@@ -85,29 +75,8 @@ namespace stupid.Maths
             long dividend = (a.rawValue << FractionalBits);
 
             result.rawValue = dividend / b.rawValue;
-
             return result;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Divide(in f32 b)
-        {
-            if (b.rawValue == 0) throw new DivideByZeroException("Cannot divide by zero.");
-
-            long dividend = (this.rawValue << FractionalBits);
-            this.rawValue = dividend / b.rawValue;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AbsInPlace()
-        {
-            long mask = rawValue >> 63;  // This creates a mask that is 0xFFFFFFFFFFFFFFFF if rawValue is negative, or 0x0000000000000000 if positive.
-            rawValue = (rawValue + mask) ^ mask;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset() { rawValue = 0; }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(in f32 value)
@@ -115,12 +84,6 @@ namespace stupid.Maths
             f32 result;
             result.rawValue = -value.rawValue;
             return result;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Negate()
-        {
-            this.rawValue = -this.rawValue;
         }
 
 

@@ -73,7 +73,7 @@ namespace stupid.Colliders
                     worldNormal = localSpherePos.z > f32.zero ? forward : -forward;
                 }
 
-                worldNormal.NormalizeInPlace();
+                worldNormal = worldNormal.Normalize();
 
                 var penetrationDepth = (sphere.radius * worldNormal).Magnitude();
 

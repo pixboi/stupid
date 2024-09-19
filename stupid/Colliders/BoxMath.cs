@@ -27,17 +27,17 @@ namespace stupid.Colliders
 
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.rightAxis).NormalizeInPlace(), a, b, 6, ref minPenRaw, ref minAxis, ref best)) return 0; //0,0
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.upAxis).NormalizeInPlace(), a, b, 7, ref minPenRaw, ref minAxis, ref best)) return 0; //0,1
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.forwardAxis).NormalizeInPlace(), a, b, 8, ref minPenRaw, ref minAxis, ref best)) return 0; //0,2
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.rightAxis).Normalize(), a, b, 6, ref minPenRaw, ref minAxis, ref best)) return 0; //0,0
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.upAxis).Normalize(), a, b, 7, ref minPenRaw, ref minAxis, ref best)) return 0; //0,1
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.forwardAxis).Normalize(), a, b, 8, ref minPenRaw, ref minAxis, ref best)) return 0; //0,2
 
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.rightAxis).NormalizeInPlace(), a, b, 9, ref minPenRaw, ref minAxis, ref best)) return 0; //1,0
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.upAxis).NormalizeInPlace(), a, b, 10, ref minPenRaw, ref minAxis, ref best)) return 0; //1,1
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.forwardAxis).NormalizeInPlace(), a, b, 11, ref minPenRaw, ref minAxis, ref best)) return 0; //1,2
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.rightAxis).Normalize(), a, b, 9, ref minPenRaw, ref minAxis, ref best)) return 0; //1,0
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.upAxis).Normalize(), a, b, 10, ref minPenRaw, ref minAxis, ref best)) return 0; //1,1
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.forwardAxis).Normalize(), a, b, 11, ref minPenRaw, ref minAxis, ref best)) return 0; //1,2
 
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.rightAxis).NormalizeInPlace(), a, b, 12, ref minPenRaw, ref minAxis, ref best)) return 0; //2,0
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.upAxis).NormalizeInPlace(), a, b, 13, ref minPenRaw, ref minAxis, ref best)) return 0; //2,1
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.forwardAxis).NormalizeInPlace(), a, b, 14, ref minPenRaw, ref minAxis, ref best)) return 0; //2,2
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.rightAxis).Normalize(), a, b, 12, ref minPenRaw, ref minAxis, ref best)) return 0; //2,0
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.upAxis).Normalize(), a, b, 13, ref minPenRaw, ref minAxis, ref best)) return 0; //2,1
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.forwardAxis).Normalize(), a, b, 14, ref minPenRaw, ref minAxis, ref best)) return 0; //2,2
 
             if (best == -1)
             {
