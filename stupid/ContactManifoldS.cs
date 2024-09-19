@@ -9,8 +9,9 @@ namespace stupid.Colliders
         public readonly Collidable a, b;
         public readonly RigidbodyS ab, bb;
         public readonly f32 friction, restitution;
-        public readonly int contactCount;
 
+
+        public readonly int contactCount;
         public ContactS one, two, three, four;
 
         // Constructor
