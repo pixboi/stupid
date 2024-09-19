@@ -2,20 +2,41 @@
 using stupid;
 using System.Runtime.CompilerServices;
 
-public struct ContactS
+public readonly struct ContactData
 {
     //Init
-    public readonly Vector3S point, normal, localAnchorA, localAnchorB;
+    public readonly Vector3S point, normal;
     public readonly f32 penetrationDepth;
     public readonly int featureId;
 
+    public ContactData(Vector3S point, Vector3S normal, f32 penetrationDepth, int featureId)
+    {
+        this.point = point;
+        this.normal = normal;
+        this.penetrationDepth = penetrationDepth;
+        this.featureId = featureId;
+    }
+}
+
+public readonly struct ContactConstraint
+{
+    public readonly Vector3S normal, ra, rb;
+}
+
+public struct ContactS
+{
+    //Init
+    public readonly Vector3S point, normal, ra, rb;
+    public readonly f32 penetrationDepth;
+    public readonly byte featureId;
+
     //Runtime
-    public Vector3S tangent, prevTangent, ra, rb;
+    public Vector3S tangent, prevTangent;
     public f32 normalMass, tangentMass;
     public f32 accumulatedImpulse, accumulatedFriction;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ContactS(in Vector3S point, in Vector3S normal, in f32 penetrationDepth, in Collidable a, in Collidable b, int featureId = -1)
+    public ContactS(in Vector3S point, in Vector3S normal, in f32 penetrationDepth, in Collidable a, in Collidable b, byte featureId = 255)
     {
         // Contact point on A, normal points towards B
         this.point = point;
@@ -23,10 +44,10 @@ public struct ContactS
         this.penetrationDepth = penetrationDepth;
         this.featureId = featureId;
 
-        this.localAnchorA = a.transform.ToLocalPoint(this.point);
-        this.localAnchorB = b.transform.ToLocalPoint(this.point);
-        this.ra = a.transform.TransformDirection(this.localAnchorA);
-        this.rb = b.transform.TransformDirection(this.localAnchorB);
+        var localAnchorA = a.transform.ToLocalPoint(this.point);
+        var localAnchorB = b.transform.ToLocalPoint(this.point);
+        this.ra = a.transform.TransformDirection(localAnchorA);
+        this.rb = b.transform.TransformDirection(localAnchorB);
 
         this.normalMass = f32.zero;
         this.tangent = Vector3S.zero;

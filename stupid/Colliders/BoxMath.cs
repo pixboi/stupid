@@ -60,7 +60,7 @@ namespace stupid.Colliders
                     var feature = p.Item2;
                     var pen = minPen;
 
-                    contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature);
+                    contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, (byte)feature);
                     if (count == contacts.Length) return count; // Early exit if max contacts reached
                 }
             }
@@ -75,7 +75,7 @@ namespace stupid.Colliders
                         var feature = p.Item2;
                         var pen = minPen;
 
-                        contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, feature + 8);
+                        contacts[count++] = new ContactS(vertex, normalV, pen, a.collidable, b.collidable, (byte)(feature + 8));
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
                 }
@@ -97,14 +97,14 @@ namespace stupid.Colliders
                     // Check in the positive direction
                     if (b.RaycastBox(start, dir, out var p1, out var m1))
                     {
-                        contacts[count++] = new ContactS(p1, normalV, minPen, a.collidable, b.collidable, baseFeatureID);
+                        contacts[count++] = new ContactS(p1, normalV, minPen, a.collidable, b.collidable, (byte)baseFeatureID);
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
 
                     // Check in the negative direction
                     if (b.RaycastBox(start, -dir, out var p2, out var m2))
                     {
-                        contacts[count++] = new ContactS(p2, normalV, minPen, a.collidable, b.collidable, baseFeatureID + 1);
+                        contacts[count++] = new ContactS(p2, normalV, minPen, a.collidable, b.collidable, (byte)(baseFeatureID + 1));
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
                 }
