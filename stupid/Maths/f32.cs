@@ -40,21 +40,38 @@ namespace stupid.Maths
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator +(in f32 a, in f32 b) => new f32(a.rawValue + b.rawValue);
+        public static f32 operator +(in f32 a, in f32 b)
+        {
+            f32 result;
+            result.rawValue = a.rawValue + b.rawValue;
+            return result;
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(in f32 b) { rawValue += b.rawValue; }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator -(in f32 a, in f32 b) => new f32(a.rawValue - b.rawValue);
+        public static f32 operator -(in f32 a, in f32 b)
+        {
+            f32 result;
+            result.rawValue = a.rawValue - b.rawValue;
+            return result;
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Subtract(in f32 b) { rawValue -= b.rawValue; }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator *(in f32 a, in f32 b) => new f32((a.rawValue * b.rawValue) >> FractionalBits);
+        public static f32 operator *(in f32 a, in f32 b)
+        {
+            f32 result;
+            result.rawValue = (a.rawValue * b.rawValue) >> FractionalBits;
+            return result;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Multiply(in f32 b) { rawValue = (rawValue * b.rawValue) >> FractionalBits; }
@@ -64,9 +81,12 @@ namespace stupid.Maths
         {
             if (b.rawValue == 0) throw new DivideByZeroException("Cannot divide by zero.");
 
+            f32 result;
             long dividend = (a.rawValue << FractionalBits);
-            long result = dividend / b.rawValue;
-            return new f32(result);
+
+            result.rawValue = dividend / b.rawValue;
+
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -90,7 +110,12 @@ namespace stupid.Maths
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 operator -(in f32 value) => new f32(-value.rawValue);
+        public static f32 operator -(in f32 value)
+        {
+            f32 result;
+            result.rawValue = -value.rawValue;
+            return result;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Negate()

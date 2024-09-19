@@ -122,11 +122,10 @@ public struct ContactS
     {
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-        /*
         Vector3S warmImpulse = (this.normal * this.accumulatedImpulse) + (this.tangent * this.accumulatedFriction);
-        ApplyImpulse(a, bb, warmImpulse);
-        */
+        ApplyImpulse(a, bb, warmImpulse, this.ra, this.rb);
 
+        /*
         var ni = this.normal;
         ni.Multiply(this.accumulatedImpulse);
 
@@ -136,14 +135,13 @@ public struct ContactS
         ni.Add(ti);
 
         ApplyImpulse(a, bb, ni, this.ra, this.rb);
+        */
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 slop)
+    static f32 CalculateSeparation(in TransformS a, in TransformS b, in f32 pen, in f32 slop)
     {
-        var s = this.penetrationDepth;
-        s.Add(slop);
-        return MathS.Min(f32.zero, s);
+        return MathS.Min(f32.zero, pen + slop);
 
         /*
         var ds = b.transientPosition + this.rb - a.transientPosition - this.ra;
@@ -165,7 +163,7 @@ public struct ContactS
         var bb = b.isDynamic ? (RigidbodyS)b : null;
 
         var bias = f32.zero;
-        var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
+        var separation = CalculateSeparation(a.transform, b.transform, this.penetrationDepth, settings.DefaultContactOffset);
 
         if (separation > f32.zero)
         {
@@ -196,17 +194,11 @@ public struct ContactS
 
         var contactVelocity = CalculateContactVelocity(a, bb, this.ra, this.rb);
 
-        /*
-        //var separation = CalculateSeparation(a.transform, b.transform, settings.DefaultContactOffset);
-        //f32 bias = f32.zero;
-        // if (useBias) bias = settings.Baumgartner * separation * inverseDt;
-        */
+        var couloumbMax = sumAccum * friction;
 
         var vt = Vector3S.Dot(contactVelocity, this.tangent);
-        var incrementalFriction = -this.tangentMass;
-        incrementalFriction.Multiply(vt);
+        var incrementalFriction = -this.tangentMass * vt;
 
-        var couloumbMax = sumAccum * friction;
         var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);
         incrementalFriction = newImpulse - this.accumulatedFriction;
         this.accumulatedFriction = newImpulse;
@@ -217,14 +209,14 @@ public struct ContactS
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb, in Vector3S ra, in Vector3S rb)
+    static Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb, in Vector3S ra, in Vector3S rb)
     {
-        /*
-        var av = a.velocity + Vector3S.Cross(a.angularVelocity, this.ra);
-        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, this.rb) : Vector3S.zero;
-        return bv - av;
-        */
 
+        var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+        var bv = bb != null ? bb.velocity + Vector3S.Cross(bb.angularVelocity, rb) : Vector3S.zero;
+        return bv - av;
+
+        /*
         var ai = a.velocity;
         var ac = a.angularVelocity;
         ac.CrossInPlace(ra);// Vector3S.Cross(a.angularVelocity, this.ra);
@@ -241,24 +233,22 @@ public struct ContactS
 
         bi.Subtract(ai);
         return bi;
-
+        */
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
+    static void ApplyImpulse(in RigidbodyS a, in RigidbodyS bb, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
     {
-        /*
         a.velocity -= impulse * a.inverseMass; // A moves away
-        a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(this.ra, impulse);
+        a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
 
         if (bb != null)
         {
             bb.velocity += impulse * bb.inverseMass; // B moves along normal
-            bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(this.rb, impulse);
+            bb.angularVelocity += bb.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
         }
 
-        */
-
+        /*
         // Update linear velocity for 'a'
         Vector3S ai = impulse;
         ai.Multiply(a.inverseMass); // ai = impulse * a.inverseMass
@@ -284,7 +274,7 @@ public struct ContactS
             rbCrossImpulse.Multiply(bb.tensor.inertiaWorld); // rbCrossImpulse = bb.tensor.inertiaWorld * rbCrossImpulse
             bb.angularVelocity.Add(rbCrossImpulse); // bb.angularVelocity += rbCrossImpulse
         }
-
+        */
 
     }
 
