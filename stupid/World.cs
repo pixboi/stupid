@@ -106,7 +106,6 @@ namespace stupid
                 if (count > 0)
                 {
                     var manifold = new ContactManifoldSlim((RigidbodyS)a, b, contactVectorCache, count);
-                    Vector3S tangent = Vector3S.zero;
 
                     if (WorldSettings.Warmup)
                     {
@@ -114,11 +113,10 @@ namespace stupid
                         {
                             //This retains data
                             manifold.RetainData(oldM);
-                            tangent = oldM.tangent;
                         }
                     }
 
-                    manifold.CalculateMassTangent(tangent);
+                    manifold.CalculatePrestep();
 
                     ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);

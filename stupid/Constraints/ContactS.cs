@@ -163,45 +163,6 @@ public struct ContactS
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SolvePatchFriction(in RigidbodyS a, in Collidable b, in Vector3S avgPoint, in f32 sumAccum, in f32 friction)
-    {
-        var bb = b.isDynamic ? (RigidbodyS)b : null;
-
-        var RA = avgPoint - a.transform.position;
-        var RB = avgPoint - b.transform.position;
-        var contactVelocity = CalculateContactVelocity(a, bb, RA, RB);
-
-        // Project the contact velocity onto the plane perpendicular to the normal (get the tangential velocity)
-        Vector3S nv = this.normal * Vector3S.Dot(contactVelocity, this.normal);
-        Vector3S tv = contactVelocity - nv;
-        Vector3S t = tv.Normalize();
-
-        // Precompute cross products for mass calculation
-        var ract = Vector3S.Cross(RA, t);
-        var tmass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * ract, RA), t);
-
-        if (bb != null)
-        {
-            var rbct = Vector3S.Cross(RB, t);
-            tmass += bb.inverseMass + Vector3S.Dot(Vector3S.Cross(bb.tensor.inertiaWorld * rbct, RB), t);
-        }
-
-        tmass = tmass > f32.zero ? f32.one / tmass : f32.zero;
-
-        var vt = Vector3S.Dot(contactVelocity, t);
-        var incrementalFriction = -tmass * vt;
-
-        var couloumbMax = sumAccum * friction;
-        var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);
-        incrementalFriction = newImpulse - this.accumulatedFriction;
-        this.accumulatedFriction = newImpulse;
-
-        var tangentImpulse = t * incrementalFriction;
-        ApplyImpulse(a, bb, tangentImpulse, RA, RB);
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS bb, in Vector3S ra, in Vector3S rb)
     {
         var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
