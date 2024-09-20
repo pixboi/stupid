@@ -12,7 +12,7 @@ namespace stupid.Colliders
         }
 
         public abstract BoundsS GetBounds(TransformS t);
-        public abstract int Intersects(Collidable other, ref ContactS[] contacts);
+        public abstract int Intersects(Collidable other, ref ContactData[] contacts);
 
         public abstract Matrix3S CalculateInertiaTensor(in f32 mass);
 

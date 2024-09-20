@@ -19,14 +19,14 @@ namespace stupid
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
 
         int _counter;
-        Dictionary<IntPair, ContactManifoldS> ManifoldMap = new Dictionary<IntPair, ContactManifoldS>();
+        Dictionary<IntPair, ContactManifoldSlim> ManifoldMap = new Dictionary<IntPair, ContactManifoldSlim>();
         List<IntPair> _removeCache = new List<IntPair>();
 
-        ContactS[] contactVectorCache = new ContactS[4];
+        ContactData[] contactVectorCache = new ContactData[4];
 
-        List<ContactManifoldS> _currentManifolds = new List<ContactManifoldS>(1000);
+        List<ContactManifoldSlim> _currentManifolds = new List<ContactManifoldSlim>(1000);
 
-        public event Action<ContactManifoldS> OnContact;
+        public event Action<ContactManifoldSlim> OnContact;
 
         public World(WorldSettings worldSettings, int startSize = 1000)
         {
@@ -102,9 +102,11 @@ namespace stupid
                 }
 
                 var count = a.collider.Intersects(b, ref contactVectorCache);
+
                 if (count > 0)
                 {
-                    var manifold = new ContactManifoldS((RigidbodyS)a, b, count, contactVectorCache);
+                    var manifold = new ContactManifoldSlim((RigidbodyS)a, b, contactVectorCache, count);
+                    Vector3S tangent = Vector3S.zero;
 
                     if (WorldSettings.Warmup)
                     {
@@ -112,11 +114,11 @@ namespace stupid
                         {
                             //This retains data
                             manifold.RetainData(oldM);
+                            tangent = oldM.tangent;
                         }
                     }
 
-                    //Then we calc the mass
-                    manifold.CalculatePrestep();
+                    manifold.CalculateMassTangent(tangent);
 
                     ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);
@@ -199,7 +201,7 @@ namespace stupid
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
                     var m = _currentManifolds[i];
-                    m.ResolveAll(inverseDt, WorldSettings, true);
+                    m.Resolve(inverseDt, WorldSettings, true);
                     _currentManifolds[i] = m;
                 }
             }
@@ -214,7 +216,7 @@ namespace stupid
                     for (int i = 0; i < _currentManifolds.Count; i++)
                     {
                         var m = _currentManifolds[i];
-                        m.ResolveAll(inverseDt, WorldSettings, false);
+                        m.Resolve(inverseDt, WorldSettings, false);
                         _currentManifolds[i] = m;
                     }
                 }

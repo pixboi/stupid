@@ -24,7 +24,7 @@ namespace stupid.Colliders
             return new BoundsS(transform.position - size, transform.position + size);
         }
 
-        public override int Intersects(Collidable other, ref ContactS[] contacts)
+        public override int Intersects(Collidable other, ref ContactData[] contacts)
         {
             if (other.collider is SphereColliderS otherSphere)
             {

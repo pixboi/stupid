@@ -139,7 +139,7 @@ namespace stupid.Colliders
             return new BoundsS(min, max);
         }
 
-        public override int Intersects(Collidable other, ref ContactS[] contact)
+        public override int Intersects(Collidable other, ref ContactData[] contact)
         {
             if (other.collider is BoxColliderS otherBox)
             {

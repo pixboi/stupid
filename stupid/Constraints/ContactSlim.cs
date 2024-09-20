@@ -16,7 +16,6 @@ public struct ContactSlim
         this.accumulatedImpulse = f32.zero;
 
         var ra = this.point - a.transform.position;
-
         Vector3S raCrossNormal = Vector3S.Cross(ra, normal);
         f32 angularMassA = Vector3S.Dot(raCrossNormal, a.tensor.inertiaWorld * raCrossNormal);
         f32 effectiveMass = a.inverseMass + angularMassA;
@@ -42,6 +41,14 @@ public struct ContactSlim
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS b, in Vector3S ra, in Vector3S rb)
+    {
+        var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+        var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+        return bv - av;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SolveImpulse(in RigidbodyS a, in RigidbodyS b, in f32 inverseDt, in WorldSettings settings, in f32 penetrationDepth, in Vector3S normal, bool useBias = true)
     {
         f32 bias = f32.zero;
@@ -58,9 +65,7 @@ public struct ContactSlim
         var ra = this.point - a.transform.position;
         var rb = b != null ? this.point - b.transform.position : Vector3S.zero;
 
-        var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-        var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
-        var contactVelocity = bv - av;
+        var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
         var vn = Vector3S.Dot(contactVelocity, normal);
 
         var impulse = -this.normalMass * (vn + bias);
