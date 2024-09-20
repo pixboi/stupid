@@ -1,8 +1,7 @@
-﻿using stupid.Maths;
-using System.Runtime.CompilerServices;
-using stupid;
-using stupid.Constraints;
+﻿using stupid;
 using stupid.Broadphase;
+using stupid.Maths;
+using System.Runtime.CompilerServices;
 
 public struct ContactManifoldSlim
 {

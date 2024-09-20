@@ -1,8 +1,6 @@
-﻿using System;
+﻿using stupid.Maths;
+using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using stupid;
-using stupid.Maths;
 
 namespace stupid.Broadphase
 {

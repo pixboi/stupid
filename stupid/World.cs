@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using stupid.Constraints;
+﻿using stupid.Broadphase;
 using stupid.Maths;
-using stupid.Broadphase;
+using System;
+using System.Collections.Generic;
 
 namespace stupid
 {
@@ -107,7 +105,7 @@ namespace stupid
                 {
                     var ab = (RigidbodyS)a;
                     var bb = b.isDynamic ? (RigidbodyS)b : null;
-                    var manifold = new ContactManifoldSlim((RigidbodyS)a, b, contactVectorCache, count);
+                    var manifold = new ContactManifoldSlim(ab, b, contactVectorCache, count);
 
                     if (WorldSettings.Warmup)
                     {
@@ -139,34 +137,6 @@ namespace stupid
             }
         }
 
-        // In-place rotation method
-        private void RotateListInPlace(List<ContactManifoldS> list, int offset)
-        {
-            int n = list.Count;
-
-            // Reverse the first part (0 to offset-1)
-            ReverseList(list, 0, offset - 1);
-
-            // Reverse the second part (offset to n-1)
-            ReverseList(list, offset, n - 1);
-
-            // Reverse the whole list (0 to n-1)
-            ReverseList(list, 0, n - 1);
-        }
-
-        // Helper method to reverse a portion of the list in place
-        private void ReverseList(List<ContactManifoldS> list, int start, int end)
-        {
-            while (start < end)
-            {
-                var temp = list[start];
-                list[start] = list[end];
-                list[end] = temp;
-                start++;
-                end--;
-            }
-        }
-
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
@@ -176,19 +146,6 @@ namespace stupid
             foreach (var p in pairs)
                 _currentManifolds.Add(ManifoldMap[p]);
 
-            /* this caused division by zero error?*/
-            //Add a the current .SimulationFrame as an offset to the list, like rotate it with that, should be kind of deterministic?
-            /*
-            if (_currentManifolds.Count > 1)
-            {
-                int frameOffset = SimulationFrame % _currentManifolds.Count;
-                if (frameOffset > 0)
-                {
-                    // Perform in-place rotation
-                    RotateListInPlace(_currentManifolds, frameOffset);
-                }
-            }
-            */
 
             if (WorldSettings.Warmup)
                 foreach (var m in _currentManifolds) m.Warmup();
@@ -196,13 +153,18 @@ namespace stupid
             foreach (var rb in Bodies)
                 rb.IntegrateForces(dt, WorldSettings);
 
+            int frameOffset = SimulationFrame % (_currentManifolds.Count + 1);
+
             for (int iter = 0; iter < WorldSettings.DefaultSolverIterations; iter++)
             {
                 for (int i = 0; i < _currentManifolds.Count; i++)
                 {
-                    var m = _currentManifolds[i];
+                    // Calculate the index with the offset, wrapping around the list
+                    int index = (i + frameOffset) % _currentManifolds.Count;
+
+                    var m = _currentManifolds[index];
                     m.Resolve(inverseDt, WorldSettings, true);
-                    _currentManifolds[i] = m;
+                    _currentManifolds[index] = m;
                 }
             }
 
@@ -215,9 +177,12 @@ namespace stupid
                 {
                     for (int i = 0; i < _currentManifolds.Count; i++)
                     {
-                        var m = _currentManifolds[i];
+                        // Calculate the index with the offset, wrapping around the list
+                        int index = (i + frameOffset) % _currentManifolds.Count;
+
+                        var m = _currentManifolds[index];
                         m.Resolve(inverseDt, WorldSettings, false);
-                        _currentManifolds[i] = m;
+                        _currentManifolds[index] = m;
                     }
                 }
             }

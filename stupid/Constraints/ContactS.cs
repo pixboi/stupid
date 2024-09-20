@@ -1,6 +1,6 @@
-﻿using stupid.Maths;
+﻿using stupid;
+using stupid.Maths;
 using System.Runtime.CompilerServices;
-using stupid;
 
 public struct ContactS
 {

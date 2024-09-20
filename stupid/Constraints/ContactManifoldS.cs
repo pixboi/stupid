@@ -1,8 +1,6 @@
-﻿using stupid;
+﻿using stupid.Broadphase;
 using stupid.Maths;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using stupid.Broadphase;
 
 namespace stupid.Constraints
 {

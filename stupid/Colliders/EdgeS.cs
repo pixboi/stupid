@@ -1,6 +1,4 @@
-﻿using stupid.Maths;
-
-namespace stupid.Colliders
+﻿namespace stupid.Colliders
 {
     public readonly struct EdgeS
     {

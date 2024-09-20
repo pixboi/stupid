@@ -1,6 +1,5 @@
 ﻿using stupid.Colliders;
 using stupid.Constraints;
-using stupid.Maths;
 using System;
 
 namespace stupid

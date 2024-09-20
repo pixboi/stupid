@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using stupid.Colliders;
 using stupid.Maths;
-using stupid.Colliders;
+using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Collections
