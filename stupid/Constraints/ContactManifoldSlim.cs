@@ -50,7 +50,7 @@ public struct ContactManifoldSlim
         if (old.contactCount == this.contactCount)
         {
             this.accumulatedFriction = old.accumulatedFriction;
-            this.accumulatedTwist += old.accumulatedTwist;
+            this.accumulatedTwist = old.accumulatedTwist;
         }
 
         for (int i = 0; i < contactCount; i++)

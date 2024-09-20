@@ -176,6 +176,7 @@ namespace stupid
 
             /* this caused division by zero error?*/
             //Add a the current .SimulationFrame as an offset to the list, like rotate it with that, should be kind of deterministic?
+            /*
             if (_currentManifolds.Count > 1)
             {
                 int frameOffset = SimulationFrame % _currentManifolds.Count;
@@ -185,6 +186,7 @@ namespace stupid
                     RotateListInPlace(_currentManifolds, frameOffset);
                 }
             }
+            */
 
             if (WorldSettings.Warmup)
                 foreach (var m in _currentManifolds) m.Warmup();
