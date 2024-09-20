@@ -91,14 +91,12 @@ public struct ContactManifoldSlim
 
     // Prestep calculations for all contacts
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void CalculatePrestep()
+    public void CalculatePrestep(RigidbodyS a, RigidbodyS b)
     {
-        var bb = b.isDynamic ? (RigidbodyS)b : null;
-
         for (int i = 0; i < contactCount; i++)
         {
             ref var contact = ref this[i];
-            contact.CalculatePrestep(a, bb, this.normal);
+            contact.CalculatePrestep(a, b, this.normal);
         }
     }
 

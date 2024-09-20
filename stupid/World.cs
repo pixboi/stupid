@@ -105,6 +105,8 @@ namespace stupid
 
                 if (count > 0)
                 {
+                    var ab = (RigidbodyS)a;
+                    var bb = b.isDynamic ? (RigidbodyS)b : null;
                     var manifold = new ContactManifoldSlim((RigidbodyS)a, b, contactVectorCache, count);
 
                     if (WorldSettings.Warmup)
@@ -116,7 +118,7 @@ namespace stupid
                         }
                     }
 
-                    manifold.CalculatePrestep();
+                    manifold.CalculatePrestep(ab, bb);
 
                     ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);
