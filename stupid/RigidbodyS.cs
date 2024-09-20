@@ -1,5 +1,6 @@
 ﻿using stupid.Colliders;
 using stupid.Maths;
+using stupid;
 
 namespace stupid
 {
@@ -13,41 +14,33 @@ namespace stupid
 
     public class RigidbodyS : Collidable
     {
-        // Integration
+        public override bool isDynamic => true;
+
+        //Constructor
         public Vector3S velocity;
         public Vector3S angularVelocity;
-
-        //Runtime
-        public Vector3S forceBucket { get; private set; }
-        public Vector3S torqueBucket { get; private set; }
-
-        public Tensor tensor;
-
-        // Settings
         public f32 mass = f32.one;
-        public f32 inverseMass;
-
         public f32 drag = f32.zero;
         public f32 angularDrag = (f32)0.05;
         public bool useGravity = true;
         public bool isKinematic = false;
 
-        public RigidbodyS(int index, Shape collider, bool isDynamic = true, TransformS transform = default,
-            Vector3S velocity = default,
-            Vector3S angularVelocity = default,
-            f32 mass = default,
-            bool useGravity = true,
-            bool isKinematic = false) : base(index, collider, transform, isDynamic)
-        {
+        //Runtime
+        public Vector3S forceBucket;
+        public Vector3S torqueBucket;
+        public Tensor tensor;
+        public f32 inverseMass;
 
+        public RigidbodyS(int index, Shape collider, TransformS transform, Vector3S velocity, Vector3S angularVelocity, f32 mass, bool useGravity = true, bool isKinematic = false) : base(index, collider, transform)
+        {
             this.mass = mass;
             if (this.mass <= f32.zero) this.mass = f32.one;
-            this.inverseMass = f32.one / this.mass;
+            inverseMass = f32.one / this.mass;
 
             if (collider != null)
             {
                 var inertia = collider.CalculateInertiaTensor(this.mass);
-                this.tensor = new Tensor(inertia, transform);
+                tensor = new Tensor(inertia, transform);
             }
 
             this.velocity = velocity;
@@ -67,10 +60,10 @@ namespace stupid
             if (useGravity) velocity += settings.Gravity * dt;
 
             // Apply accumulated forces to the velocity.
-            if (forceBucket != Vector3S.zero) velocity += (forceBucket / mass) * dt;
+            if (forceBucket != Vector3S.zero) velocity += forceBucket / mass * dt;
 
             // Apply linear drag, ensuring it doesn't invert the velocity direction.
-            if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - (drag * dt), f32.zero, f32.one);
+            if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - drag * dt, f32.zero, f32.one);
 
             // Apply accumulated torques to the angular velocity.
             if (torqueBucket != Vector3S.zero) angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * dt;
@@ -103,7 +96,7 @@ namespace stupid
             transform.rotation = (dq * transform.rotation).Normalize();
 
             transform.UpdateRotationMatrix();
-            this.tensor.UpdateInertiaTensor(this.transform);
+            tensor.UpdateInertiaTensor(transform);
         }
 
         public void FinalizePosition()
@@ -117,22 +110,22 @@ namespace stupid
             {
                 case ForceModeS.Force:
                     // Continuous force
-                    this.forceBucket += force;
+                    forceBucket += force;
                     break;
 
                 case ForceModeS.Impulse:
                     // Instantaneous force
-                    this.velocity += force / this.mass;
+                    velocity += force / mass;
                     break;
 
                 case ForceModeS.Acceleration:
                     // Continuous acceleration
-                    this.forceBucket += force * this.mass;
+                    forceBucket += force * mass;
                     break;
 
                 case ForceModeS.VelocityChange:
                     // Instantaneous change in velocity
-                    this.velocity += force;
+                    velocity += force;
                     break;
             }
         }
@@ -143,22 +136,22 @@ namespace stupid
             {
                 case ForceModeS.Force:
                     // Continuous force
-                    this.torqueBucket += force;
+                    torqueBucket += force;
                     break;
 
                 case ForceModeS.Impulse:
                     // Instantaneous force
-                    this.angularVelocity += force / this.mass;
+                    angularVelocity += force / mass;
                     break;
 
                 case ForceModeS.Acceleration:
                     // Continuous acceleration
-                    this.torqueBucket += force * this.mass;
+                    torqueBucket += force * mass;
                     break;
 
                 case ForceModeS.VelocityChange:
                     // Instantaneous change in velocity
-                    this.angularVelocity += force;
+                    angularVelocity += force;
                     break;
             }
         }

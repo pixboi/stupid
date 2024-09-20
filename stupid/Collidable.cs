@@ -1,4 +1,5 @@
 ﻿using stupid.Colliders;
+using stupid.Constraints;
 using stupid.Maths;
 using System;
 
@@ -8,31 +9,28 @@ namespace stupid
     {
         public int index { get; private set; }
         public void Register(int index) => this.index = index;
-
-        public bool isDynamic = false;
+        public virtual bool isDynamic => false;
         public Shape collider { get; private set; }
 
-        public TransformS transform = new TransformS(Vector3S.zero, QuaternionS.identity, Vector3S.one);
+        public TransformS transform;
 
         public PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL;
 
-        public Collidable(int index, Shape collider, TransformS transform, bool isDynamic = false)
+        public Collidable(int index, Shape collider, TransformS transform)
         {
             this.index = index;
-            this.isDynamic = isDynamic;
             this.collider = collider;
             this.transform = transform;
 
             collider?.Attach(this);
-
-            this.material = PhysicsMaterialS.DEFAULT_MATERIAL;
+            material = PhysicsMaterialS.DEFAULT_MATERIAL;
         }
 
         public BoundsS _bounds;
         public BoundsS CalculateBounds()
         {
-            this._bounds = this.collider.GetBounds(this.transform);
-            return this._bounds;
+            _bounds = collider.GetBounds(transform);
+            return _bounds;
         }
 
         public override bool Equals(object? obj)

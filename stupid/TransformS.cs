@@ -16,35 +16,35 @@ namespace stupid
         {
             this.position = position;
             this.rotation = rotation;
-            this.deltaPosition = Vector3S.zero;
-            this.transientPosition = position;
+            deltaPosition = Vector3S.zero;
+            transientPosition = position;
             this.localScale = localScale;
             UpdateRotationMatrix();
         }
 
         public void UpdateRotationMatrix()
         {
-            this.rotationMatrix = Matrix3S.Rotate(this.rotation);
-            this.rotationMatrixTranspose = rotationMatrix.Transpose();
+            rotationMatrix = Matrix3S.Rotate(rotation);
+            rotationMatrixTranspose = rotationMatrix.Transpose();
         }
 
         public void AddDelta(in Vector3S amount)
         {
-            this.deltaPosition += amount;
-            this.transientPosition = position + deltaPosition;
+            deltaPosition += amount;
+            transientPosition = position + deltaPosition;
         }
 
         public void ActuateDelta()
         {
-            this.position += this.deltaPosition;
-            this.transientPosition = this.position;
-            this.deltaPosition = Vector3S.zero;
+            position += deltaPosition;
+            transientPosition = position;
+            deltaPosition = Vector3S.zero;
         }
 
         // Updates rotation matrix
         public void Rotate(in QuaternionS delta)
         {
-            this.rotation = (delta * rotation).Normalize();
+            rotation = (delta * rotation).Normalize();
             UpdateRotationMatrix();
         }
 
@@ -60,9 +60,9 @@ namespace stupid
             long dy = worldPoint.y.rawValue - position.y.rawValue;
             long dz = worldPoint.z.rawValue - position.z.rawValue;
 
-            long xRaw = (rotationMatrixTranspose.m00.rawValue * dx + rotationMatrixTranspose.m01.rawValue * dy + rotationMatrixTranspose.m02.rawValue * dz) >> f32.FractionalBits;
-            long yRaw = (rotationMatrixTranspose.m10.rawValue * dx + rotationMatrixTranspose.m11.rawValue * dy + rotationMatrixTranspose.m12.rawValue * dz) >> f32.FractionalBits;
-            long zRaw = (rotationMatrixTranspose.m20.rawValue * dx + rotationMatrixTranspose.m21.rawValue * dy + rotationMatrixTranspose.m22.rawValue * dz) >> f32.FractionalBits;
+            long xRaw = rotationMatrixTranspose.m00.rawValue * dx + rotationMatrixTranspose.m01.rawValue * dy + rotationMatrixTranspose.m02.rawValue * dz >> f32.FractionalBits;
+            long yRaw = rotationMatrixTranspose.m10.rawValue * dx + rotationMatrixTranspose.m11.rawValue * dy + rotationMatrixTranspose.m12.rawValue * dz >> f32.FractionalBits;
+            long zRaw = rotationMatrixTranspose.m20.rawValue * dx + rotationMatrixTranspose.m21.rawValue * dy + rotationMatrixTranspose.m22.rawValue * dz >> f32.FractionalBits;
 
             result.x.rawValue = xRaw;
             result.y.rawValue = yRaw;
@@ -78,9 +78,9 @@ namespace stupid
         {
             Vector3S result;
 
-            long xRaw = ((rotationMatrix.m00.rawValue * localPoint.x.rawValue + rotationMatrix.m01.rawValue * localPoint.y.rawValue + rotationMatrix.m02.rawValue * localPoint.z.rawValue) >> f32.FractionalBits) + position.x.rawValue;
-            long yRaw = ((rotationMatrix.m10.rawValue * localPoint.x.rawValue + rotationMatrix.m11.rawValue * localPoint.y.rawValue + rotationMatrix.m12.rawValue * localPoint.z.rawValue) >> f32.FractionalBits) + position.y.rawValue;
-            long zRaw = ((rotationMatrix.m20.rawValue * localPoint.x.rawValue + rotationMatrix.m21.rawValue * localPoint.y.rawValue + rotationMatrix.m22.rawValue * localPoint.z.rawValue) >> f32.FractionalBits) + position.z.rawValue;
+            long xRaw = (rotationMatrix.m00.rawValue * localPoint.x.rawValue + rotationMatrix.m01.rawValue * localPoint.y.rawValue + rotationMatrix.m02.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.x.rawValue;
+            long yRaw = (rotationMatrix.m10.rawValue * localPoint.x.rawValue + rotationMatrix.m11.rawValue * localPoint.y.rawValue + rotationMatrix.m12.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.y.rawValue;
+            long zRaw = (rotationMatrix.m20.rawValue * localPoint.x.rawValue + rotationMatrix.m21.rawValue * localPoint.y.rawValue + rotationMatrix.m22.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.z.rawValue;
 
             result.x.rawValue = xRaw;
             result.y.rawValue = yRaw;
@@ -96,9 +96,9 @@ namespace stupid
         {
             Vector3S result;
 
-            long xRaw = (rotationMatrixTranspose.m00.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m01.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m02.rawValue * worldDirection.z.rawValue) >> f32.FractionalBits;
-            long yRaw = (rotationMatrixTranspose.m10.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m11.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m12.rawValue * worldDirection.z.rawValue) >> f32.FractionalBits;
-            long zRaw = (rotationMatrixTranspose.m20.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m21.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m22.rawValue * worldDirection.z.rawValue) >> f32.FractionalBits;
+            long xRaw = rotationMatrixTranspose.m00.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m01.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m02.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
+            long yRaw = rotationMatrixTranspose.m10.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m11.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m12.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
+            long zRaw = rotationMatrixTranspose.m20.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m21.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m22.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
 
             result.x.rawValue = xRaw;
             result.y.rawValue = yRaw;
@@ -114,9 +114,9 @@ namespace stupid
         {
 
             Vector3S result;
-            long xRaw = (rotationMatrix.m00.rawValue * localDirection.x.rawValue + rotationMatrix.m01.rawValue * localDirection.y.rawValue + rotationMatrix.m02.rawValue * localDirection.z.rawValue) >> f32.FractionalBits;
-            long yRaw = (rotationMatrix.m10.rawValue * localDirection.x.rawValue + rotationMatrix.m11.rawValue * localDirection.y.rawValue + rotationMatrix.m12.rawValue * localDirection.z.rawValue) >> f32.FractionalBits;
-            long zRaw = (rotationMatrix.m20.rawValue * localDirection.x.rawValue + rotationMatrix.m21.rawValue * localDirection.y.rawValue + rotationMatrix.m22.rawValue * localDirection.z.rawValue) >> f32.FractionalBits;
+            long xRaw = rotationMatrix.m00.rawValue * localDirection.x.rawValue + rotationMatrix.m01.rawValue * localDirection.y.rawValue + rotationMatrix.m02.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
+            long yRaw = rotationMatrix.m10.rawValue * localDirection.x.rawValue + rotationMatrix.m11.rawValue * localDirection.y.rawValue + rotationMatrix.m12.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
+            long zRaw = rotationMatrix.m20.rawValue * localDirection.x.rawValue + rotationMatrix.m21.rawValue * localDirection.y.rawValue + rotationMatrix.m22.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
 
 
             result.x.rawValue = xRaw;

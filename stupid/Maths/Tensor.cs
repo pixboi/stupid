@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using stupid;
 
 namespace stupid.Maths
 {

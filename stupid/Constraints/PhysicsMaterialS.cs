@@ -1,6 +1,6 @@
 ﻿using stupid.Maths;
 
-namespace stupid
+namespace stupid.Constraints
 {
     public readonly struct PhysicsMaterialS
     {
@@ -9,7 +9,7 @@ namespace stupid
         {
             this.staticFriction = staticFriction;
             this.dynamicFriction = dynamicFriction;
-            this.restitution = bounciness;
+            restitution = bounciness;
         }
 
         public static readonly PhysicsMaterialS DEFAULT_MATERIAL1 = new PhysicsMaterialS(f32.one, f32.one, f32.zero);

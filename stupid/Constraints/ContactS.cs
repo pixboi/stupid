@@ -1,6 +1,6 @@
 ﻿using stupid.Maths;
-using stupid;
 using System.Runtime.CompilerServices;
+using stupid;
 
 
 //The only thing different really, between contacts that share the same manifold, are the offset FROM A, and feature ID

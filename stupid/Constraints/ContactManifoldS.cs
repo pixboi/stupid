@@ -1,8 +1,10 @@
-﻿using stupid.Maths;
+﻿using stupid;
+using stupid.Maths;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using stupid.Broadphase;
 
-namespace stupid.Colliders
+namespace stupid.Constraints
 {
     public struct ContactManifoldS
     {
@@ -19,13 +21,13 @@ namespace stupid.Colliders
             this.b = b;
             this.contactCount = (byte)contactCount;
 
-            this.one = contactCache[0];
-            this.two = contactCache[1];
-            this.three = contactCache[2];
-            this.four = contactCache[3];
+            one = contactCache[0];
+            two = contactCache[1];
+            three = contactCache[2];
+            four = contactCache[3];
         }
 
-        public IntPair ToPair => new IntPair(this.a.index, this.b.index);
+        public IntPair ToPair => new IntPair(a.index, b.index);
 
         // Indexer with a direct array-like access pattern using unsafe pointers
         public ref ContactS this[int i]
@@ -63,7 +65,7 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RetainData(in ContactManifoldS old)
         {
-            for (int i = 0; i < this.contactCount; i++)
+            for (int i = 0; i < contactCount; i++)
             {
                 ref var c = ref this[i];
 
@@ -96,7 +98,7 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep()
         {
-            for (int i = 0; i < this.contactCount; i++)
+            for (int i = 0; i < contactCount; i++)
             {
                 ref var contact = ref this[i];
                 contact.CalculatePrestep(a, b);
@@ -107,7 +109,7 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Warmup()
         {
-            for (int i = 0; i < this.contactCount; i++)
+            for (int i = 0; i < contactCount; i++)
             {
                 this[i].WarmStart(a, b);
             }
@@ -153,7 +155,7 @@ namespace stupid.Colliders
                 sumAccum += four.accumulatedImpulse;
             }
 
-            var friction = MathS.Sqrt((a.material.staticFriction * b.material.staticFriction));
+            var friction = MathS.Sqrt(a.material.staticFriction * b.material.staticFriction);
 
 
 

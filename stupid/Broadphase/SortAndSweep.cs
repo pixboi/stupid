@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using stupid;
 using stupid.Maths;
 
-namespace stupid
+namespace stupid.Broadphase
 {
     public interface IBroadphase
     {
-        HashSet<IntPair> ComputePairs(DumbList<Collidable> rigidbodies);
+        HashSet<IntPair> ComputePairs(List<Collidable> rigidbodies);
     }
 
     public class SortAndSweepBroadphase : IBroadphase
@@ -27,12 +28,12 @@ namespace stupid
             endpointsX = new AxisEndpoint[initialCapacity * 2];
             endpointsY = new AxisEndpoint[initialCapacity * 2];
             endpointsZ = new AxisEndpoint[initialCapacity * 2];
-            pairs = new HashSet<IntPair>(initialCapacity * initialCapacity, new BodyPairComparer());
+            pairs = new HashSet<IntPair>(initialCapacity * initialCapacity, new IntPairComparer());
             activeList = new Collidable[initialCapacity];
             overlapCount = new int[initialCapacity * initialCapacity];
         }
 
-        private void Rebuild(DumbList<Collidable> rigidbodies)
+        private void Rebuild(List<Collidable> rigidbodies)
         {
             int endpointCapacity = rigidbodies.Count * 2;
             if (endpointsX.Length < endpointCapacity)
@@ -59,7 +60,7 @@ namespace stupid
             overlapCount = new int[rbCount * rbCount];
         }
 
-        public HashSet<IntPair> ComputePairs(DumbList<Collidable> rigidbodies)
+        public HashSet<IntPair> ComputePairs(List<Collidable> rigidbodies)
         {
             if (rbCount != rigidbodies.Count)
             {
@@ -199,78 +200,5 @@ namespace stupid
         }
     }
 
-    public readonly struct IntPair : IEquatable<IntPair>
-    {
-        public readonly int aIndex;
-        public readonly int bIndex;
 
-        public IntPair(int aIndex, int bIndex)
-        {
-            bool condition = aIndex < bIndex;
-            this.aIndex = condition ? aIndex : bIndex;
-            this.bIndex = condition ? bIndex : aIndex;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return obj is IntPair pair && Equals(pair);
-        }
-
-        public bool Equals(IntPair other)
-        {
-            return aIndex == other.aIndex &&
-                   bIndex == other.bIndex;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(aIndex, bIndex);
-        }
-    }
-
-    public readonly struct IntPairCount : IEquatable<IntPairCount>
-    {
-        public readonly int aIndex;
-        public readonly int bIndex;
-        public readonly int count;
-
-        public IntPairCount(int aIndex, int bIndex, int count)
-        {
-            bool condition = aIndex < bIndex;
-            this.aIndex = condition ? aIndex : bIndex;
-            this.bIndex = condition ? bIndex : aIndex;
-            this.count = count;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return obj is IntPairCount count && Equals(count);
-        }
-
-        public bool Equals(IntPairCount other)
-        {
-            return aIndex == other.aIndex &&
-                   bIndex == other.bIndex &&
-                   count == other.count;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(aIndex, bIndex, count);
-        }
-    }
-
-
-    public class BodyPairComparer : IEqualityComparer<IntPair>
-    {
-        public bool Equals(IntPair x, IntPair y)
-        {
-            return x.aIndex == y.aIndex && x.bIndex == y.bIndex;
-        }
-
-        public int GetHashCode(IntPair obj)
-        {
-            return obj.GetHashCode();
-        }
-    }
 }

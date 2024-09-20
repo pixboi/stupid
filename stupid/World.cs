@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using stupid.Colliders;
+using stupid.Constraints;
 using stupid.Maths;
+using stupid.Broadphase;
 
 namespace stupid
 {
-
     public class World
     {
         public WorldSettings WorldSettings { get; private set; }
         public SortAndSweepBroadphase Broadphase { get; set; }
-        public DumbList<Collidable> Collidables { get; private set; }
+        public List<Collidable> Collidables { get; private set; }
 
         List<RigidbodyS> Bodies = new List<RigidbodyS>();
         public int SimulationFrame { get; private set; }
@@ -26,13 +26,12 @@ namespace stupid
 
         List<ContactManifoldS> _currentManifolds = new List<ContactManifoldS>(1000);
 
-
         public event Action<ContactManifoldS> OnContact;
 
         public World(WorldSettings worldSettings, int startSize = 1000)
         {
             WorldSettings = worldSettings;
-            Collidables = new DumbList<Collidable>(startSize);
+            Collidables = new List<Collidable>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
             _counter = 0;
             SimulationFrame = 0;
