@@ -66,10 +66,9 @@ namespace stupid.Constraints
 
             //Max at one, at one, it should prefer the oldTangent
             // var dirSimilarity = (Vector3S.Dot(oldTangent, newTangent) + f32.one) * f32.half;
-            var magSimilarity = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;
+            var blend = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;
 
-            this.tangent = Vector3S.Lerp(oldTangent, newTangent, magSimilarity).Normalize();
-            // this.tangent = this.tangent.Normalize() * newTangent.Magnitude();
+            this.tangent = Vector3S.Lerp(oldTangent, newTangent, blend).Normalize();
 
             // Precompute cross products for mass calculation
             var raCrossTangent = Vector3S.Cross(ra, tangent);
@@ -119,7 +118,10 @@ namespace stupid.Constraints
             var ra = point - a.transform.position;
             var rb = b != null ? point - b.transform.position : Vector3S.zero;
 
-            var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
+            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            var contactVelocity = bv - av;
+
             var vn = Vector3S.Dot(contactVelocity, normal);
 
             var impulse = -normalMass * (vn + bias);
@@ -128,7 +130,15 @@ namespace stupid.Constraints
             accumulatedImpulse = newImpulse;
 
             var normalImpulse = normal * impulse;
-            ApplyImpulse(a, b, normalImpulse, ra, rb);
+
+            a.velocity -= normalImpulse * a.inverseMass; // A moves away
+            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
+
+            if (b != null)
+            {
+                b.velocity += normalImpulse * b.inverseMass; // B moves along normal
+                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -137,7 +147,9 @@ namespace stupid.Constraints
             var ra = point - a.transform.position;
             var rb = b != null ? point - b.transform.position : Vector3S.zero;
 
-            var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
+            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            var contactVelocity = bv - av;
 
             var vt = Vector3S.Dot(contactVelocity, tangent);
             var incrementalFriction = -tangentMass * vt;
@@ -147,8 +159,16 @@ namespace stupid.Constraints
             incrementalFriction = newImpulse - accumulatedFriction;
             accumulatedFriction = newImpulse;
 
-            var tangentImpulse = tangent * incrementalFriction;
-            ApplyImpulse(a, b, tangentImpulse, ra, rb);
+            var impulse = tangent * incrementalFriction;
+
+            a.velocity -= impulse * a.inverseMass; // A moves away
+            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+
+            if (b != null)
+            {
+                b.velocity += impulse * b.inverseMass; // B moves along normal
+                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

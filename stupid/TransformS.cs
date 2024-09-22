@@ -15,11 +15,13 @@ namespace stupid
         public TransformS(in Vector3S position, in QuaternionS rotation, in Vector3S localScale)
         {
             this.position = position;
+            this.transientPosition = position;
+            this.deltaPosition = Vector3S.zero;
+
             this.rotation = rotation;
-            deltaPosition = Vector3S.zero;
-            transientPosition = position;
             this.localScale = localScale;
-            UpdateRotationMatrix();
+            this.rotationMatrix = Matrix3S.Rotate(rotation);
+            this.rotationMatrixTranspose = rotationMatrix.Transpose();
         }
 
         public void UpdateRotationMatrix()

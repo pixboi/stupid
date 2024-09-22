@@ -13,6 +13,7 @@ namespace stupid.Maths
         {
             // Precompute the inverse of the local inertia tensor
             this.inertiaInverse = Matrix3S.Inverse(inertia);
+            this.inertiaWorld = default;
             UpdateInertiaTensor(t);
         }
 
