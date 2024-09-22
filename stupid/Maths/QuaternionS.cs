@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public readonly struct QuaternionS : IEquatable<QuaternionS>
+    public struct QuaternionS : IEquatable<QuaternionS>
     {
-        public readonly f32 x, y, z, w;
+        public f32 x, y, z, w;
 
         public static readonly QuaternionS identity = new QuaternionS(f32.zero, f32.zero, f32.zero, f32.one);
         public static readonly QuaternionS zero = new QuaternionS(f32.zero, f32.zero, f32.zero, f32.zero);
@@ -63,30 +63,52 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS operator *(in QuaternionS a, in QuaternionS b)
         {
-            // QuaternionS result;
-            long x = (a.w.rawValue * b.x.rawValue + a.x.rawValue * b.w.rawValue + a.y.rawValue * b.z.rawValue - a.z.rawValue * b.y.rawValue) >> f32.FractionalBits;
-            long y = (a.w.rawValue * b.y.rawValue - a.x.rawValue * b.z.rawValue + a.y.rawValue * b.w.rawValue + a.z.rawValue * b.x.rawValue) >> f32.FractionalBits;
-            long z = (a.w.rawValue * b.z.rawValue + a.x.rawValue * b.y.rawValue - a.y.rawValue * b.x.rawValue + a.z.rawValue * b.w.rawValue) >> f32.FractionalBits;
-            long w = (a.w.rawValue * b.w.rawValue - a.x.rawValue * b.x.rawValue - a.y.rawValue * b.y.rawValue - a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
+            QuaternionS result;
 
-            return new QuaternionS(new f32(x), new f32(y), new f32(z), new f32(w));
+            result.x.rawValue = (a.w.rawValue * b.x.rawValue + a.x.rawValue * b.w.rawValue + a.y.rawValue * b.z.rawValue - a.z.rawValue * b.y.rawValue) >> f32.FractionalBits;
+            result.y.rawValue = (a.w.rawValue * b.y.rawValue - a.x.rawValue * b.z.rawValue + a.y.rawValue * b.w.rawValue + a.z.rawValue * b.x.rawValue) >> f32.FractionalBits;
+            result.z.rawValue = (a.w.rawValue * b.z.rawValue + a.x.rawValue * b.y.rawValue - a.y.rawValue * b.x.rawValue + a.z.rawValue * b.w.rawValue) >> f32.FractionalBits;
+            result.w.rawValue = (a.w.rawValue * b.w.rawValue - a.x.rawValue * b.x.rawValue - a.y.rawValue * b.y.rawValue - a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
+
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator *(in QuaternionS q, in Vector3S v)
         {
-            Vector3S u = new Vector3S(q.x, q.y, q.z);
-            f32 s = q.w;
+            Vector3S result;
 
-            return f32.two * Vector3S.Dot(u, v) * u
-                 + (s * s - Vector3S.Dot(u, u)) * v
-                 + f32.two * s * Vector3S.Cross(u, v);
+            // Precompute quaternion terms
+            long qx2 = q.x.rawValue + q.x.rawValue;
+            long qy2 = q.y.rawValue + q.y.rawValue;
+            long qz2 = q.z.rawValue + q.z.rawValue;
+
+            long qwqx2 = q.w.rawValue * qx2 >> f32.FractionalBits;
+            long qwqy2 = q.w.rawValue * qy2 >> f32.FractionalBits;
+            long qwqz2 = q.w.rawValue * qz2 >> f32.FractionalBits;
+
+            long qxqx2 = q.x.rawValue * qx2 >> f32.FractionalBits;
+            long qxqy2 = q.x.rawValue * qy2 >> f32.FractionalBits;
+            long qxqz2 = q.x.rawValue * qz2 >> f32.FractionalBits;
+
+            long qyqy2 = q.y.rawValue * qy2 >> f32.FractionalBits;
+            long qyqz2 = q.y.rawValue * qz2 >> f32.FractionalBits;
+
+            long qzqz2 = q.z.rawValue * qz2 >> f32.FractionalBits;
+
+            // Rotate vector using quaternion
+            result.x.rawValue = ((f32.One - qyqy2 - qzqz2) * v.x.rawValue + (qxqy2 - qwqz2) * v.y.rawValue + (qxqz2 + qwqy2) * v.z.rawValue) >> f32.FractionalBits;
+            result.y.rawValue = ((qxqy2 + qwqz2) * v.x.rawValue + (f32.One - qxqx2 - qzqz2) * v.y.rawValue + (qyqz2 - qwqx2) * v.z.rawValue) >> f32.FractionalBits;
+            result.z.rawValue = ((qxqz2 - qwqy2) * v.x.rawValue + (qyqz2 + qwqx2) * v.y.rawValue + (f32.One - qxqx2 - qyqy2) * v.z.rawValue) >> f32.FractionalBits;
+
+            return result;
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static QuaternionS operator /(in QuaternionS q, f32 scalar)
         {
-            long invScalar = (f32.one.rawValue << f32.FractionalBits) / scalar.rawValue;
+            long invScalar = 1L / scalar.rawValue;
 
             return new QuaternionS(
                 new f32((q.x.rawValue * invScalar) >> f32.FractionalBits),
@@ -108,11 +130,14 @@ namespace stupid.Maths
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
+                f32 result;
                 long xx = (x.rawValue * x.rawValue) >> f32.FractionalBits;
                 long yy = (y.rawValue * y.rawValue) >> f32.FractionalBits;
                 long zz = (z.rawValue * z.rawValue) >> f32.FractionalBits;
                 long ww = (w.rawValue * w.rawValue) >> f32.FractionalBits;
-                return new f32(xx + yy + zz + ww);
+
+                result.rawValue = (xx + yy + zz + ww);
+                return result;
             }
         }
 

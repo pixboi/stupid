@@ -22,14 +22,13 @@ namespace stupid.Maths
         public static readonly f32 pi = FromFloat(3.14159265358979323846f);
         public static readonly f32 twoPi = FromFloat(6.28318530717958647692f);
         public static readonly f32 halfPi = FromFloat(1.57079632679489661923f);
-
         public static readonly f32 maxValue = new f32(long.MaxValue);
         public static readonly f32 minValue = new f32(long.MinValue);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32(long value)
         {
-            rawValue = value;
+           this.rawValue = value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

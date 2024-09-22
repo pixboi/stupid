@@ -177,6 +177,23 @@ namespace stupid.Colliders
             );
         }
 
+        public Vector3S CalculateTensorDiagonal(in f32 mass)
+        {
+            // Precompute constants and squares to minimize redundant calculations
+            var massConst = boxConst * mass;
+
+            var h2 = size.x * size.x; // h squared
+            var d2 = size.y * size.y; // d squared
+            var w2 = size.z * size.z; // w squared
+
+            // Calculate inertia tensor components
+            var inertiaX = massConst * (d2 + w2);
+            var inertiaY = massConst * (h2 + w2);
+            var inertiaZ = massConst * (h2 + d2);
+
+            return new Vector3S(inertiaX, inertiaY, inertiaZ);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool RaycastBox(Vector3S rayOrigin, Vector3S rayDirection, out Vector3S intersectionPoint, out f32 tMin)
         {

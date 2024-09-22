@@ -10,7 +10,7 @@ namespace stupid.Constraints
         public readonly byte featureId;
         public f32 normalMass, tangentMass;
         public f32 accumulatedImpulse, accumulatedFriction;
-        public Vector3S tangent;
+        public Vector3S tangent, ra, rb;
 
         public ContactSlim(in ContactData data)
         {
@@ -21,6 +21,8 @@ namespace stupid.Constraints
             tangentMass = f32.zero;
             tangent = Vector3S.zero;
             accumulatedFriction = f32.zero;
+            this.ra = Vector3S.zero;
+            this.rb = Vector3S.zero;
         }
 
         public ContactSlim(Vector3S point, byte featureId)
@@ -33,21 +35,23 @@ namespace stupid.Constraints
             tangentMass = f32.zero;
             tangent = Vector3S.zero;
             accumulatedFriction = f32.zero;
+            this.ra = Vector3S.zero;
+            this.rb = Vector3S.zero;
         }
 
 
-        public void CalculatePrestep(RigidbodyS a, RigidbodyS b, Vector3S normal)
+        public void CalculatePrestep(RigidbodyS a, RigidbodyS b, in ContactManifoldSlim manifold)
         {
             var ra = point - a.transform.position;
             var rb = b != null ? point - b.transform.position : Vector3S.zero;
 
-            Vector3S raCrossNormal = Vector3S.Cross(ra, normal);
+            Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, a.tensor.inertiaWorld * raCrossNormal);
             f32 effectiveMass = a.inverseMass + angularMassA;
 
             if (b != null)
             {
-                Vector3S rbCrossNormal = Vector3S.Cross(rb, normal);
+                Vector3S rbCrossNormal = Vector3S.Cross(rb, manifold.normal);
                 f32 angularMassB = Vector3S.Dot(rbCrossNormal, b.tensor.inertiaWorld * rbCrossNormal);
                 effectiveMass += b.inverseMass + angularMassB;
             }
@@ -56,7 +60,7 @@ namespace stupid.Constraints
 
             // Calculate relative velocity at the contact point
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
-            Vector3S normalVelocity = normal * Vector3S.Dot(contactVelocity, normal);
+            Vector3S normalVelocity = manifold.normal * Vector3S.Dot(contactVelocity, manifold.normal);
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
             f32 tangentMag = tangentialVelocity.sqrMagnitude;
 
@@ -124,20 +128,20 @@ namespace stupid.Constraints
 
             var vn = Vector3S.Dot(contactVelocity, normal);
 
-            var impulse = -normalMass * (vn + bias);
-            var newImpulse = MathS.Max(impulse + accumulatedImpulse, f32.zero);
-            impulse = newImpulse - accumulatedImpulse;
+            var incremental = -normalMass * (vn + bias);
+            var newImpulse = MathS.Max(incremental + accumulatedImpulse, f32.zero);
+            incremental = newImpulse - accumulatedImpulse;
             accumulatedImpulse = newImpulse;
 
-            var normalImpulse = normal * impulse;
+            var impulse = normal * incremental;
 
-            a.velocity -= normalImpulse * a.inverseMass; // A moves away
-            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, normalImpulse);
+            a.velocity -= impulse * a.inverseMass; // A moves away
+            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
 
             if (b != null)
             {
-                b.velocity += normalImpulse * b.inverseMass; // B moves along normal
-                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, normalImpulse);
+                b.velocity += impulse * b.inverseMass; // B moves along normal
+                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
             }
         }
 
