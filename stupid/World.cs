@@ -1,4 +1,5 @@
 ﻿using stupid.Broadphase;
+using stupid.Constraints;
 using stupid.Maths;
 using System;
 using System.Collections.Generic;

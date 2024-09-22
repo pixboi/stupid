@@ -1,4 +1,5 @@
-﻿using stupid.Maths;
+﻿using stupid.Constraints;
+using stupid.Maths;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders

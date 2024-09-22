@@ -1,4 +1,5 @@
-﻿using stupid.Maths;
+﻿using stupid.Constraints;
+using stupid.Maths;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
