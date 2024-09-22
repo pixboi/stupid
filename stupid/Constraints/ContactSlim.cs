@@ -23,6 +23,19 @@ namespace stupid.Constraints
             accumulatedFriction = f32.zero;
         }
 
+        public ContactSlim(Vector3S point, byte featureId)
+        {
+            this.point = point;
+            this.featureId = featureId;
+            accumulatedImpulse = f32.zero;
+
+            normalMass = f32.zero;
+            tangentMass = f32.zero;
+            tangent = Vector3S.zero;
+            accumulatedFriction = f32.zero;
+        }
+
+
         public void CalculatePrestep(RigidbodyS a, RigidbodyS b, Vector3S normal)
         {
             var ra = point - a.transform.position;
@@ -45,14 +58,18 @@ namespace stupid.Constraints
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             Vector3S normalVelocity = normal * Vector3S.Dot(contactVelocity, normal);
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
+            f32 tangentMag = tangentialVelocity.sqrMagnitude;
 
             //In retain, the previous tangent is stored IN THIS.TANGENT!
             var oldTangent = tangent;
+            var newTangent = tangentialVelocity.Normalize();
 
-            // Calculate the magnitude of the tangential velocity
-            f32 tangentMag = tangentialVelocity.sqrMagnitude;
-            f32 blendFactor = MathS.Clamp(tangentMag, f32.zero, f32.small);
-            tangent = Vector3S.Lerp(oldTangent, tangentialVelocity.Normalize(), blendFactor / f32.small);
+            //Max at one, at one, it should prefer the oldTangent
+            // var dirSimilarity = (Vector3S.Dot(oldTangent, newTangent) + f32.one) * f32.half;
+            var magSimilarity = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;
+
+            this.tangent = Vector3S.Lerp(oldTangent, newTangent, magSimilarity).Normalize();
+            // this.tangent = this.tangent.Normalize() * newTangent.Magnitude();
 
             // Precompute cross products for mass calculation
             var raCrossTangent = Vector3S.Cross(ra, tangent);
