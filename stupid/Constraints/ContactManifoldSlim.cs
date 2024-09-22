@@ -48,7 +48,7 @@ namespace stupid.Constraints
             c3 = default;
         }
 
-        public bool AddContact(Vector3S point, byte featureId)
+        public bool AddContact(in Vector3S point, byte featureId)
         {
             if (contactCount < 4)
             {
@@ -152,32 +152,28 @@ namespace stupid.Constraints
             if (contactCount >= 1)
             {
                 c0.SolveImpulse(a, bb, inverseDt, settings, penetrationDepth, normal, bias);
-                c0.SolveFriction(a, bb, friction);
 
             }
 
             if (contactCount >= 2)
             {
                 c1.SolveImpulse(a, bb, inverseDt, settings, penetrationDepth, normal, bias);
-                c1.SolveFriction(a, bb, friction);
 
             }
 
             if (contactCount >= 3)
             {
                 c2.SolveImpulse(a, bb, inverseDt, settings, penetrationDepth, normal, bias);
-                c2.SolveFriction(a, bb, friction);
 
             }
 
             if (contactCount >= 4)
             {
                 c3.SolveImpulse(a, bb, inverseDt, settings, penetrationDepth, normal, bias);
-                c3.SolveFriction(a, bb, friction);
 
             }
 
-            return;
+
 
             if (contactCount >= 1)
             {

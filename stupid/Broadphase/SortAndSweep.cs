@@ -11,9 +11,9 @@ namespace stupid.Broadphase
 
     public class SortAndSweepBroadphase : IBroadphase
     {
-        public AxisEndpoint[] endpointsX { get; private set; }
-        public AxisEndpoint[] endpointsY { get; private set; }
-        public AxisEndpoint[] endpointsZ { get; private set; }
+        public AxisEndpoint[] endpointsX;
+        public AxisEndpoint[] endpointsY;
+        public AxisEndpoint[] endpointsZ;
 
         private readonly HashSet<IntPair> pairs;
         private int[] overlapCount;

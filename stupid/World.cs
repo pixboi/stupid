@@ -106,6 +106,7 @@ namespace stupid
                 {
                     var ab = (RigidbodyS)a;
                     var bb = b.isDynamic ? (RigidbodyS)b : null;
+
                     var manifold = new ContactManifoldSlim(ab, b, contactVectorCache, count);
 
                     if (WorldSettings.Warmup)
@@ -145,11 +146,14 @@ namespace stupid
 
             _currentManifolds.Clear();
             foreach (var p in pairs)
+            {
                 _currentManifolds.Add(ManifoldMap[p]);
-
+            }
 
             if (WorldSettings.Warmup)
+            {
                 foreach (var m in _currentManifolds) m.Warmup();
+            }
 
             foreach (var rb in Bodies)
                 rb.IntegrateForces(dt, WorldSettings);
