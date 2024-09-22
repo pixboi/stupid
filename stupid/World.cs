@@ -150,6 +150,7 @@ namespace stupid
                 _currentManifolds.Add(ManifoldMap[p]);
             }
 
+
             if (WorldSettings.Warmup)
             {
                 foreach (var m in _currentManifolds) m.Warmup();
