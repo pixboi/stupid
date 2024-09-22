@@ -7,10 +7,10 @@ namespace stupid.Constraints
     public struct ContactSlim
     {
         public readonly Vector3S point;
-        public readonly byte featureId;
+        public Vector3S tangent, ra, rb;
         public f32 normalMass, tangentMass;
         public f32 accumulatedImpulse, accumulatedFriction;
-        public Vector3S tangent, ra, rb;
+        public readonly byte featureId;
 
         public ContactSlim(in ContactData data)
         {
@@ -42,8 +42,8 @@ namespace stupid.Constraints
 
         public void CalculatePrestep(RigidbodyS a, RigidbodyS b, in ContactManifoldSlim manifold)
         {
-            var ra = point - a.transform.position;
-            var rb = b != null ? point - b.transform.position : Vector3S.zero;
+            this.ra = point - a.transform.position;
+            this.rb = b != null ? point - b.transform.position : Vector3S.zero;
 
             Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, a.tensor.inertiaWorld * raCrossNormal);
@@ -90,9 +90,6 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WarmStart(in Vector3S normal, in RigidbodyS a, in RigidbodyS b)
         {
-            var ra = point - a.transform.position;
-            var rb = b != null ? point - b.transform.position : Vector3S.zero;
-
             Vector3S warmImpulse = normal * accumulatedImpulse + tangent * accumulatedFriction;
             ApplyImpulse(a, b, warmImpulse, ra, rb);
         }
@@ -118,9 +115,6 @@ namespace stupid.Constraints
                 var separation = MathS.Min(f32.zero, penetrationDepth + settings.DefaultContactOffset);
                 bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
             }
-
-            var ra = point - a.transform.position;
-            var rb = b != null ? point - b.transform.position : Vector3S.zero;
 
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
             var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
@@ -148,9 +142,6 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SolveFriction(in RigidbodyS a, in RigidbodyS b, in f32 friction)
         {
-            var ra = point - a.transform.position;
-            var rb = b != null ? point - b.transform.position : Vector3S.zero;
-
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
             var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
             var contactVelocity = bv - av;

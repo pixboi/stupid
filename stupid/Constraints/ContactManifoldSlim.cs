@@ -7,12 +7,13 @@ namespace stupid.Constraints
 {
     public struct ContactManifoldSlim
     {
+        public ContactSlim c0, c1, c2, c3;
         public readonly RigidbodyS a;
         public readonly Collidable b;
         public readonly Vector3S normal;
         public readonly f32 penetrationDepth;
         public int contactCount;
-        public ContactSlim c0, c1, c2, c3;
+
 
         public ContactManifoldSlim(RigidbodyS a, Collidable b, in ContactData[] data, int contactCount)
         {
@@ -121,7 +122,7 @@ namespace stupid.Constraints
             for (int i = 0; i < contactCount; i++)
             {
                 ref var contact = ref this[i];
-                contact.CalculatePrestep(a, b, normal);
+                contact.CalculatePrestep(a, b, this);
             }
         }
 

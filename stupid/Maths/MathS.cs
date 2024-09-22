@@ -32,10 +32,9 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Clamp(in f32 value, in f32 min, in f32 max)
         {
-            if (value < min) return min;
-            if (value > max) return max;
-            return value;
+            return MathS.Max(min, MathS.Min(max, value));
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Sign(in f32 value) => value < f32.zero ? -f32.one : f32.one;
