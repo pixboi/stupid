@@ -1,9 +1,11 @@
 ﻿using stupid;
 using stupid.Maths;
+using System.Drawing;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Constraints
 {
+
     public struct ContactSlim
     {
         public readonly Vector3S point;
@@ -81,14 +83,6 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS b, in Vector3S ra, in Vector3S rb)
-        {
-            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
-            return bv - av;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SolveImpulse(in RigidbodyS a, in RigidbodyS b, in f32 inverseDt, in WorldSettings settings, in f32 penetrationDepth, in Vector3S normal, bool useBias = true)
         {
             f32 bias = f32.zero;
@@ -154,7 +148,15 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void ApplyImpulse(in RigidbodyS a, in RigidbodyS b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
+        public static Vector3S CalculateContactVelocity(in RigidbodyS a, in RigidbodyS b, in Vector3S ra, in Vector3S rb)
+        {
+            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            return bv - av;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ApplyImpulse(in RigidbodyS a, in RigidbodyS b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
         {
             a.velocity -= impulse * a.inverseMass; // A moves away
             a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
