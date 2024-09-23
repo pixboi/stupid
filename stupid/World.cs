@@ -18,10 +18,15 @@ namespace stupid
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
 
         int _counter;
+
         Dictionary<IntPair, ContactManifoldSlim> ManifoldMap = new Dictionary<IntPair, ContactManifoldSlim>();
+
         List<IntPair> _removeCache = new List<IntPair>();
 
-        ContactData[] contactVectorCache = new ContactData[4];
+        ContactData[] _contactCache = new ContactData[4];
+
+        public ContactSlim[] oldContacts = new ContactSlim[5000];
+        public ContactSlim[] allContacts = new ContactSlim[5000];
 
         List<ContactManifoldSlim> _currentManifolds = new List<ContactManifoldSlim>(1000);
 
@@ -88,6 +93,8 @@ namespace stupid
         {
             _removeCache.Clear();
 
+            int startIndex = 0;
+
             //Go through pairs and test collisions, share data, etc.
             foreach (var pair in pairs)
             {
@@ -100,25 +107,32 @@ namespace stupid
                     (a, b) = (b, a);
                 }
 
-                var count = a.collider.Intersects(b, ref contactVectorCache);
+                var count = a.collider.Intersects(b, ref _contactCache);
 
                 if (count > 0)
                 {
                     var ab = (RigidbodyS)a;
                     var bb = b.isDynamic ? (RigidbodyS)b : null;
 
-                    var manifold = new ContactManifoldSlim(ab, b, contactVectorCache, count);
+                    var firstContact = _contactCache[0];
+                    var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, startIndex, count);
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        allContacts[startIndex + i] = new ContactSlim(_contactCache[i]);
+                    }
+
+                    startIndex += count;
 
                     if (WorldSettings.Warmup)
                     {
-                        if (ManifoldMap.TryGetValue(pair, out var oldM))
+                        if (ManifoldMap.TryGetValue(pair, out var oldManifold))
                         {
-                            //This retains data
-                            manifold.RetainData(oldM);
+                            manifold.RetainData(ref allContacts, oldContacts, oldManifold);
                         }
                     }
 
-                    manifold.CalculatePrestep(ab, bb);
+                    manifold.CalculatePrestep(ref allContacts, ab, bb);
 
                     ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);
@@ -145,61 +159,41 @@ namespace stupid
             var inverseDt = InverseDeltaTime;
 
             _currentManifolds.Clear();
-            foreach (var p in pairs)
-            {
-                _currentManifolds.Add(ManifoldMap[p]);
-            }
+            foreach (var p in pairs) _currentManifolds.Add(ManifoldMap[p]);
 
             if (WorldSettings.Warmup)
             {
-                foreach (var m in _currentManifolds) m.Warmup();
+                foreach (var m in _currentManifolds) m.Warmup(allContacts);
             }
 
-            foreach (var rb in Bodies)
-                rb.IntegrateForces(dt, WorldSettings);
+            foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
 
-            int frameOffset = SimulationFrame % (_currentManifolds.Count + 1);
 
-            for (int iter = 0; iter < WorldSettings.DefaultSolverIterations; iter++)
+            for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
             {
-                for (int i = 0; i < _currentManifolds.Count; i++)
+                foreach (var m in _currentManifolds)
                 {
-                    // Calculate the index with the offset, wrapping around the list
-                    int index = (i + frameOffset) % _currentManifolds.Count;
-
-                    var m = _currentManifolds[index];
-                    m.Resolve(inverseDt, WorldSettings, true);
-                    _currentManifolds[index] = m;
+                    m.Resolve(ref allContacts, inverseDt, WorldSettings, true);
                 }
             }
 
-            foreach (var rb in Bodies)
-                rb.IntegrateVelocity(dt, WorldSettings);
+            foreach (var rb in Bodies) rb.IntegrateVelocity(dt, WorldSettings);
 
             if (WorldSettings.Relaxation)
             {
                 for (int relax = 0; relax < WorldSettings.DefaultSolverIterations; relax++)
                 {
-                    for (int i = 0; i < _currentManifolds.Count; i++)
+                    foreach (var m in _currentManifolds)
                     {
-                        // Calculate the index with the offset, wrapping around the list
-                        int index = (i + frameOffset) % _currentManifolds.Count;
-
-                        var m = _currentManifolds[index];
-                        m.Resolve(inverseDt, WorldSettings, false);
-                        _currentManifolds[index] = m;
+                        m.Resolve(ref allContacts, inverseDt, WorldSettings, false);
                     }
                 }
             }
 
             foreach (var rb in Bodies) rb.FinalizePosition();
 
-            //Save changes
-            for (int i = 0; i < _currentManifolds.Count; i++)
-            {
-                var m = _currentManifolds[i];
-                ManifoldMap[m.ToPair] = m;
-            }
+            // Perform a deep copy (copying data from one array to another)
+            Array.Copy(allContacts, this.oldContacts, allContacts.Length);
         }
     }
 }

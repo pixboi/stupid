@@ -12,7 +12,7 @@ namespace stupid.Constraints
         public readonly f32 penetrationDepth;
         public readonly byte featureId;
 
-        public ContactData(Vector3S point, Vector3S normal, f32 penetrationDepth, byte featureId)
+        public ContactData(Vector3S point, Vector3S normal, f32 penetrationDepth, byte featureId = 255)
         {
             this.point = point;
             this.normal = normal;

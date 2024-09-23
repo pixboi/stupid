@@ -7,10 +7,11 @@ namespace stupid.Constraints
     public struct ContactSlim
     {
         public readonly Vector3S point;
+        public readonly byte featureId;
+
         public Vector3S tangent, ra, rb;
         public f32 normalMass, tangentMass;
         public f32 accumulatedImpulse, accumulatedFriction;
-        public readonly byte featureId;
 
         public ContactSlim(in ContactData data)
         {
@@ -53,10 +54,7 @@ namespace stupid.Constraints
             var oldTangent = tangent;
             var newTangent = tangentialVelocity.Normalize();
 
-            //Max at one, at one, it should prefer the oldTangent
-            // var dirSimilarity = (Vector3S.Dot(oldTangent, newTangent) + f32.one) * f32.half;
             var blend = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;
-
             this.tangent = Vector3S.Lerp(oldTangent, newTangent, blend).Normalize();
 
             // Precompute cross products for mass calculation
