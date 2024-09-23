@@ -27,37 +27,6 @@ namespace stupid.Constraints
             {
                 throw new System.ArgumentException("ZERO CONTACTS?");
             }
-
-            var bb = b.isDynamic ? (RigidbodyS)b : null;
-
-            c0 = new ContactSlim(data[0]);
-            c1 = new ContactSlim(data[1]);
-            c2 = new ContactSlim(data[2]);
-            c3 = new ContactSlim(data[3]);
-        }
-
-        public ContactManifoldSlim(RigidbodyS a, RigidbodyS b, in Vector3S normal, in f32 penetrationDepth)
-        {
-            this.a = a;
-            this.b = b;
-            this.normal = normal;
-            this.penetrationDepth = penetrationDepth;
-            this.contactCount = 0;
-            c0 = default;
-            c1 = default;
-            c2 = default;
-            c3 = default;
-        }
-
-        public bool AddContact(in Vector3S point, byte featureId)
-        {
-            if (contactCount < 4)
-            {
-                this[contactCount++] = new ContactSlim(point, featureId);
-                return true;
-            }
-
-            return false;
         }
 
         public IntPair ToPair => new IntPair(a.index, b.index);

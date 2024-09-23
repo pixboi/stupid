@@ -28,7 +28,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32(long value)
         {
-           this.rawValue = value;
+            this.rawValue = value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -38,7 +38,6 @@ namespace stupid.Maths
         public float ToFloat() => (float)rawValue / One;
 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator +(in f32 a, in f32 b)
         {
             f32 result;
@@ -61,6 +60,14 @@ namespace stupid.Maths
         {
             f32 result;
             result.rawValue = (a.rawValue * b.rawValue) >> FractionalBits;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static f32 AddAndMultiply(in f32 a, in f32 b, in f32 m)
+        {
+            f32 result;
+            result.rawValue = ((a.rawValue + b.rawValue) * m.rawValue) >> FractionalBits;
             return result;
         }
 

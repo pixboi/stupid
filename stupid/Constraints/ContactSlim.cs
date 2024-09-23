@@ -25,21 +25,6 @@ namespace stupid.Constraints
             this.rb = Vector3S.zero;
         }
 
-        public ContactSlim(Vector3S point, byte featureId)
-        {
-            this.point = point;
-            this.featureId = featureId;
-            accumulatedImpulse = f32.zero;
-
-            normalMass = f32.zero;
-            tangentMass = f32.zero;
-            tangent = Vector3S.zero;
-            accumulatedFriction = f32.zero;
-            this.ra = Vector3S.zero;
-            this.rb = Vector3S.zero;
-        }
-
-
         public void CalculatePrestep(RigidbodyS a, RigidbodyS b, in ContactManifoldSlim manifold)
         {
             this.ra = point - a.transform.position;
@@ -122,7 +107,8 @@ namespace stupid.Constraints
 
             var vn = Vector3S.Dot(contactVelocity, normal);
 
-            var incremental = -normalMass * (vn + bias);
+            //var incremental = -normalMass * (vn + bias);
+            var incremental = f32.AddAndMultiply(vn, bias, -normalMass);
             var newImpulse = MathS.Max(incremental + accumulatedImpulse, f32.zero);
             incremental = newImpulse - accumulatedImpulse;
             accumulatedImpulse = newImpulse;

@@ -56,8 +56,6 @@ namespace stupid.Maths
             return result;
         }
 
-
-
         // Subtraction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator -(in Vector3S a, in Vector3S b)
