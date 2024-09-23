@@ -48,7 +48,14 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 Abs(in f32 value) => value < f32.zero ? -value : value;
+        public static f32 Abs(in f32 value)
+        {
+            f32 result;
+            long mask = value.rawValue >> 63;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
+            result.rawValue = (value.rawValue + mask) ^ mask; // Flip bits if negative
+            return result;
+        }
+
 
 
         // Fixed-point sine approximation using Taylor series expansion

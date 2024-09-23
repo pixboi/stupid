@@ -12,32 +12,32 @@ namespace stupid.Colliders
         {
             Vector3S relativePosition = b.collidable.transform.position - a.collidable.transform.position;
 
-            long minPenRaw = long.MaxValue;
+            f32 minPen = f32.maxValue;
             Vector3S minAxis = Vector3S.zero;
             int best = -1;
 
             // Check for overlaps on the primary axes of both boxes
-            if (!TryAxis(relativePosition, a.rightAxis, a, b, 0, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, a.upAxis, a, b, 1, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, a.forwardAxis, a, b, 2, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, a.rightAxis, a, b, 0, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, a.upAxis, a, b, 1, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, a.forwardAxis, a, b, 2, ref minPen, ref minAxis, ref best)) return 0;
 
-            if (!TryAxis(relativePosition, b.rightAxis, a, b, 3, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, b.upAxis, a, b, 4, ref minPenRaw, ref minAxis, ref best)) return 0;
-            if (!TryAxis(relativePosition, b.forwardAxis, a, b, 5, ref minPenRaw, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, b.rightAxis, a, b, 3, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, b.upAxis, a, b, 4, ref minPen, ref minAxis, ref best)) return 0;
+            if (!TryAxis(relativePosition, b.forwardAxis, a, b, 5, ref minPen, ref minAxis, ref best)) return 0;
 
             // Check for overlaps on the cross product of axes pairs
             //Need normalizations
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.rightAxis).Normalize(), a, b, 6, ref minPenRaw, ref minAxis, ref best)) return 0; //0,0
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.upAxis).Normalize(), a, b, 7, ref minPenRaw, ref minAxis, ref best)) return 0; //0,1
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.forwardAxis).Normalize(), a, b, 8, ref minPenRaw, ref minAxis, ref best)) return 0; //0,2
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.rightAxis).Normalize(), a, b, 6, ref minPen, ref minAxis, ref best)) return 0; //0,0
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.upAxis).Normalize(), a, b, 7, ref minPen, ref minAxis, ref best)) return 0; //0,1
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.rightAxis, b.forwardAxis).Normalize(), a, b, 8, ref minPen, ref minAxis, ref best)) return 0; //0,2
 
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.rightAxis).Normalize(), a, b, 9, ref minPenRaw, ref minAxis, ref best)) return 0; //1,0
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.upAxis).Normalize(), a, b, 10, ref minPenRaw, ref minAxis, ref best)) return 0; //1,1
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.forwardAxis).Normalize(), a, b, 11, ref minPenRaw, ref minAxis, ref best)) return 0; //1,2
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.rightAxis).Normalize(), a, b, 9, ref minPen, ref minAxis, ref best)) return 0; //1,0
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.upAxis).Normalize(), a, b, 10, ref minPen, ref minAxis, ref best)) return 0; //1,1
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.upAxis, b.forwardAxis).Normalize(), a, b, 11, ref minPen, ref minAxis, ref best)) return 0; //1,2
 
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.rightAxis).Normalize(), a, b, 12, ref minPenRaw, ref minAxis, ref best)) return 0; //2,0
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.upAxis).Normalize(), a, b, 13, ref minPenRaw, ref minAxis, ref best)) return 0; //2,1
-            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.forwardAxis).Normalize(), a, b, 14, ref minPenRaw, ref minAxis, ref best)) return 0; //2,2
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.rightAxis).Normalize(), a, b, 12, ref minPen, ref minAxis, ref best)) return 0; //2,0
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.upAxis).Normalize(), a, b, 13, ref minPen, ref minAxis, ref best)) return 0; //2,1
+            if (!TryAxis(relativePosition, Vector3S.Cross(a.forwardAxis, b.forwardAxis).Normalize(), a, b, 14, ref minPen, ref minAxis, ref best)) return 0; //2,2
 
             if (best == -1)
             {
@@ -48,7 +48,6 @@ namespace stupid.Colliders
             if (Vector3S.Dot(normalV, relativePosition) < f32.zero) normalV = -normalV;
 
             int count = 0;
-            f32 minPen = new f32(minPenRaw);
             minPen = -minPen;
 
             //A vert on b
@@ -132,18 +131,18 @@ namespace stupid.Colliders
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool TryAxis(in Vector3S relativePosition, in Vector3S axis, in BoxColliderS a, in BoxColliderS b, int index, ref long minOverlap, ref Vector3S minAxis, ref int best)
+        private static bool TryAxis(in Vector3S relativePosition, in Vector3S axis, in BoxColliderS a, in BoxColliderS b, int index, ref f32 minOverlap, ref Vector3S minAxis, ref int best)
         {
             if (axis.sqrMagnitude <= f32.epsilon) return true; // Skip zero-length axes
 
             // Calculate projection and overlap using raw values
-            long pA = ProjectBoxRaw(axis, a);
-            long pB = ProjectBoxRaw(axis, b);
+            var pA = ProjectBox(axis, a);
+            var pB = ProjectBox(axis, b);
 
-            long distance = Vector3S.RawAbsDot(relativePosition, axis);
-            long penetration = (pA + pB) - distance;
+            var distance = Vector3S.AbsDot(relativePosition, axis);
+            var penetration = (pA + pB) - distance;
 
-            if (penetration < 0) return false;
+            if (penetration < f32.zero) return false;
 
             if (penetration < minOverlap)
             {
@@ -157,20 +156,13 @@ namespace stupid.Colliders
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static long ProjectBoxRaw(in Vector3S axis, in BoxColliderS box)
+        private static f32 ProjectBox(in Vector3S axis, in BoxColliderS box)
         {
-            long absDot0 = Vector3S.RawAbsDot(axis, box.rightAxis);
-            long absDot1 = Vector3S.RawAbsDot(axis, box.upAxis);
-            long absDot2 = Vector3S.RawAbsDot(axis, box.forwardAxis);
+            var absDot0 = Vector3S.AbsDot(axis, box.rightAxis);
+            var absDot1 = Vector3S.AbsDot(axis, box.upAxis);
+            var absDot2 = Vector3S.AbsDot(axis, box.forwardAxis);
 
-            return ((box.halfSize.x.rawValue * absDot0) +
-                    (box.halfSize.y.rawValue * absDot1) +
-                    (box.halfSize.z.rawValue * absDot2)) >> f32.FractionalBits;
+            return ((box.halfSize.x * absDot0) + (box.halfSize.y * absDot1) + (box.halfSize.z * absDot2));
         }
-
-
-
-
-
     }
 }

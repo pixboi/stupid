@@ -85,7 +85,6 @@ namespace stupid.Colliders
         public readonly Vector3S halfSize;
         public readonly Vector3S[] localVertices;
 
-
         //Runtime
         public Vector3S rightAxis, upAxis, forwardAxis;
         public Vector3S[] vertices;

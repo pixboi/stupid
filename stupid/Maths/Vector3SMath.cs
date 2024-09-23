@@ -64,32 +64,14 @@ namespace stupid.Maths
         public static f32 Dot(in Vector3S a, in Vector3S b)
         {
             f32 result;
-
-            long dotX = a.x.rawValue * b.x.rawValue;
-            long dotY = a.y.rawValue * b.y.rawValue;
-            long dotZ = a.z.rawValue * b.z.rawValue;
-
-            result.rawValue = (dotX + dotY + dotZ) >> f32.FractionalBits;
+            result.rawValue = (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
             return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 AbsDot(in Vector3S a, in Vector3S b)
         {
-            f32 result = Dot(a, b);
-            return MathS.Abs(result);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long RawAbsDot(in Vector3S a, in Vector3S b)
-        {
-            long dotProduct = ((a.x.rawValue * b.x.rawValue) +
-                               (a.y.rawValue * b.y.rawValue) +
-                               (a.z.rawValue * b.z.rawValue)) >> f32.FractionalBits;
-
-            // Use bitwise operation to get the absolute value
-            long mask = dotProduct >> 63; // Create a mask based on the sign of dotProduct
-            return (dotProduct + mask) ^ mask;
+            return MathS.Abs(Dot(a,b));
         }
 
         #endregion
