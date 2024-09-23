@@ -4,7 +4,7 @@ using stupid.Maths;
 
 namespace stupid
 {
-    public class WorldSettings
+    public struct WorldSettings
     {
         public Vector3S Gravity;
         public PhysicsMaterialS DefaultMaterial;
@@ -16,8 +16,7 @@ namespace stupid
         public int DefaultSolverVelocityIterations;
         public BoundsS WorldBounds;
         public f32 DefaultMaxAngularSpeed;
-        public bool Presolve, Relaxation, Warmup;
-        public f32 PositionCorrection;
+        public bool Relaxation, Warmup;
         public f32 Baumgartner;
         public f32 FastMotionThreshold;
 
@@ -35,10 +34,8 @@ namespace stupid
                 DefaultSolverVelocityIterations = 1,
                 WorldBounds = new BoundsS(new Vector3S(0, 0, 0), new Vector3S(32, 32, 32)),
                 DefaultMaxAngularSpeed = (f32)14,
-                Presolve = true,
                 Relaxation = true,
                 Warmup = true,
-                PositionCorrection = (f32)0.2,
                 Baumgartner = (f32)0.2,
                 FastMotionThreshold = (f32)512,
             };

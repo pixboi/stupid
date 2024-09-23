@@ -138,16 +138,15 @@ namespace stupid
                 }
                 else
                 {
+                    ManifoldMap.Remove(pair);
                     _removeCache.Add(pair);
                 }
             }
 
             //If there are current manifolds that are not in the new broadphase, remove
-            foreach (var key in ManifoldMap.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
-
+            //foreach (var key in ManifoldMap.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
             foreach (var key in _removeCache)
             {
-                ManifoldMap.Remove(key);
                 pairs.Remove(key);
             }
         }

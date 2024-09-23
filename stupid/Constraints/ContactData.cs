@@ -1,4 +1,5 @@
 ﻿using stupid.Maths;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Constraints
 {
@@ -12,6 +13,7 @@ namespace stupid.Constraints
         public readonly f32 penetrationDepth;
         public readonly byte featureId;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactData(Vector3S point, Vector3S normal, f32 penetrationDepth, byte featureId = 255)
         {
             this.point = point;

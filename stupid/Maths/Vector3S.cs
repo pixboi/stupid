@@ -106,6 +106,27 @@ namespace stupid.Maths
             return result;
         }
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3S MultiplyAndAdd(in Vector3S a, in f32 b, in Vector3S parent)
+        {
+            Vector3S result;
+            result.x.rawValue = parent.x.rawValue + ((a.x.rawValue * b.rawValue) >> f32.FractionalBits);
+            result.y.rawValue = parent.y.rawValue + ((a.y.rawValue * b.rawValue) >> f32.FractionalBits);
+            result.z.rawValue = parent.y.rawValue + ((a.z.rawValue * b.rawValue) >> f32.FractionalBits);
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3S MultiplyAndSubtract(in Vector3S a, in f32 b, in Vector3S parent)
+        {
+            Vector3S result;
+            result.x.rawValue = parent.x.rawValue - ((a.x.rawValue * b.rawValue) >> f32.FractionalBits);
+            result.y.rawValue = parent.y.rawValue - ((a.y.rawValue * b.rawValue) >> f32.FractionalBits);
+            result.z.rawValue = parent.y.rawValue - ((a.z.rawValue * b.rawValue) >> f32.FractionalBits);
+            return result;
+        }
+
         // Division
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator /(in Vector3S a, f32 d)

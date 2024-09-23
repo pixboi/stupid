@@ -13,6 +13,7 @@ namespace stupid.Constraints
         public f32 normalMass, tangentMass;
         public f32 accumulatedImpulse, accumulatedFriction;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactSlim(in ContactData data)
         {
             point = data.point;
@@ -26,6 +27,7 @@ namespace stupid.Constraints
             this.rb = Vector3S.zero;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(RigidbodyS a, RigidbodyS b, in ContactManifoldSlim manifold)
         {
             this.ra = point - a.transform.position;
@@ -53,6 +55,7 @@ namespace stupid.Constraints
             //In retain, the previous tangent is stored IN THIS.TANGENT!
             var oldTangent = tangent;
             var newTangent = tangentialVelocity.Normalize();
+
 
             var blend = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;
             this.tangent = Vector3S.Lerp(oldTangent, newTangent, blend).Normalize();

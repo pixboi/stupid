@@ -12,6 +12,7 @@ namespace stupid.Constraints
         public readonly f32 penetrationDepth, friction;
         public readonly int startIndex, contactCount;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactManifoldSlim(RigidbodyS a, Collidable b, in Vector3S normal, in f32 penetrationDepth, int startIndex = -1, int contactCount = -1)
         {
             this.a = a;
@@ -27,7 +28,6 @@ namespace stupid.Constraints
                 throw new System.ArgumentException("ZERO CONTACTS?");
             }
         }
-
 
         // Retain impulse data from the old manifold
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,6 +86,7 @@ namespace stupid.Constraints
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resolve(ref ContactSlim[] contacts, in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
             for (int i = this.startIndex; i < startIndex + contactCount; i++)
