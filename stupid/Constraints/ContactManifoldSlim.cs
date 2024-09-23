@@ -7,20 +7,20 @@ namespace stupid.Constraints
 {
     public readonly struct ContactManifoldSlim
     {
-        public readonly RigidbodyS a;
-        public readonly Collidable b;
+        public readonly RigidbodyS a, b;
         public readonly Vector3S normal;
-        public readonly f32 penetrationDepth;
+        public readonly f32 penetrationDepth, friction;
         public readonly int startIndex, contactCount;
 
         public ContactManifoldSlim(RigidbodyS a, Collidable b, in Vector3S normal, in f32 penetrationDepth, int startIndex = -1, int contactCount = -1)
         {
             this.a = a;
-            this.b = b;
+            this.b = b.isDynamic ? (RigidbodyS)b : null;
             this.normal = normal;
             this.penetrationDepth = penetrationDepth;
             this.startIndex = startIndex;
             this.contactCount = contactCount;
+            this.friction = MathS.Sqrt(a.material.staticFriction * b.material.staticFriction);
 
             if (contactCount < 1)
             {
@@ -67,7 +67,7 @@ namespace stupid.Constraints
 
         // Prestep calculations for all contacts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep(ref ContactSlim[] contacts, RigidbodyS a, RigidbodyS b)
+        public void CalculatePrestep(ref ContactSlim[] contacts)
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
@@ -81,30 +81,25 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Warmup(ContactSlim[] contacts)
         {
-            var bb = b.isDynamic ? (RigidbodyS)b : null;
-
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
-                contacts[i].WarmStart(normal, a, bb);
+                contacts[i].WarmStart(normal, a, b);
             }
         }
 
         public void Resolve(ref ContactSlim[] contacts, in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
-            var bb = b.isDynamic ? (RigidbodyS)b : null;
-            var friction = MathS.Sqrt(a.material.staticFriction * b.material.staticFriction);
-
             for (int i = this.startIndex; i < startIndex + contactCount; i++)
             {
                 var c = contacts[i];
-                c.SolveImpulse(a, bb, inverseDt, settings, penetrationDepth, normal, bias);
+                c.SolveImpulse(a, b, inverseDt, settings, penetrationDepth, normal, bias);
                 contacts[i] = c;
             }
 
             for (int i = this.startIndex; i < startIndex + contactCount; i++)
             {
                 var c = contacts[i];
-                c.SolveFriction(a, bb, friction);
+                c.SolveFriction(a, b, friction);
                 contacts[i] = c;
             }
 

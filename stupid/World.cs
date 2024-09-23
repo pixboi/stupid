@@ -112,7 +112,6 @@ namespace stupid
                 if (count > 0)
                 {
                     var ab = (RigidbodyS)a;
-                    var bb = b.isDynamic ? (RigidbodyS)b : null;
 
                     var firstContact = _contactCache[0];
                     var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, startIndex, count);
@@ -132,7 +131,7 @@ namespace stupid
                         }
                     }
 
-                    manifold.CalculatePrestep(ref allContacts, ab, bb);
+                    manifold.CalculatePrestep(ref allContacts);
 
                     ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);
