@@ -35,15 +35,14 @@ namespace stupid.Constraints
         {
             for (int i = this.startIndex; i < this.startIndex + this.contactCount; i++)
             {
-                var c = contacts[i];
+                ref var c = ref contacts[i];
 
                 for (int j = old.startIndex; j < old.startIndex + old.contactCount; j++)
                 {
-                    var o = oldContacts[j];
+                    ref var o = ref oldContacts[j];
 
                     if (Transfer(ref c, o))
                     {
-                        contacts[i] = c;
                         break; // Exit the inner loop once a match is found
                     }
                 }
@@ -71,19 +70,19 @@ namespace stupid.Constraints
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
-                var contact = contacts[i];
-                contact.CalculatePrestep(a, b, this);
-                contacts[i] = contact;
+                ref var c = ref contacts[i];
+                c.CalculatePrestep(a, b, this);
             }
         }
 
         // Warmup for iterative solvers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup(ContactSlim[] contacts)
+        public void Warmup(ref ContactSlim[] contacts)
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
-                contacts[i].WarmStart(normal, a, b);
+                ref var c = ref contacts[i];
+                c.WarmStart(this.normal, a, b);
             }
         }
 
@@ -91,16 +90,14 @@ namespace stupid.Constraints
         {
             for (int i = this.startIndex; i < startIndex + contactCount; i++)
             {
-                var c = contacts[i];
+                ref var c = ref contacts[i]; // Using ref to avoid copying the struct
                 c.SolveImpulse(a, b, inverseDt, settings, penetrationDepth, normal, bias);
-                contacts[i] = c;
             }
 
             for (int i = this.startIndex; i < startIndex + contactCount; i++)
             {
-                var c = contacts[i];
+                ref var c = ref contacts[i]; // Using ref to avoid copying the struct
                 c.SolveFriction(a, b, friction);
-                contacts[i] = c;
             }
 
         }

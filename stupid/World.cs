@@ -152,6 +152,7 @@ namespace stupid
             }
         }
 
+        //Remember that the pair are still like wrong way, A ,b 
         private void NarrowPhase(HashSet<IntPair> pairs)
         {
             var dt = DeltaTime;
@@ -162,7 +163,7 @@ namespace stupid
 
             if (WorldSettings.Warmup)
             {
-                foreach (var m in _currentManifolds) m.Warmup(allContacts);
+                foreach (var m in _currentManifolds) m.Warmup(ref allContacts);
             }
 
             foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
