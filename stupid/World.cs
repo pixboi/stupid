@@ -8,27 +8,27 @@ namespace stupid
 {
     public class World
     {
-        public WorldSettings WorldSettings { get; private set; }
-        public SortAndSweepBroadphase Broadphase { get; set; }
-        public List<Collidable> Collidables { get; private set; }
+        public readonly WorldSettings WorldSettings;
+        public readonly SortAndSweepBroadphase Broadphase;
+        public List<Collidable> Collidables;
 
         List<RigidbodyS> Bodies = new List<RigidbodyS>();
-        public int SimulationFrame { get; private set; }
+        public int SimulationFrame;
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
 
         int _counter;
 
         Dictionary<IntPair, ContactManifoldSlim> ManifoldMap = new Dictionary<IntPair, ContactManifoldSlim>();
-
         List<IntPair> _removeCache = new List<IntPair>();
 
         ContactData[] _contactCache = new ContactData[4];
-
-        public ContactSlim[] oldContacts = new ContactSlim[5000];
         public ContactSlim[] allContacts = new ContactSlim[5000];
+        public ContactSlim[] oldContacts = new ContactSlim[5000];
+        int _contactCount;
 
-        List<ContactManifoldSlim> _currentManifolds = new List<ContactManifoldSlim>(1000);
+        int _manifoldCount;
+        ContactManifoldSlim[] _manifolds = new ContactManifoldSlim[5000];
 
         public event Action<ContactManifoldSlim> OnContact;
 
@@ -93,7 +93,7 @@ namespace stupid
         {
             _removeCache.Clear();
 
-            int startIndex = 0;
+            _contactCount = 0;
 
             //Go through pairs and test collisions, share data, etc.
             foreach (var pair in pairs)
@@ -114,14 +114,14 @@ namespace stupid
                     var ab = (RigidbodyS)a;
 
                     var firstContact = _contactCache[0];
-                    var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, startIndex, count);
+                    var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, _contactCount, count);
 
                     for (int i = 0; i < count; i++)
                     {
-                        allContacts[startIndex + i] = new ContactSlim(_contactCache[i]);
+                        allContacts[_contactCount + i] = new ContactSlim(_contactCache[i]);
                     }
 
-                    startIndex += count;
+                    _contactCount += count;
 
                     if (WorldSettings.Warmup)
                     {
@@ -144,7 +144,6 @@ namespace stupid
             }
 
             //If there are current manifolds that are not in the new broadphase, remove
-            //foreach (var key in ManifoldMap.Keys) if (!pairs.Contains(key)) _removeCache.Add(key);
             foreach (var key in _removeCache)
             {
                 pairs.Remove(key);
@@ -157,12 +156,20 @@ namespace stupid
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
 
-            _currentManifolds.Clear();
-            foreach (var p in pairs) _currentManifolds.Add(ManifoldMap[p]);
+            //For fast iteration just leave the array as is
+            _manifoldCount = 0;
+            foreach (var p in pairs)
+            {
+                _manifolds[_manifoldCount] = ManifoldMap[p];
+                _manifoldCount++;
+            }
 
             if (WorldSettings.Warmup)
             {
-                foreach (var m in _currentManifolds) m.Warmup(ref allContacts);
+                for (int i = 0; i < _manifoldCount; i++)
+                {
+                    _manifolds[i].Warmup(ref allContacts);
+                }
             }
 
             foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
@@ -170,9 +177,9 @@ namespace stupid
 
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
             {
-                foreach (var m in _currentManifolds)
+                for (int i = 0; i < _manifoldCount; i++)
                 {
-                    m.Resolve(ref allContacts, inverseDt, WorldSettings, true);
+                    _manifolds[i].Resolve(ref allContacts, inverseDt, WorldSettings, true);
                 }
             }
 
@@ -182,9 +189,9 @@ namespace stupid
             {
                 for (int relax = 0; relax < WorldSettings.DefaultSolverIterations; relax++)
                 {
-                    foreach (var m in _currentManifolds)
+                    for (int i = 0; i < _manifoldCount; i++)
                     {
-                        m.Resolve(ref allContacts, inverseDt, WorldSettings, false);
+                        _manifolds[i].Resolve(ref allContacts, inverseDt, WorldSettings, false);
                     }
                 }
             }
@@ -192,7 +199,7 @@ namespace stupid
             foreach (var rb in Bodies) rb.FinalizePosition();
 
             // Perform a deep copy (copying data from one array to another)
-            Array.Copy(allContacts, this.oldContacts, allContacts.Length);
+            Array.Copy(allContacts, oldContacts, allContacts.Length);
         }
     }
 }
