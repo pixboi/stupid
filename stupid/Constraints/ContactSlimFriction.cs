@@ -10,7 +10,7 @@ namespace stupid.Constraints
         public Vector3S tangent;
         public f32 tangentMass;
         public f32 accumulatedFriction;
-        public readonly byte featureId;
+        public readonly int featureId;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactSlimFriction(in ContactData data)

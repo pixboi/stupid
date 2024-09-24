@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 public struct ContactSlimNormal
 {
     public readonly Vector3S point;
-    public readonly byte featureId;
+    public readonly int featureId;
     public f32 normalMass;
     public f32 accumulatedImpulse;
 

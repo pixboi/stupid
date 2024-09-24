@@ -58,7 +58,7 @@ namespace stupid.Colliders
                     var vertex = p.Item1;
                     var feature = p.Item2;
 
-                    contacts[count++] = new ContactData(vertex, normalV, minPen, (byte)feature);
+                    contacts[count++] = new ContactData(vertex, normalV, minPen, feature);
                     if (count == contacts.Length) return count; // Early exit if max contacts reached
                 }
             }
@@ -72,7 +72,7 @@ namespace stupid.Colliders
                         var vertex = p.Item1;
                         var feature = p.Item2;
 
-                        contacts[count++] = new ContactData(vertex, normalV, minPen, (byte)(feature + 8));
+                        contacts[count++] = new ContactData(vertex, normalV, minPen, feature + 8);
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
                 }
@@ -94,14 +94,14 @@ namespace stupid.Colliders
                     // Check in the positive direction
                     if (b.RaycastBox(start, dir, out var p1, out var m1))
                     {
-                        contacts[count++] = new ContactData(p1, normalV, minPen, (byte)baseFeatureID);
+                        contacts[count++] = new ContactData(p1, normalV, minPen, baseFeatureID);
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
 
                     // Check in the negative direction
                     if (b.RaycastBox(start, -dir, out var p2, out var m2))
                     {
-                        contacts[count++] = new ContactData(p2, normalV, minPen, (byte)(baseFeatureID + 1));
+                        contacts[count++] = new ContactData(p2, normalV, minPen, baseFeatureID + 1);
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
                 }

@@ -49,44 +49,6 @@ namespace stupid.Constraints
             }
         }
 
-        // Retain impulse data from the old manifold
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void RetainDataNormal(ref ContactSlimNormal[] contacts, in ContactSlimNormal[] oldContacts, in ContactManifoldSlim old)
-        {
-            for (int i = this.startIndex; i < this.startIndex + this.contactCount; i++)
-            {
-                ref var c = ref contacts[i];
-
-                for (int j = old.startIndex; j < old.startIndex + old.contactCount; j++)
-                {
-                    ref var o = ref oldContacts[j];
-                    if (c.Transfer(o))
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Retain impulse data from the old manifold
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void RetainDataFriction(ref ContactSlimFriction[] contacts, in ContactSlimFriction[] oldContacts, in ContactManifoldSlim old)
-        {
-            for (int i = this.startIndex; i < this.startIndex + this.contactCount; i++)
-            {
-                ref var c = ref contacts[i];
-
-                for (int j = old.startIndex; j < old.startIndex + old.contactCount; j++)
-                {
-                    ref var o = ref oldContacts[j];
-                    if (c.Transfer(o))
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
         // Transfer impulse data from an old contact to a new one
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool Transfer(ref ContactSlim c, in ContactSlim old)
@@ -148,36 +110,6 @@ namespace stupid.Constraints
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup2(ref ContactSlimNormal[] c0, ref ContactSlimFriction[] c1)
-        {
-            for (int i = startIndex; i < startIndex + contactCount; i++)
-            {
-                var c = c0[i];
-                var ra = c.point - a.transform.position;
-                var rb = c.point - b.transform.position;
-
-                c0[i].WarmStart(a, b, ra, rb, this.normal);
-                c1[i].WarmStart(a, b, ra, rb);
-            }
-        }
-
-        public void Resolve2(ref ContactSlimNormal[] c0, ref ContactSlimFriction[] c1, in f32 inverseDt, in WorldSettings settings, in bool bias)
-        {
-            var end = startIndex + contactCount;
-
-            for (int i = this.startIndex; i < end; i++)
-            {
-                ref var c = ref c0[i]; // Using ref to avoid copying the struct
-                var ra = c.point - a.transform.position;
-                var rb = c.point - b.transform.position;
-
-                c.SolveImpulse(a, b, ra, rb, this.normal, inverseDt, settings, penetrationDepth, bias);
-
-                ref var f = ref c1[i]; // Using ref to avoid copying the struct
-                f.SolveFriction(a, b, ra, rb, c.accumulatedImpulse, this.friction);
-            }
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resolve(ref ContactSlim[] contacts, in f32 inverseDt, in WorldSettings settings, in bool bias)

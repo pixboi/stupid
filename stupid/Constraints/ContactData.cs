@@ -11,10 +11,10 @@ namespace stupid.Constraints
         //Init
         public readonly Vector3S point, normal;
         public readonly f32 penetrationDepth;
-        public readonly byte featureId;
+        public readonly int featureId;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContactData(Vector3S point, Vector3S normal, f32 penetrationDepth, byte featureId = 255)
+        public ContactData(Vector3S point, Vector3S normal, f32 penetrationDepth, int featureId = -1)
         {
             this.point = point;
             this.normal = normal;
