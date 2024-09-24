@@ -3,15 +3,15 @@ using stupid.Maths;
 using stupid;
 using System.Runtime.CompilerServices;
 
-public struct ContactSlimNormal
+public struct ContactImpulse
 {
-    public readonly Vector3S point;
-    public readonly int featureId;
-    public f32 normalMass;
-    public f32 accumulatedImpulse;
+    public readonly Vector3S point;//24
+    public f32 normalMass;//8
+    public f32 accumulatedImpulse; //8
+    public readonly int featureId; //4
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ContactSlimNormal(in ContactData data)
+    public ContactImpulse(in ContactData data)
     {
         point = data.point;
         featureId = data.featureId;

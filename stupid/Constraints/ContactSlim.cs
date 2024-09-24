@@ -5,15 +5,14 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Constraints
 {
-
     public struct ContactSlim
     {
-        public Vector3S point;
-        public readonly int featureId;
+        public Vector3S point; // 24
+        public readonly int featureId; //8
 
-        public Vector3S tangent;
-        public f32 normalMass, tangentMass;
-        public f32 accumulatedImpulse, accumulatedFriction;
+        public Vector3S tangent; // 24
+        public f32 normalMass, tangentMass; // 16
+        public f32 accumulatedImpulse, accumulatedFriction; //16
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactSlim(in ContactData data)

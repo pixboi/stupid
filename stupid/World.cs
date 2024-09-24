@@ -18,7 +18,7 @@ namespace stupid
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
 
-        int _counter;
+        int _indexCounter;
 
         Dictionary<IntPair, ContactManifoldSlim> ManifoldMap = new Dictionary<IntPair, ContactManifoldSlim>();
         List<IntPair> _removeCache = new List<IntPair>();
@@ -38,13 +38,13 @@ namespace stupid
             WorldSettings = worldSettings;
             Collidables = new List<Collidable>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
-            _counter = 0;
+            _indexCounter = 0;
             SimulationFrame = 0;
         }
 
         public Collidable AddCollidable(Collidable c)
         {
-            c.Register(_counter++);
+            c.Register(_indexCounter++);
             Collidables.Add(c);
             if (c is RigidbodyS rb) Bodies.Add(rb);
             return c;
@@ -65,7 +65,7 @@ namespace stupid
             UpdateCollidableTransforms();
             var pairs = Broadphase.ComputePairs(Collidables);
 
-
+            //The pairs, the hash set, determinism?
 
             //Prepare contacts
             PrepareContacts(pairs);

@@ -9,9 +9,9 @@ namespace stupid.Constraints
     public readonly struct ContactData
     {
         //Init
-        public readonly Vector3S point, normal;
-        public readonly f32 penetrationDepth;
-        public readonly int featureId;
+        public readonly Vector3S point, normal;//48
+        public readonly f32 penetrationDepth; //8
+        public readonly int featureId; //4
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactData(Vector3S point, Vector3S normal, f32 penetrationDepth, int featureId = -1)

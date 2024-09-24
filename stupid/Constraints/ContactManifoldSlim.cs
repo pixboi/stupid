@@ -81,7 +81,7 @@ namespace stupid.Constraints
 
         // Prestep calculations for all contacts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep2(ref ContactSlimNormal[] c0, ref ContactSlimFriction[] c1)
+        public void CalculatePrestep2(ref ContactImpulse[] c0, ref ContactFriction[] c1)
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {

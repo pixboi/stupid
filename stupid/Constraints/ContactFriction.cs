@@ -3,17 +3,15 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Constraints
 {
-   
-
-    public struct ContactSlimFriction
+    public struct ContactFriction
     {
-        public Vector3S tangent;
-        public f32 tangentMass;
-        public f32 accumulatedFriction;
-        public readonly int featureId;
+        public Vector3S tangent; //24
+        public f32 tangentMass; //8
+        public f32 accumulatedFriction; //8
+        public readonly int featureId; //4
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContactSlimFriction(in ContactData data)
+        public ContactFriction(in ContactData data)
         {
             tangent = Vector3S.zero;
             tangentMass = f32.zero;
