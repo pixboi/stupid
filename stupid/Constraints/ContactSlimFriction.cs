@@ -3,79 +3,60 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Constraints
 {
+   
+
     public struct ContactSlimFriction
     {
-        public readonly byte featureId;
         public Vector3S tangent;
-        public f32 tangentMass, accumulatedFriction;
+        public f32 tangentMass;
+        public f32 accumulatedFriction;
+        public readonly byte featureId;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactSlimFriction(in ContactData data)
         {
-            featureId = data.featureId;
-            tangentMass = f32.zero;
             tangent = Vector3S.zero;
+            tangentMass = f32.zero;
             accumulatedFriction = f32.zero;
-        }
-
-        public bool Transfer(in ContactSlimFriction old)
-        {
-            if (old.featureId == this.featureId)
-            {
-                this.tangent = old.tangent;
-                this.accumulatedFriction = old.accumulatedFriction;
-                return true;
-
-            }
-
-            return false;
+            featureId = data.featureId;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb, in Vector3S normal)
         {
-            // Calculate relative velocity at the contact point
             var contactVelocity = ContactSlim.CalculateContactVelocity(a, b, ra, rb);
-            Vector3S normalVelocity = normal * Vector3S.Dot(contactVelocity, normal);
-            Vector3S tangentialVelocity = contactVelocity - normalVelocity;
+            Vector3S tangentialVelocity = contactVelocity - (normal * Vector3S.Dot(contactVelocity, normal));
+
             f32 tangentMag = tangentialVelocity.sqrMagnitude;
 
-            //In retain, the previous tangent is stored IN THIS.TANGENT!
+            // Retain the previous tangent direction
             var oldTangent = tangent;
             var newTangent = tangentialVelocity.Normalize();
             var blend = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;
-            this.tangent = Vector3S.Lerp(oldTangent, newTangent, blend).Normalize();
+            tangent = Vector3S.Lerp(oldTangent, newTangent, blend).Normalize();
 
-            // Precompute cross products for mass calculation
             var raCrossTangent = Vector3S.Cross(ra, tangent);
-            var tmass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * raCrossTangent, ra), tangent);
+            var tMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * raCrossTangent, ra), tangent);
 
             if (b != null)
             {
                 var rbCrossTangent = Vector3S.Cross(rb, tangent);
-                tmass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * rbCrossTangent, rb), tangent);
+                tMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * rbCrossTangent, rb), tangent);
             }
 
-            tangentMass = tmass > f32.zero ? f32.one / tmass : f32.zero;
+            tangentMass = tMass > f32.zero ? f32.one / tMass : f32.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WarmStart(in RigidbodyS a, in RigidbodyS b, in Vector3S ra, in Vector3S rb)
-        {
-            Vector3S warmImpulse = tangent * this.accumulatedFriction;
-            ContactSlim.ApplyImpulse(a, b, warmImpulse, ra, rb);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveFriction(in RigidbodyS a, in RigidbodyS b, in Vector3S ra, in Vector3S rb, in f32 accumulatedImpulse, in f32 friction)
+        public void SolveFriction(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb, in f32 accumulatedImpulse, in f32 friction)
         {
             var contactVelocity = ContactSlim.CalculateContactVelocity(a, b, ra, rb);
-
             var vt = Vector3S.Dot(contactVelocity, tangent);
+
             var incrementalFriction = -tangentMass * vt;
 
-            var couloumbMax = accumulatedImpulse * friction;
-            var newImpulse = MathS.Clamp(accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);
+            var coulombMax = accumulatedImpulse * friction;
+            var newImpulse = MathS.Clamp(accumulatedFriction + incrementalFriction, -coulombMax, coulombMax);
             incrementalFriction = newImpulse - accumulatedFriction;
             accumulatedFriction = newImpulse;
 

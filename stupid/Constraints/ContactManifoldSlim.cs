@@ -110,7 +110,10 @@ namespace stupid.Constraints
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
                 ref var c = ref contacts[i];
-                c.CalculatePrestep(a, b, this);
+                var ra = c.point - a.transform.position;
+                var rb = b != null ? c.point - b.transform.position : Vector3S.zero;
+
+                c.CalculatePrestep(a, b, ra, rb, this);
             }
         }
 
@@ -138,7 +141,10 @@ namespace stupid.Constraints
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
                 ref var c = ref contacts[i];
-                c.WarmStart(this.normal, a, b);
+                var ra = c.point - a.transform.position;
+                var rb = b != null ? c.point - b.transform.position : Vector3S.zero;
+
+                c.WarmStart(a, b, ra, rb, this.normal);
             }
         }
 
@@ -176,18 +182,14 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resolve(ref ContactSlim[] contacts, in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
-            var end = startIndex + contactCount;
-
-            for (int i = this.startIndex; i < end; i++)
+            for (int i = this.startIndex; i < startIndex + contactCount; i++)
             {
                 ref var c = ref contacts[i]; // Using ref to avoid copying the struct
-                c.SolveImpulse(a, b, inverseDt, settings, penetrationDepth, normal, bias);
-            }
+                var ra = c.point - a.transform.position;
+                var rb = b != null ? c.point - b.transform.position : Vector3S.zero;
 
-            for (int i = this.startIndex; i < end; i++)
-            {
-                ref var c = ref contacts[i]; // Using ref to avoid copying the struct
-                c.SolveFriction(a, b, friction);
+                c.SolveImpulse(a, b, ra, rb, inverseDt, settings, penetrationDepth, normal, bias);
+                c.SolveFriction(a, b, ra, rb, friction);
             }
 
         }
