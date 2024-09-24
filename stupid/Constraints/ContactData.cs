@@ -5,7 +5,6 @@ namespace stupid.Constraints
 {
     //The only thing different really, between contacts that share the same manifold, are the offset FROM A, and feature ID
     //We could grealt reduce the memory footprint with this... i think
-
     public readonly struct ContactData
     {
         //Init

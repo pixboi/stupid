@@ -15,6 +15,8 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactManifoldSlim(RigidbodyS a, Collidable b, in Vector3S normal, in f32 penetrationDepth, int startIndex = -1, int contactCount = -1)
         {
+            if (contactCount < 1) throw new System.ArgumentException("ZERO CONTACTS?");
+
             this.a = a;
             this.b = b.isDynamic ? (RigidbodyS)b : null;
             this.normal = normal;
@@ -22,10 +24,26 @@ namespace stupid.Constraints
             this.startIndex = startIndex;
             this.contactCount = contactCount;
             this.friction = MathS.Sqrt(a.material.staticFriction * b.material.staticFriction);
+        }
 
-            if (contactCount < 1)
+        // Prestep calculations for all contacts
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CalculatePrestep(ref ContactSlim[] contacts)
+        {
+            for (int i = startIndex; i < startIndex + contactCount; i++)
             {
-                throw new System.ArgumentException("ZERO CONTACTS?");
+                ref var c = ref contacts[i];
+                c.CalculatePrestep(a, b, this);
+            }
+        }
+
+        // Warmup for iterative solvers
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Warmup(ref ContactSlim[] contacts)
+        {
+            for (int i = startIndex; i < startIndex + contactCount; i++)
+            {
+                contacts[i].WarmStart(a, b, this.normal);
             }
         }
 
@@ -37,93 +55,34 @@ namespace stupid.Constraints
             {
                 ref var c = ref contacts[i];
 
+                // Reduce loop nesting and optimize featureID checks
                 for (int j = old.startIndex; j < old.startIndex + old.contactCount; j++)
                 {
                     ref var o = ref oldContacts[j];
 
-                    if (Transfer(ref c, o))
+                    if (c.featureId == o.featureId)
                     {
-                        break; // Exit the inner loop once a match is found
+                        c.accumulatedImpulse = o.accumulatedImpulse;
+                        c.accumulatedFriction = o.accumulatedFriction;
+                        c.tangent = o.tangent;
+                        break; // Once the match is found, stop iterating.
                     }
                 }
             }
         }
 
-        // Transfer impulse data from an old contact to a new one
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool Transfer(ref ContactSlim c, in ContactSlim old)
-        {
-            if (c.featureId == old.featureId)
-            {
-                c.accumulatedImpulse = old.accumulatedImpulse;
-                c.accumulatedFriction = old.accumulatedFriction;
-                c.tangent = old.tangent;
-                return true;
-            }
-
-            return false;
-        }
-
-
-        // Prestep calculations for all contacts
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep(ref ContactSlim[] contacts)
-        {
-            for (int i = startIndex; i < startIndex + contactCount; i++)
-            {
-                ref var c = ref contacts[i];
-                var ra = c.point - a.transform.position;
-                var rb = b != null ? c.point - b.transform.position : Vector3S.zero;
-
-                c.CalculatePrestep(a, b, ra, rb, this);
-            }
-        }
-
-        // Prestep calculations for all contacts
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep2(ref ContactImpulse[] c0, ref ContactFriction[] c1)
-        {
-            for (int i = startIndex; i < startIndex + contactCount; i++)
-            {
-                ref var c = ref c0[i];
-                var ra = c.point - a.transform.position;
-                var rb = c.point - b.transform.position;
-
-                c.CalculatePrestep(a, b, ra, rb, this.normal);
-
-                ref var f = ref c1[i]; // Using ref to avoid copying the struct
-                f.CalculatePrestep(a, b, ra, rb, this.normal);
-            }
-        }
-
-        // Warmup for iterative solvers
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup(ref ContactSlim[] contacts)
-        {
-            for (int i = startIndex; i < startIndex + contactCount; i++)
-            {
-                ref var c = ref contacts[i];
-                var ra = c.point - a.transform.position;
-                var rb = b != null ? c.point - b.transform.position : Vector3S.zero;
-
-                c.WarmStart(a, b, ra, rb, this.normal);
-            }
-        }
-
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resolve(ref ContactSlim[] contacts, in f32 inverseDt, in WorldSettings settings, in bool bias)
         {
-            for (int i = this.startIndex; i < startIndex + contactCount; i++)
+            var end = startIndex + contactCount;
+
+            // Resolve impulse for all contacts first
+            for (int i = startIndex; i < end; i++)
             {
-                ref var c = ref contacts[i]; // Using ref to avoid copying the struct
-                var ra = c.point - a.transform.position;
-                var rb = b != null ? c.point - b.transform.position : Vector3S.zero;
-
-                c.SolveImpulse(a, b, ra, rb, inverseDt, settings, penetrationDepth, normal, bias);
-                c.SolveFriction(a, b, ra, rb, friction);
+                ref var c = ref contacts[i];
+                c.SolveImpulse(a, b, inverseDt, settings, penetrationDepth, normal, bias);
+                c.SolveFriction(a, b, friction);
             }
-
         }
     }
 }

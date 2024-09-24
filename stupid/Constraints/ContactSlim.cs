@@ -7,12 +7,9 @@ namespace stupid.Constraints
 {
     public struct ContactSlim
     {
-        public Vector3S point; // 24
         public readonly int featureId; //8
-
-        public Vector3S tangent; // 24
-        public f32 normalMass, tangentMass; // 16
-        public f32 accumulatedImpulse, accumulatedFriction; //16
+        public Vector3S point, tangent, ra, rb; // 4 * 24 = 96
+        public f32 tangentMass, accumulatedFriction, normalMass, accumulatedImpulse; // 4 * 8 = 32
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactSlim(in ContactData data)
@@ -24,11 +21,16 @@ namespace stupid.Constraints
             tangentMass = f32.zero;
             tangent = Vector3S.zero;
             accumulatedFriction = f32.zero;
+            ra = Vector3S.zero;
+            rb = Vector3S.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb, in ContactManifoldSlim manifold)
+        public void CalculatePrestep(RigidbodyS a, RigidbodyS b, in ContactManifoldSlim manifold)
         {
+            this.ra = this.point - a.transform.position;
+            this.rb = b != null ? this.point - b.transform.position : Vector3S.zero;
+
             Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, a.tensor.inertiaWorld * raCrossNormal);
             f32 effectiveMass = a.inverseMass + angularMassA;
@@ -68,14 +70,14 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WarmStart(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb, in Vector3S normal)
+        public void WarmStart(RigidbodyS a, RigidbodyS b, in Vector3S normal)
         {
             Vector3S warmImpulse = normal * accumulatedImpulse + tangent * accumulatedFriction;
             ApplyImpulse(a, b, warmImpulse, ra, rb);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveImpulse(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb, in f32 inverseDt, in WorldSettings settings, in f32 penetrationDepth, in Vector3S normal, bool useBias = true)
+        public void SolveImpulse(RigidbodyS a, RigidbodyS b, in f32 inverseDt, in WorldSettings settings, in f32 penetrationDepth, in Vector3S normal, bool useBias = true)
         {
             f32 bias = f32.zero;
             if (penetrationDepth > f32.zero)
@@ -101,7 +103,7 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveFriction(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb, in f32 friction)
+        public void SolveFriction(RigidbodyS a, RigidbodyS b, in f32 friction)
         {
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
 
