@@ -3,6 +3,7 @@ using stupid.Constraints;
 using stupid.Maths;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace stupid
 {
@@ -64,6 +65,8 @@ namespace stupid
             UpdateCollidableTransforms();
             var pairs = Broadphase.ComputePairs(Collidables);
 
+
+
             //Prepare contacts
             PrepareContacts(pairs);
 
@@ -89,10 +92,10 @@ namespace stupid
             }
         }
 
+        //hash set determinism?
         void PrepareContacts(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();
-
             _contactCount = 0;
 
             //Go through pairs and test collisions, share data, etc.
@@ -116,13 +119,13 @@ namespace stupid
                     var firstContact = _contactCache[0];
                     var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, _contactCount, count);
 
+                    //First, put the new ones in
                     for (int i = 0; i < count; i++)
                     {
                         allContacts[_contactCount + i] = new ContactSlim(_contactCache[i]);
                     }
 
-                    _contactCount += count;
-
+                    //Then retain
                     if (WorldSettings.Warmup)
                     {
                         if (ManifoldMap.TryGetValue(pair, out var oldManifold))
@@ -131,10 +134,14 @@ namespace stupid
                         }
                     }
 
+                    //Calculate the thing
                     manifold.CalculatePrestep(ref allContacts);
+                    _contactCount += count;
 
+                    //Fire off and finish
                     ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);
+
                 }
                 else
                 {
@@ -198,8 +205,8 @@ namespace stupid
 
             foreach (var rb in Bodies) rb.FinalizePosition();
 
-            // Perform a deep copy (copying data from one array to another)
             Array.Copy(allContacts, oldContacts, allContacts.Length);
+            Array.Clear(allContacts, 0, allContacts.Length);
         }
     }
 }

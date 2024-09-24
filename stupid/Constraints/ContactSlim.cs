@@ -8,7 +8,7 @@ namespace stupid.Constraints
 
     public struct ContactSlim
     {
-        public readonly Vector3S point;
+        public Vector3S point;
         public readonly int featureId;
 
         public Vector3S tangent;

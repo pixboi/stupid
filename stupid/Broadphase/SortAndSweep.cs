@@ -1,6 +1,7 @@
 ﻿using stupid.Maths;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Broadphase
 {
@@ -21,6 +22,7 @@ namespace stupid.Broadphase
         private Collidable[] activeList;
         private int activeListCount;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SortAndSweepBroadphase(int initialCapacity = 100)
         {
             endpointsX = new AxisEndpoint[initialCapacity * 2];
@@ -31,6 +33,7 @@ namespace stupid.Broadphase
             overlapCount = new int[initialCapacity * initialCapacity];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Rebuild(List<Collidable> rigidbodies)
         {
             int endpointCapacity = rigidbodies.Count * 2;
@@ -58,6 +61,7 @@ namespace stupid.Broadphase
             overlapCount = new int[rbCount * rbCount];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public HashSet<IntPair> ComputePairs(List<Collidable> rigidbodies)
         {
             if (rbCount != rigidbodies.Count)
@@ -107,6 +111,7 @@ namespace stupid.Broadphase
             return pairs;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void FlagPairsInAxis(AxisEndpoint[] endpoints, int count)
         {
             activeListCount = 0;
@@ -151,6 +156,7 @@ namespace stupid.Broadphase
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void UpdateEndpoints(AxisEndpoint[] endpoints, int axis)
         {
             for (int i = 0; i < rbCount * 2; i++)
@@ -174,6 +180,7 @@ namespace stupid.Broadphase
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void InsertionSort(AxisEndpoint[] endpoints, int count)
         {
             for (int i = 1; i < count; i++)
