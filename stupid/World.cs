@@ -26,6 +26,11 @@ namespace stupid
         ContactData[] _contactCache = new ContactData[4];
         public ContactSlim[] allContacts = new ContactSlim[5000];
         public ContactSlim[] oldContacts = new ContactSlim[5000];
+
+        public ContactImpulse[] allImpulses = new ContactImpulse[5000];
+        public ContactImpulse[] oldImpulses = new ContactImpulse[5000];
+        public ContactFriction[] allFrictions = new ContactFriction[5000];
+        public ContactFriction[] oldFrictions = new ContactFriction[5000];
         int _contactCount;
 
         int _manifoldCount;

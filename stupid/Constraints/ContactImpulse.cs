@@ -24,16 +24,16 @@ public struct ContactImpulse
     {
         Vector3S raCrossNormal = Vector3S.Cross(ra, normal);
         f32 angularMassA = Vector3S.Dot(raCrossNormal, a.tensor.inertiaWorld * raCrossNormal);
-        f32 effectiveMass = a.inverseMass + angularMassA;
+        f32 effMass = a.inverseMass + angularMassA;
 
         if (b != null)
         {
             Vector3S rbCrossNormal = Vector3S.Cross(rb, normal);
             f32 angularMassB = Vector3S.Dot(rbCrossNormal, b.tensor.inertiaWorld * rbCrossNormal);
-            effectiveMass += b.inverseMass + angularMassB;
+            effMass += b.inverseMass + angularMassB;
         }
 
-        normalMass = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
+        this.normalMass = effMass > f32.zero ? f32.one / effMass : f32.zero;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -53,10 +53,10 @@ public struct ContactImpulse
         var contactVelocity = ContactSlim.CalculateContactVelocity(a, b, ra, rb);
         var vn = Vector3S.Dot(contactVelocity, normal);
 
-        var incremental = -normalMass * (vn + bias);
-        var newImpulse = MathS.Max(incremental + accumulatedImpulse, f32.zero);
-        incremental = newImpulse - accumulatedImpulse;
-        accumulatedImpulse = newImpulse;
+        var incremental = -this.normalMass * (vn + bias);
+        var newImpulse = MathS.Max(incremental + this.accumulatedImpulse, f32.zero);
+        incremental = newImpulse - this.accumulatedImpulse;
+        this.accumulatedImpulse = newImpulse;
 
         var impulse = normal * incremental;
         ContactSlim.ApplyImpulse(a, b, impulse, ra, rb);
