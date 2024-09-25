@@ -1,4 +1,5 @@
-﻿using stupid.Maths;
+﻿using stupid.Colliders;
+using stupid.Maths;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -14,72 +15,80 @@ namespace stupid.Broadphase
         private HashSet<IntPair> pairs;
         private int[] overlapCount;
         private int rbCount = 0;
-        private Collidable[] activeList;
         private int activeListCount;
+        private BoundsIndex[] activeList;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SortAndSweepBroadphase(int initialCapacity = 100)
         {
-            endpointsX = new AxisEndpoint[initialCapacity * 2];
-            endpointsY = new AxisEndpoint[initialCapacity * 2];
-            endpointsZ = new AxisEndpoint[initialCapacity * 2];
+            int capacity = initialCapacity * 2;
+            endpointsX = new AxisEndpoint[capacity];
+            endpointsY = new AxisEndpoint[capacity];
+            endpointsZ = new AxisEndpoint[capacity];
             pairs = new HashSet<IntPair>(initialCapacity * initialCapacity, new IntPairComparer());
-            activeList = new Collidable[initialCapacity];
+            activeList = new BoundsIndex[initialCapacity];
             overlapCount = new int[initialCapacity * initialCapacity];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Rebuild(List<Collidable> rigidbodies)
+        private void Rebuild(BoundsIndex[] boundsIndices, int boundsLength)
         {
-            int endpointCapacity = rigidbodies.Count * 2;
+            int endpointCapacity = boundsLength * 2;
+
             if (endpointsX.Length < endpointCapacity)
             {
+                // Expand capacity when needed, reduce unnecessary reallocation
                 endpointsX = new AxisEndpoint[endpointCapacity];
                 endpointsY = new AxisEndpoint[endpointCapacity];
                 endpointsZ = new AxisEndpoint[endpointCapacity];
             }
 
-            for (int i = 0; i < rigidbodies.Count; i++)
+            for (int i = 0; i < boundsLength; i++)
             {
-                var body = rigidbodies[i];
-                var bounds = body._bounds;
-                endpointsX[i * 2] = new AxisEndpoint { Value = bounds.min.x, IsMin = true, Body = body };
-                endpointsX[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.x, IsMin = false, Body = body };
-                endpointsY[i * 2] = new AxisEndpoint { Value = bounds.min.y, IsMin = true, Body = body };
-                endpointsY[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.y, IsMin = false, Body = body };
-                endpointsZ[i * 2] = new AxisEndpoint { Value = bounds.min.z, IsMin = true, Body = body };
-                endpointsZ[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.z, IsMin = false, Body = body };
+                ref var boundsIndex = ref boundsIndices[i];
+                var bounds = boundsIndex.bounds;
+
+                // Precompute both min and max
+                endpointsX[i * 2] = new AxisEndpoint { Value = bounds.min.x, IsMin = true, bodyIndex = boundsIndex.bodyIndex };
+                endpointsX[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.x, IsMin = false, bodyIndex = boundsIndex.bodyIndex };
+                endpointsY[i * 2] = new AxisEndpoint { Value = bounds.min.y, IsMin = true, bodyIndex = boundsIndex.bodyIndex };
+                endpointsY[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.y, IsMin = false, bodyIndex = boundsIndex.bodyIndex };
+                endpointsZ[i * 2] = new AxisEndpoint { Value = bounds.min.z, IsMin = true, bodyIndex = boundsIndex.bodyIndex };
+                endpointsZ[i * 2 + 1] = new AxisEndpoint { Value = bounds.max.z, IsMin = false, bodyIndex = boundsIndex.bodyIndex };
             }
 
-            activeList = new Collidable[rigidbodies.Count];
-            rbCount = rigidbodies.Count;
+            rbCount = boundsLength;
+            activeList = new BoundsIndex[boundsLength];
             overlapCount = new int[rbCount * rbCount];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public HashSet<IntPair> ComputePairs(List<Collidable> rigidbodies)
+        public HashSet<IntPair> ComputePairs(BoundsIndex[] boundsIndices, int boundsLength)
         {
-            if (rbCount != rigidbodies.Count)
+            if (rbCount != boundsLength)
             {
-                Rebuild(rigidbodies);
+                Rebuild(boundsIndices, boundsLength);
             }
 
             pairs.Clear();
             Array.Clear(overlapCount, 0, overlapCount.Length);
 
-            UpdateEndpoints(endpointsX, 0);
-            UpdateEndpoints(endpointsY, 1);
-            UpdateEndpoints(endpointsZ, 2);
+            // Update the endpoints
+            UpdateEndpoints(ref endpointsX, boundsIndices, 0);
+            UpdateEndpoints(ref endpointsY, boundsIndices, 1);
+            UpdateEndpoints(ref endpointsZ, boundsIndices, 2);
 
+            // Sort the endpoints
             InsertionSort(endpointsX, rbCount * 2);
             InsertionSort(endpointsY, rbCount * 2);
             InsertionSort(endpointsZ, rbCount * 2);
 
-            FlagPairsInAxis(endpointsX, rbCount * 2);
-            FlagPairsInAxis(endpointsY, rbCount * 2);
-            FlagPairsInAxis(endpointsZ, rbCount * 2);
+            // Flag overlapping pairs in each axis
+            FlagPairsInAxis(endpointsX, rbCount * 2, boundsIndices);
+            FlagPairsInAxis(endpointsY, rbCount * 2, boundsIndices);
+            FlagPairsInAxis(endpointsZ, rbCount * 2, boundsIndices);
 
-            // Check overlap counts and perform detailed bounds checks
+            // Final pass: check 3-axis overlaps
             for (int i = 0; i < overlapCount.Length; i++)
             {
                 if (overlapCount[i] == 3)
@@ -87,16 +96,10 @@ namespace stupid.Broadphase
                     int aIndex = i / rbCount;
                     int bIndex = i % rbCount;
 
-                    var bodyA = rigidbodies[aIndex];
-                    var bodyB = rigidbodies[bIndex];
+                    var boundsA = boundsIndices[aIndex].bounds;
+                    var boundsB = boundsIndices[bIndex].bounds;
 
-                    //Skip static + static
-                    if (!bodyA.isDynamic && !bodyB.isDynamic) continue;
-
-                    var ab = bodyA._bounds;
-                    var bb = bodyB._bounds;
-
-                    if (ab.Intersects(bb))
+                    if (boundsA.Intersects(boundsB))
                     {
                         pairs.Add(new IntPair(aIndex, bIndex));
                     }
@@ -107,41 +110,39 @@ namespace stupid.Broadphase
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void FlagPairsInAxis(AxisEndpoint[] endpoints, int count)
+        private void FlagPairsInAxis(AxisEndpoint[] endpoints, int count, BoundsIndex[] boundsIndices)
         {
             activeListCount = 0;
 
             for (int i = 0; i < count; i++)
             {
-                var me = endpoints[i];
-                var aIndex = me.Body.index;
+                ref var me = ref endpoints[i];
+                int aIndex = me.bodyIndex;
 
                 if (me.IsMin)
                 {
                     for (int j = 0; j < activeListCount; j++)
                     {
-                        var otherBody = activeList[j];
-                        var bIndex = otherBody.index;
+                        int bIndex = activeList[j].bodyIndex;
 
                         if (aIndex < bIndex)
                         {
-                            int index = aIndex * rbCount + bIndex;
-                            overlapCount[index]++;
+                            overlapCount[aIndex * rbCount + bIndex]++;
                         }
                         else
                         {
-                            int index = bIndex * rbCount + aIndex;
-                            overlapCount[index]++;
+                            overlapCount[bIndex * rbCount + aIndex]++;
                         }
-
                     }
-                    activeList[activeListCount++] = me.Body;
+
+                    activeList[activeListCount++] = boundsIndices[aIndex];  // Use ref for efficient storage
                 }
                 else
                 {
+                    // Remove from activeList
                     for (int j = 0; j < activeListCount; j++)
                     {
-                        if (activeList[j] == me.Body)
+                        if (activeList[j].bodyIndex == aIndex)
                         {
                             activeList[j] = activeList[--activeListCount];
                             break;
@@ -152,31 +153,24 @@ namespace stupid.Broadphase
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void UpdateEndpoints(AxisEndpoint[] endpoints, int axis)
+        private void UpdateEndpoints(ref AxisEndpoint[] endpoints, BoundsIndex[] boundsIndices, int axis)
         {
             for (int i = 0; i < rbCount * 2; i++)
             {
-                var endpoint = endpoints[i];
+                ref var endpoint = ref endpoints[i];
+                var bounds = boundsIndices[endpoint.bodyIndex].bounds;
 
-                var bounds = endpoint.Body._bounds;
                 switch (axis)
                 {
-                    case 0:
-                        endpoint.Value = endpoint.IsMin ? bounds.min.x : bounds.max.x;
-                        break;
-                    case 1:
-                        endpoint.Value = endpoint.IsMin ? bounds.min.y : bounds.max.y;
-                        break;
-                    case 2:
-                        endpoint.Value = endpoint.IsMin ? bounds.min.z : bounds.max.z;
-                        break;
+                    case 0: endpoint.Value = endpoint.IsMin ? bounds.min.x : bounds.max.x; break;
+                    case 1: endpoint.Value = endpoint.IsMin ? bounds.min.y : bounds.max.y; break;
+                    case 2: endpoint.Value = endpoint.IsMin ? bounds.min.z : bounds.max.z; break;
                 }
-                endpoints[i] = endpoint; // Ensure the updated endpoint is stored back
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void InsertionSort(AxisEndpoint[] endpoints, int count)
+        private static void InsertionSort(AxisEndpoint[] endpoints, int count)
         {
             for (int i = 1; i < count; i++)
             {
@@ -188,17 +182,28 @@ namespace stupid.Broadphase
                     endpoints[j + 1] = endpoints[j];
                     j--;
                 }
+
                 endpoints[j + 1] = key;
             }
         }
-
-        public struct AxisEndpoint
-        {
-            public f32 Value;
-            public bool IsMin;
-            public Collidable Body;
-        }
     }
 
+    public struct AxisEndpoint
+    {
+        public f32 Value;
+        public bool IsMin;
+        public int bodyIndex;  // Use bodyIndex for referencing
+    }
 
+    public readonly struct BoundsIndex
+    {
+        public readonly BoundsS bounds;
+        public readonly int bodyIndex;
+
+        public BoundsIndex(BoundsS bounds, int index)
+        {
+            this.bounds = bounds;
+            this.bodyIndex = index;
+        }
+    }
 }

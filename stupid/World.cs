@@ -12,8 +12,8 @@ namespace stupid
         public readonly WorldSettings WorldSettings;
         public readonly SortAndSweepBroadphase Broadphase;
         public List<Collidable> Collidables;
+        List<RigidbodyS> Bodies;
 
-        List<RigidbodyS> Bodies = new List<RigidbodyS>();
         public int SimulationFrame;
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
@@ -37,9 +37,15 @@ namespace stupid
         {
             WorldSettings = worldSettings;
             Collidables = new List<Collidable>(startSize);
+            Bodies = new List<RigidbodyS>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
-            _indexCounter = 0;
             SimulationFrame = 0;
+
+            _indexCounter = 0;
+            _contactCount = 0;
+            _manifoldCount = 0;
+
+            _boundsIndices = new BoundsIndex[startSize * 2];
         }
 
         public Collidable AddCollidable(Collidable c)
@@ -50,6 +56,7 @@ namespace stupid
             return c;
         }
 
+        BoundsIndex[] _boundsIndices;
         public void Simulate(f32 deltaTime)
         {
             //Update delta time
@@ -63,7 +70,15 @@ namespace stupid
 
             //Broadphase
             UpdateCollidableTransforms();
-            var pairs = Broadphase.ComputePairs(Collidables);
+
+            Array.Clear(_boundsIndices, 0, _boundsIndices.Length);
+            int boundsLength = 0;
+            foreach (Collidable c in Collidables)
+            {
+                _boundsIndices[boundsLength++] = new BoundsIndex(c._bounds, c.index);
+            }
+
+            var pairs = Broadphase.ComputePairs(_boundsIndices, boundsLength);
 
             //The pairs, the hash set, determinism?
 
@@ -104,6 +119,13 @@ namespace stupid
                 var a = Collidables[pair.aIndex];
                 var b = Collidables[pair.bIndex];
 
+                //Skip static + static
+                if (!b.isDynamic && !a.isDynamic)
+                {
+                    _removeCache.Add(pair);
+                    continue;
+                }
+
                 // Ensure the dynamic body is 'a' for consistent processing
                 if (b.isDynamic && !a.isDynamic)
                 {
@@ -117,7 +139,7 @@ namespace stupid
                     var ab = (RigidbodyS)a;
 
                     var firstContact = _contactCache[0];
-                    var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, WorldSettings, InverseDeltaTime, _contactCount, count);
+                    var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, _contactCount, count);
 
                     //First, put the new ones in
                     for (int i = 0; i < count; i++)
@@ -170,8 +192,15 @@ namespace stupid
                 _manifoldCount++;
             }
 
+            var span = new ReadOnlySpan<ContactManifoldSlim>(_manifolds, 0, _manifoldCount);
+
             if (WorldSettings.Warmup)
             {
+                foreach (var manifold in span)
+                {
+                    manifold.Warmup(ref allContacts);
+                }
+
                 for (int i = 0; i < _manifoldCount; i++)
                 {
                     _manifolds[i].Warmup(ref allContacts);

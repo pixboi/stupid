@@ -14,7 +14,7 @@ namespace stupid.Constraints
         public readonly int startIndex, contactCount; // 8
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContactManifoldSlim(RigidbodyS a, Collidable b, in Vector3S normal, in f32 penetrationDepth, in WorldSettings settings, in f32 inverseDt, int startIndex = -1, int contactCount = -1)
+        public ContactManifoldSlim(RigidbodyS a, Collidable b, in Vector3S normal, in f32 penetrationDepth, int startIndex = -1, int contactCount = -1)
         {
             if (contactCount < 1) throw new System.ArgumentException("ZERO CONTACTS?");
 
@@ -78,7 +78,6 @@ namespace stupid.Constraints
             var end = startIndex + contactCount;
 
             var bias = f32.zero;
-
             if (useBias)
             {
                 var separation = MathS.Min(f32.zero, this.penetrationDepth + settings.DefaultContactOffset);
@@ -90,14 +89,17 @@ namespace stupid.Constraints
             {
                 ref var c = ref contacts[i];
                 c.SolveImpulse(a, b, normal, bias);
+                c.SolveFriction(a, b, friction);
             }
 
+            /*
             // Resolve impulse for all contacts first
             for (int i = startIndex; i < end; i++)
             {
                 ref var c = ref contacts[i];
-                c.SolveFriction(a, b, friction);
+
             }
+            */
         }
     }
 }
