@@ -26,16 +26,16 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep(RigidbodyS a, RigidbodyS b, in ContactManifoldSlim manifold)
+        public void CalculatePrestep(Collidable a, Collidable b, in ContactManifoldSlim manifold)
         {
             this.ra = this.point - a.transform.position;
-            this.rb = b != null ? this.point - b.transform.position : Vector3S.zero;
+            this.rb = b.isDynamic ? this.point - b.transform.position : Vector3S.zero;
 
             Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, a.tensor.inertiaWorld * raCrossNormal);
             f32 effectiveMass = a.inverseMass + angularMassA;
 
-            if (b != null)
+            if (b.isDynamic)
             {
                 Vector3S rbCrossNormal = Vector3S.Cross(rb, manifold.normal);
                 f32 angularMassB = Vector3S.Dot(rbCrossNormal, b.tensor.inertiaWorld * rbCrossNormal);
@@ -60,7 +60,7 @@ namespace stupid.Constraints
             var raCrossTangent = Vector3S.Cross(ra, tangent);
             var tMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * raCrossTangent, ra), tangent);
 
-            if (b != null)
+            if (b.isDynamic)
             {
                 var rbCrossTangent = Vector3S.Cross(rb, tangent);
                 tMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * rbCrossTangent, rb), tangent);
@@ -70,27 +70,27 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WarmStart(RigidbodyS a, RigidbodyS b, in Vector3S normal)
+        public void WarmStart(Collidable a, Collidable b, in Vector3S normal)
         {
             Vector3S warmImpulse = normal * accumulatedImpulse + tangent * accumulatedFriction;
             ApplyImpulse(a, b, warmImpulse, ra, rb);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S CalculateContactVelocity(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb)
+        public static Vector3S CalculateContactVelocity(Collidable a, Collidable b, in Vector3S ra, in Vector3S rb)
         {
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
             return bv - av;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ApplyImpulse(RigidbodyS a, RigidbodyS b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
+        public static void ApplyImpulse(Collidable a, Collidable b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
         {
             a.velocity -= impulse * a.inverseMass; // A moves away
             a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
 
-            if (b != null)
+            if (b.isDynamic)
             {
                 b.velocity += impulse * b.inverseMass; // B moves along normal
                 b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
@@ -98,11 +98,11 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveImpulse(RigidbodyS a, RigidbodyS b, in Vector3S normal, f32 bias)
+        public void SolveImpulse(Collidable a, Collidable b, in Vector3S normal, f32 bias)
         {
             //var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
             var contactVelocity = bv - av;
 
             var vn = Vector3S.Dot(contactVelocity, normal);
@@ -117,7 +117,7 @@ namespace stupid.Constraints
             a.velocity -= impulse * a.inverseMass; // A moves away
             a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
 
-            if (b != null)
+            if (b.isDynamic)
             {
                 b.velocity += impulse * b.inverseMass; // B moves along normal
                 b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
@@ -125,10 +125,10 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveFriction(RigidbodyS a, RigidbodyS b, in f32 friction)
+        public void SolveFriction(Collidable a, Collidable b, in f32 friction)
         {
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
             var contactVelocity = bv - av;
 
             var vt = Vector3S.Dot(contactVelocity, this.tangent);
@@ -144,7 +144,7 @@ namespace stupid.Constraints
             a.velocity -= impulse * a.inverseMass; // A moves away
             a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
 
-            if (b != null)
+            if (b.isDynamic)
             {
                 b.velocity += impulse * b.inverseMass; // B moves along normal
                 b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);

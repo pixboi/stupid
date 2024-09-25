@@ -98,7 +98,8 @@ namespace stupid
 
                 c.CalculateBounds();
 
-                if (c is RigidbodyS rb) rb.tensor.UpdateInertiaTensor(c.transform);
+                if (c.isDynamic) c.tensor.UpdateInertiaTensor(c.transform);
+
             }
         }
 
@@ -131,10 +132,8 @@ namespace stupid
 
                 if (count > 0)
                 {
-                    var ab = (RigidbodyS)a;
-
                     var firstContact = _contactCache[0];
-                    var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, _contactCount, count);
+                    var manifold = new ContactManifoldSlim(a, b, firstContact.normal, firstContact.penetrationDepth, _contactCount, count);
 
                     //First, put the new ones in
                     for (int i = 0; i < count; i++)
@@ -202,7 +201,7 @@ namespace stupid
 
             foreach (var c in Collidables)
             {
-                if (c is RigidbodyS rb) rb.IntegrateForces(dt, WorldSettings);
+                c.IntegrateForces(dt, WorldSettings);
             }
 
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
@@ -215,7 +214,7 @@ namespace stupid
 
             foreach (var c in Collidables)
             {
-                if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
+                c.IntegrateVelocity(dt, WorldSettings);
             }
 
             if (WorldSettings.Relaxation)
@@ -231,7 +230,7 @@ namespace stupid
 
             foreach (var c in Collidables)
             {
-                if (c is RigidbodyS rb) rb.FinalizePosition();
+                c.FinalizePosition();
             }
 
             Array.Copy(allContacts, oldContacts, allContacts.Length);

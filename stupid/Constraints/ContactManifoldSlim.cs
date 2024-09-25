@@ -10,18 +10,17 @@ namespace stupid.Constraints
 {
     public readonly struct ContactManifoldSlim
     {
-        public readonly RigidbodyS a, b; // 16
+        public readonly Collidable a, b; // 16
         public readonly Vector3S normal; // 24 
         public readonly f32 penetrationDepth, friction; // 16
         public readonly int startIndex, contactCount; // 8
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContactManifoldSlim(RigidbodyS a, Collidable b, in Vector3S normal, in f32 penetrationDepth, int startIndex = -1, int contactCount = -1)
+        public ContactManifoldSlim(Collidable a, Collidable b, in Vector3S normal, in f32 penetrationDepth, int startIndex = -1, int contactCount = -1)
         {
             if (contactCount < 1) throw new System.ArgumentException("ZERO CONTACTS?");
-
             this.a = a;
-            this.b = b.isDynamic ? (RigidbodyS)b : null;
+            this.b = b;
             this.normal = normal;
             this.penetrationDepth = penetrationDepth;
             this.startIndex = startIndex;
