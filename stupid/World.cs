@@ -70,7 +70,7 @@ namespace stupid
             int boundsLength = 0;
             foreach (Collidable c in Collidables)
             {
-                _boundsIndices[boundsLength++] = new BoundsIndex(c._bounds, c.index);
+                _boundsIndices[boundsLength++] = new BoundsIndex(c.bounds, c.index);
             }
 
             var pairs = Broadphase.ComputePairs(_boundsIndices, boundsLength);
@@ -156,7 +156,7 @@ namespace stupid
 
                     //Fire off and finish
                     ManifoldMap[pair] = manifold;
-                    // OnContact?.Invoke(manifold);
+                    OnContact?.Invoke(manifold);
                 }
                 else
                 {

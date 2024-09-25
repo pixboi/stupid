@@ -120,7 +120,7 @@ namespace stupid.Colliders
             //A vertex on B
             for (int i = 0; i < 8; i++)
             {
-                var v = a.vertices[i];
+                ref var v = ref a.vertices[i];
                 if (b.ContainsPoint(v)) pointCache.Add((v, i));
             }
 

@@ -16,31 +16,30 @@ namespace stupid
 
     public class Collidable : IEquatable<Collidable>
     {
-        //Globals, for all
-        public int index;
+        public TransformS transform;           // 64+ bytes (assumed)
+        public Tensor tensor;                  // 2 Matrices, big
+        public Shape collider;                 // 64+ bytes (assumed)
+        public BoundsS bounds;                 // 48 bytes
+
+        // Reorder fields based on size (larger first to smaller)
+        public Vector3S velocity;              // 24 bytes
+        public Vector3S angularVelocity;       // 24 bytes
+        public Vector3S forceBucket;           // 24 bytes
+        public Vector3S torqueBucket;          // 24 bytes
+
+        public f32 mass = f32.one;             // 8 bytes
+        public f32 inverseMass = f32.one;      // 8 bytes
+        public f32 drag = f32.zero;            // 8 bytes
+        public f32 angularDrag = (f32)0.05;    // 8 bytes
+
+        public PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL; // Could be bigger, place in the middle
+
+        public bool isDynamic;                 // 1 byte (group booleans and smaller types)
+        public bool useGravity = true;         // 1 byte
+        public bool isKinematic = false;       // 1 byte
+        public int index;                      // 4 bytes
+
         public void Register(int index) => this.index = index;
-
-        public Shape collider;
-
-        public TransformS transform;
-
-        public PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL;
-
-        public bool isDynamic;
-
-        //Rigidbody data
-        public Vector3S velocity;
-        public Vector3S angularVelocity;
-        public f32 mass = f32.one;
-        public f32 inverseMass = f32.one;
-        public f32 drag = f32.zero;
-        public f32 angularDrag = (f32)0.05;
-        public bool useGravity = true;
-        public bool isKinematic = false;
-
-        public Vector3S forceBucket;
-        public Vector3S torqueBucket;
-        public Tensor tensor;
 
         public Collidable(int index, Shape collider, TransformS transform, bool isDynamic,
             Vector3S velocity = default,
@@ -74,13 +73,12 @@ namespace stupid
             this.isKinematic = isKinematic;
         }
 
-        public BoundsS _bounds;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BoundsS CalculateBounds()
         {
-            _bounds = collider.GetBounds(transform);
-            return _bounds;
+            bounds = collider.GetBounds(transform);
+            return bounds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -24,27 +24,6 @@ namespace stupid.Constraints
             this.friction = MathS.Sqrt(a.material.staticFriction * b.material.staticFriction);
         }
 
-        // Prestep calculations for all contacts
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep(ref ContactSlim[] contacts)
-        {
-            for (int i = startIndex; i < startIndex + contactCount; i++)
-            {
-                ref var c = ref contacts[i];
-                c.CalculatePrestep(a, b, this);
-            }
-        }
-
-        // Warmup for iterative solvers
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup(ref Span<ContactSlim> contacts)
-        {
-            for (int i = startIndex; i < startIndex + contactCount; i++)
-            {
-                contacts[i].WarmStart(a, b, this.normal);
-            }
-        }
-
         // Retain impulse data from the old manifold
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RetainData(ref ContactSlim[] contacts, in ContactSlim[] oldContacts, in ContactManifoldSlim old)
@@ -66,6 +45,27 @@ namespace stupid.Constraints
                         break; // Once the match is found, stop iterating.
                     }
                 }
+            }
+        }
+
+        // Prestep calculations for all contacts
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CalculatePrestep(ref ContactSlim[] contacts)
+        {
+            for (int i = startIndex; i < startIndex + contactCount; i++)
+            {
+                ref var c = ref contacts[i];
+                c.CalculatePrestep(a, b, this);
+            }
+        }
+
+        // Warmup for iterative solvers
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Warmup(ref Span<ContactSlim> contacts)
+        {
+            for (int i = startIndex; i < startIndex + contactCount; i++)
+            {
+                contacts[i].WarmStart(a, b, this.normal);
             }
         }
 
