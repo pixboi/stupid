@@ -103,7 +103,6 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SolveImpulse(Collidable a, Collidable b, in Vector3S normal, f32 bias)
         {
-            //var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
             var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
             var contactVelocity = bv - av;
@@ -116,8 +115,6 @@ namespace stupid.Constraints
             this.accumulatedImpulse = newImpulse;
 
             var impulse = normal * incremental;
-
-            //Actual actuation happens here
 
             a.velocity -= impulse * a.inverseMass; // A moves away
             a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
@@ -145,8 +142,6 @@ namespace stupid.Constraints
             this.accumulatedFriction = newImpulse;
 
             var impulse = this.tangent * incrementalFriction;
-
-            //Actual actuation happens here
 
             a.velocity -= impulse * a.inverseMass; // A moves away
             a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
