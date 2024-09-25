@@ -8,33 +8,22 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Min(in f32 a, in f32 b)
         {
-            if (a.rawValue < b.rawValue)
-            {
-                return a;
-            }
-
-            return b;
+            return a.rawValue < b.rawValue ? a : b;
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Max(in f32 a, in f32 b)
         {
-            if (a.rawValue > b.rawValue)
-            {
-                return a;
-            }
-
-            return b;
+            return a.rawValue > b.rawValue ? a : b;
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Clamp(in f32 value, in f32 min, in f32 max)
         {
-            return MathS.Max(min, MathS.Min(max, value));
+            // This avoids nested function calls for performance
+            var result = value.rawValue < min.rawValue ? min : value;
+            return result.rawValue > max.rawValue ? max : result;
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Sign(in f32 value) => value < f32.zero ? -f32.one : f32.one;

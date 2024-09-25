@@ -162,7 +162,7 @@ namespace stupid
 
                     //Fire off and finish
                     ManifoldMap[pair] = manifold;
-                    OnContact?.Invoke(manifold);
+                   // OnContact?.Invoke(manifold);
                 }
                 else
                 {
@@ -188,33 +188,30 @@ namespace stupid
             _manifoldCount = 0;
             foreach (var p in pairs)
             {
-                _manifolds[_manifoldCount] = ManifoldMap[p];
-                _manifoldCount++;
+                if (ManifoldMap.TryGetValue(p, out var m))
+                {
+                    _manifolds[_manifoldCount++] = m;
+                }
             }
 
-            var span = new ReadOnlySpan<ContactManifoldSlim>(_manifolds, 0, _manifoldCount);
+            var manifoldSpan = new ReadOnlySpan<ContactManifoldSlim>(_manifolds, 0, _manifoldCount);
+            var contactSpan = new Span<ContactSlim>(allContacts, 0, _contactCount);
 
             if (WorldSettings.Warmup)
             {
-                foreach (var manifold in span)
+                foreach (var manifold in manifoldSpan)
                 {
-                    manifold.Warmup(ref allContacts);
-                }
-
-                for (int i = 0; i < _manifoldCount; i++)
-                {
-                    _manifolds[i].Warmup(ref allContacts);
+                    manifold.Warmup(ref contactSpan);
                 }
             }
 
             foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
 
-
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
             {
-                for (int i = 0; i < _manifoldCount; i++)
+                foreach (var manifold in manifoldSpan)
                 {
-                    _manifolds[i].Resolve(ref allContacts, inverseDt, WorldSettings, true);
+                    manifold.Resolve(ref contactSpan, inverseDt, WorldSettings, true);
                 }
             }
 
@@ -224,9 +221,9 @@ namespace stupid
             {
                 for (int relax = 0; relax < WorldSettings.DefaultSolverVelocityIterations; relax++)
                 {
-                    for (int i = 0; i < _manifoldCount; i++)
+                    foreach (var manifold in manifoldSpan)
                     {
-                        _manifolds[i].Resolve(ref allContacts, inverseDt, WorldSettings, false);
+                        manifold.Resolve(ref contactSpan, inverseDt, WorldSettings, false);
                     }
                 }
             }

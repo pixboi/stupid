@@ -100,7 +100,11 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SolveImpulse(RigidbodyS a, RigidbodyS b, in Vector3S normal, f32 bias)
         {
-            var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
+            //var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
+            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            var contactVelocity = bv - av;
+
             var vn = Vector3S.Dot(contactVelocity, normal);
 
             var incremental = -this.normalMass * (vn + bias);
@@ -109,13 +113,23 @@ namespace stupid.Constraints
             this.accumulatedImpulse = newImpulse;
 
             var impulse = normal * incremental;
-            ApplyImpulse(a, b, impulse, ra, rb);
+
+            a.velocity -= impulse * a.inverseMass; // A moves away
+            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+
+            if (b != null)
+            {
+                b.velocity += impulse * b.inverseMass; // B moves along normal
+                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SolveFriction(RigidbodyS a, RigidbodyS b, in f32 friction)
         {
-            var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
+            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            var contactVelocity = bv - av;
 
             var vt = Vector3S.Dot(contactVelocity, this.tangent);
             var incrementalFriction = -this.tangentMass * vt;
@@ -126,7 +140,15 @@ namespace stupid.Constraints
             this.accumulatedFriction = newImpulse;
 
             var impulse = this.tangent * incrementalFriction;
-            ApplyImpulse(a, b, impulse, ra, rb);
+
+            a.velocity -= impulse * a.inverseMass; // A moves away
+            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+
+            if (b != null)
+            {
+                b.velocity += impulse * b.inverseMass; // B moves along normal
+                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+            }
         }
 
 

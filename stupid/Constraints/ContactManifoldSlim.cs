@@ -1,6 +1,8 @@
 ﻿using stupid;
 using stupid.Broadphase;
 using stupid.Maths;
+using System;
+using System.Collections.Generic;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 
@@ -40,7 +42,7 @@ namespace stupid.Constraints
 
         // Warmup for iterative solvers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup(ref ContactSlim[] contacts)
+        public void Warmup(ref Span<ContactSlim> contacts)
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
@@ -73,7 +75,7 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Resolve(ref ContactSlim[] contacts, in f32 inverseDt, in WorldSettings settings, in bool useBias)
+        public void Resolve(ref Span<ContactSlim> contacts, in f32 inverseDt, in WorldSettings settings, in bool useBias)
         {
             var end = startIndex + contactCount;
 

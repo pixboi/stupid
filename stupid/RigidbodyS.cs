@@ -11,8 +11,31 @@ namespace stupid
         VelocityChange
     }
 
+    public struct RigidbodySData
+    {
+        public Vector3S velocity, angularVelocity;
+        public f32 inverseMass;
+        public bool isDynamic;
+        public Matrix3S worldTensor;
+
+        public RigidbodySData(RigidbodyS body)
+        {
+            this.velocity = body.velocity;
+            this.angularVelocity = body.angularVelocity;
+            this.inverseMass = body.inverseMass;
+            this.isDynamic = body.isDynamic;
+            this.worldTensor = body.tensor.inertiaWorld;
+        }
+    }
+
     public class RigidbodyS : Collidable
     {
+        public void Apply(RigidbodyS data)
+        {
+            this.velocity = data.velocity;
+            this.angularVelocity = data.angularVelocity;
+        }
+
         public override bool isDynamic => true;
 
         //Constructor
