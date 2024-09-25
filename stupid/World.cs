@@ -9,16 +9,13 @@ namespace stupid
 {
     public class World
     {
+        public int SimulationFrame;
         public readonly WorldSettings WorldSettings;
         public readonly SortAndSweepBroadphase Broadphase;
         public List<Collidable> Collidables;
-        List<RigidbodyS> Bodies;
-
-        public int SimulationFrame;
+        int _indexCounter;
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
-
-        int _indexCounter;
 
         Dictionary<IntPair, ContactManifoldSlim> ManifoldMap = new Dictionary<IntPair, ContactManifoldSlim>();
         List<IntPair> _removeCache = new List<IntPair>();
@@ -37,7 +34,6 @@ namespace stupid
         {
             WorldSettings = worldSettings;
             Collidables = new List<Collidable>(startSize);
-            Bodies = new List<RigidbodyS>(startSize);
             Broadphase = new SortAndSweepBroadphase(startSize);
             SimulationFrame = 0;
 
@@ -52,7 +48,6 @@ namespace stupid
         {
             c.Register(_indexCounter++);
             Collidables.Add(c);
-            if (c is RigidbodyS rb) Bodies.Add(rb);
             return c;
         }
 
@@ -162,7 +157,7 @@ namespace stupid
 
                     //Fire off and finish
                     ManifoldMap[pair] = manifold;
-                   // OnContact?.Invoke(manifold);
+                    // OnContact?.Invoke(manifold);
                 }
                 else
                 {
@@ -205,7 +200,10 @@ namespace stupid
                 }
             }
 
-            foreach (var rb in Bodies) rb.IntegrateForces(dt, WorldSettings);
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb) rb.IntegrateForces(dt, WorldSettings);
+            }
 
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
             {
@@ -215,7 +213,10 @@ namespace stupid
                 }
             }
 
-            foreach (var rb in Bodies) rb.IntegrateVelocity(dt, WorldSettings);
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb) rb.IntegrateVelocity(dt, WorldSettings);
+            }
 
             if (WorldSettings.Relaxation)
             {
@@ -228,7 +229,10 @@ namespace stupid
                 }
             }
 
-            foreach (var rb in Bodies) rb.FinalizePosition();
+            foreach (var c in Collidables)
+            {
+                if (c is RigidbodyS rb) rb.FinalizePosition();
+            }
 
             Array.Copy(allContacts, oldContacts, allContacts.Length);
             Array.Clear(allContacts, 0, allContacts.Length);
