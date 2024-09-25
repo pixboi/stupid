@@ -37,7 +37,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float ToFloat() => (float)rawValue / One;
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator +(in f32 a, in f32 b)
         {
             f32 result;
@@ -108,8 +108,10 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CompareTo(f32 other) => rawValue.CompareTo(other.rawValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj) => obj is f32 other && Equals(other);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode() => rawValue.GetHashCode();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

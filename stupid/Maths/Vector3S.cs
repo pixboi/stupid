@@ -26,11 +26,20 @@ namespace stupid.Maths
 
         // Constructors
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3S(f32 x, f32 y, f32 z)
+        public Vector3S(in f32 x, in f32 y, in f32 z)
         {
             this.x = x;
             this.y = y;
             this.z = z;
+        }
+
+        // Constructors
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3S(in f32 value)
+        {
+            this.x = value;
+            this.y = value;
+            this.z = value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -151,8 +160,10 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Vector3S other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj) => obj is Vector3S other && Equals(other);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode() => HashCode.Combine(x, y, z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

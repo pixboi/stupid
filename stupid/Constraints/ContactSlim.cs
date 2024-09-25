@@ -77,19 +77,29 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveImpulse(RigidbodyS a, RigidbodyS b, in f32 inverseDt, in WorldSettings settings, in f32 penetrationDepth, in Vector3S normal, bool useBias = true)
+        public static Vector3S CalculateContactVelocity(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb)
         {
-            f32 bias = f32.zero;
-            if (penetrationDepth > f32.zero)
-            {
-                bias = penetrationDepth * inverseDt;
-            }
-            else if (useBias)
-            {
-                var separation = MathS.Min(f32.zero, penetrationDepth + settings.DefaultContactOffset);
-                bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
-            }
+            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            return bv - av;
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ApplyImpulse(RigidbodyS a, RigidbodyS b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
+        {
+            a.velocity -= impulse * a.inverseMass; // A moves away
+            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+
+            if (b != null)
+            {
+                b.velocity += impulse * b.inverseMass; // B moves along normal
+                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SolveImpulse(RigidbodyS a, RigidbodyS b, in Vector3S normal, f32 bias)
+        {
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             var vn = Vector3S.Dot(contactVelocity, normal);
 
@@ -119,25 +129,6 @@ namespace stupid.Constraints
             ApplyImpulse(a, b, impulse, ra, rb);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S CalculateContactVelocity(RigidbodyS a, RigidbodyS b, in Vector3S ra, in Vector3S rb)
-        {
-            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            var bv = b != null ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
-            return bv - av;
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ApplyImpulse(RigidbodyS a, RigidbodyS b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
-        {
-            a.velocity -= impulse * a.inverseMass; // A moves away
-            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
-
-            if (b != null)
-            {
-                b.velocity += impulse * b.inverseMass; // B moves along normal
-                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
-            }
-        }
     }
 }

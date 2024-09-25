@@ -1,19 +1,20 @@
 ﻿using stupid;
 using stupid.Broadphase;
 using stupid.Maths;
+using System.Runtime;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Constraints
 {
     public readonly struct ContactManifoldSlim
     {
-        public readonly RigidbodyS a, b;
-        public readonly Vector3S normal;
-        public readonly f32 penetrationDepth, friction;
-        public readonly int startIndex, contactCount;
+        public readonly RigidbodyS a, b; // 16
+        public readonly Vector3S normal; // 24 
+        public readonly f32 penetrationDepth, friction; // 16
+        public readonly int startIndex, contactCount; // 8
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContactManifoldSlim(RigidbodyS a, Collidable b, in Vector3S normal, in f32 penetrationDepth, int startIndex = -1, int contactCount = -1)
+        public ContactManifoldSlim(RigidbodyS a, Collidable b, in Vector3S normal, in f32 penetrationDepth, in WorldSettings settings, in f32 inverseDt, int startIndex = -1, int contactCount = -1)
         {
             if (contactCount < 1) throw new System.ArgumentException("ZERO CONTACTS?");
 
@@ -72,15 +73,29 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Resolve(ref ContactSlim[] contacts, in f32 inverseDt, in WorldSettings settings, in bool bias)
+        public void Resolve(ref ContactSlim[] contacts, in f32 inverseDt, in WorldSettings settings, in bool useBias)
         {
             var end = startIndex + contactCount;
+
+            var bias = f32.zero;
+
+            if (useBias)
+            {
+                var separation = MathS.Min(f32.zero, this.penetrationDepth + settings.DefaultContactOffset);
+                bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
+            }
 
             // Resolve impulse for all contacts first
             for (int i = startIndex; i < end; i++)
             {
                 ref var c = ref contacts[i];
-                c.SolveImpulse(a, b, inverseDt, settings, penetrationDepth, normal, bias);
+                c.SolveImpulse(a, b, normal, bias);
+            }
+
+            // Resolve impulse for all contacts first
+            for (int i = startIndex; i < end; i++)
+            {
+                ref var c = ref contacts[i];
                 c.SolveFriction(a, b, friction);
             }
         }

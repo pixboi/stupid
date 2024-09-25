@@ -3,7 +3,7 @@
 namespace stupid.Maths
 {
     //The life time of this object => were never creating a new tensor, just updating it
-    public class Tensor
+    public struct Tensor
     {
         // Only the inverse of the local inertia tensor is stored
         public readonly Matrix3S inertiaInverse;

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace stupid
 {
-    public class TransformS
+    public struct TransformS
     {
         // Transform properties
         public Vector3S position, deltaPosition;
@@ -20,6 +20,7 @@ namespace stupid
             this.rotation = rotation;
             this.localScale = localScale;
             this.rotationMatrix = Matrix3S.Rotate(rotation);
+            this.rotationMatrixTranspose = rotationMatrix.Transpose();
         }
 
         public void UpdateRotationMatrix()

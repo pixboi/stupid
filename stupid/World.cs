@@ -117,7 +117,7 @@ namespace stupid
                     var ab = (RigidbodyS)a;
 
                     var firstContact = _contactCache[0];
-                    var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, _contactCount, count);
+                    var manifold = new ContactManifoldSlim(ab, b, firstContact.normal, firstContact.penetrationDepth, WorldSettings, InverseDeltaTime, _contactCount, count);
 
                     //First, put the new ones in
                     for (int i = 0; i < count; i++)
@@ -193,7 +193,7 @@ namespace stupid
 
             if (WorldSettings.Relaxation)
             {
-                for (int relax = 0; relax < WorldSettings.DefaultSolverIterations; relax++)
+                for (int relax = 0; relax < WorldSettings.DefaultSolverVelocityIterations; relax++)
                 {
                     for (int i = 0; i < _manifoldCount; i++)
                     {

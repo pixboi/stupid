@@ -5,18 +5,13 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Broadphase
 {
-    public interface IBroadphase
+    public class SortAndSweepBroadphase
     {
-        HashSet<IntPair> ComputePairs(List<Collidable> rigidbodies);
-    }
+        AxisEndpoint[] endpointsX;
+        AxisEndpoint[] endpointsY;
+        AxisEndpoint[] endpointsZ;
 
-    public class SortAndSweepBroadphase : IBroadphase
-    {
-        public AxisEndpoint[] endpointsX;
-        public AxisEndpoint[] endpointsY;
-        public AxisEndpoint[] endpointsZ;
-
-        private readonly HashSet<IntPair> pairs;
+        private HashSet<IntPair> pairs;
         private int[] overlapCount;
         private int rbCount = 0;
         private Collidable[] activeList;

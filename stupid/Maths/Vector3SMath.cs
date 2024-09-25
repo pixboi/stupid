@@ -61,6 +61,12 @@ namespace stupid.Maths
         #region DOT PRODUCT
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long RawDot(in Vector3S a, in Vector3S b)
+        {
+            return (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Dot(in Vector3S a, in Vector3S b)
         {
             f32 result;
@@ -71,7 +77,7 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 AbsDot(in Vector3S a, in Vector3S b)
         {
-            return MathS.Abs(Dot(a,b));
+            return MathS.Abs(Dot(a, b));
         }
 
         #endregion
@@ -90,20 +96,6 @@ namespace stupid.Maths
 
             return result;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S CrossAdd(in Vector3S a, in Vector3S b, in Vector3S parent)
-        {
-            Vector3S result;
-
-            // Calculate the cross product and maintain fixed-point precision
-            result.x.rawValue = parent.x.rawValue + ((a.y.rawValue * b.z.rawValue - a.z.rawValue * b.y.rawValue) >> f32.FractionalBits);
-            result.y.rawValue = parent.y.rawValue + ((a.z.rawValue * b.x.rawValue - a.x.rawValue * b.z.rawValue) >> f32.FractionalBits);
-            result.z.rawValue = parent.z.rawValue + ((a.x.rawValue * b.y.rawValue - a.y.rawValue * b.x.rawValue) >> f32.FractionalBits);
-
-            return result;
-        }
-
 
         #endregion
 

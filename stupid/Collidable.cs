@@ -6,7 +6,7 @@ namespace stupid
 {
     public class Collidable : IEquatable<Collidable?>
     {
-        public int index { get; private set; }
+        public int index;
         public void Register(int index) => this.index = index;
         public virtual bool isDynamic => false;
         public Shape collider { get; private set; }
