@@ -1,9 +1,5 @@
-﻿using stupid;
-using stupid.Broadphase;
-using stupid.Maths;
+﻿using stupid.Maths;
 using System;
-using System.Collections.Generic;
-using System.Runtime;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Constraints

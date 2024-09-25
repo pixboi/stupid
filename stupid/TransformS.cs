@@ -23,17 +23,20 @@ namespace stupid
             this.rotationMatrixTranspose = rotationMatrix.Transpose();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateRotationMatrix()
         {
             rotationMatrix = Matrix3S.Rotate(rotation);
             rotationMatrixTranspose = rotationMatrix.Transpose();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddDelta(in Vector3S amount)
         {
             deltaPosition += amount;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ActuateDelta()
         {
             position += deltaPosition;
@@ -41,6 +44,8 @@ namespace stupid
         }
 
         // Updates rotation matrix
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Rotate(in QuaternionS delta)
         {
             rotation = (delta * rotation).Normalize();

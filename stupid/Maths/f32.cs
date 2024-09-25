@@ -54,7 +54,6 @@ namespace stupid.Maths
             return result;
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator *(in f32 a, in f32 b)
         {
@@ -62,15 +61,6 @@ namespace stupid.Maths
             result.rawValue = (a.rawValue * b.rawValue) >> FractionalBits;
             return result;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32 AddAndMultiply(in f32 a, in f32 b, in f32 m)
-        {
-            f32 result;
-            result.rawValue = ((a.rawValue + b.rawValue) * m.rawValue) >> FractionalBits;
-            return result;
-        }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator /(in f32 a, in f32 b)

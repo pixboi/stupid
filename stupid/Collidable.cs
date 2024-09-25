@@ -2,6 +2,7 @@
 using stupid.Constraints;
 using stupid.Maths;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace stupid
 {
@@ -13,7 +14,7 @@ namespace stupid
         VelocityChange
     }
 
-    public class Collidable : IEquatable<Collidable?>
+    public class Collidable : IEquatable<Collidable>
     {
         //Globals, for all
         public int index;
@@ -74,12 +75,15 @@ namespace stupid
         }
 
         public BoundsS _bounds;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BoundsS CalculateBounds()
         {
             _bounds = collider.GetBounds(transform);
             return _bounds;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void IntegrateForces(in f32 dt, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
@@ -104,6 +108,7 @@ namespace stupid
             ClearBuckets();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void IntegrateVelocity(in f32 dt, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
@@ -127,6 +132,7 @@ namespace stupid
             tensor.UpdateInertiaTensor(transform);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FinalizePosition()
         {
             if (!isDynamic) return;
@@ -134,6 +140,7 @@ namespace stupid
             transform.ActuateDelta();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {
             if (!isDynamic) return;
@@ -162,6 +169,7 @@ namespace stupid
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddTorque(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {
             if (!isDynamic) return;
@@ -190,26 +198,27 @@ namespace stupid
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ClearBuckets()
         {
-            if (!isDynamic) return;
-
-
             forceBucket = Vector3S.zero;
             torqueBucket = Vector3S.zero;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object? obj)
         {
             return Equals(obj as Collidable);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Collidable? other)
         {
             return !(other is null) &&
                    index == other.index;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()
         {
             return index;

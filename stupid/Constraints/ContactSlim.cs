@@ -25,6 +25,29 @@ namespace stupid.Constraints
             rb = Vector3S.zero;
         }
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3S CalculateContactVelocity(Collidable a, Collidable b, in Vector3S ra, in Vector3S rb)
+        {
+            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
+            return bv - av;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ApplyImpulse(Collidable a, Collidable b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
+        {
+            a.velocity -= impulse * a.inverseMass; // A moves away
+            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+
+            if (b.isDynamic)
+            {
+                b.velocity += impulse * b.inverseMass; // B moves along normal
+                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+            }
+        }
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(Collidable a, Collidable b, in ContactManifoldSlim manifold)
         {
@@ -76,26 +99,6 @@ namespace stupid.Constraints
             ApplyImpulse(a, b, warmImpulse, ra, rb);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S CalculateContactVelocity(Collidable a, Collidable b, in Vector3S ra, in Vector3S rb)
-        {
-            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
-            return bv - av;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ApplyImpulse(Collidable a, Collidable b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
-        {
-            a.velocity -= impulse * a.inverseMass; // A moves away
-            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
-
-            if (b.isDynamic)
-            {
-                b.velocity += impulse * b.inverseMass; // B moves along normal
-                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
-            }
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SolveImpulse(Collidable a, Collidable b, in Vector3S normal, f32 bias)
