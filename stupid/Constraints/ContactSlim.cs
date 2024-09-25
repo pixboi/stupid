@@ -117,6 +117,8 @@ namespace stupid.Constraints
 
             var impulse = normal * incremental;
 
+            //Actual actuation happens here
+
             a.velocity -= impulse * a.inverseMass; // A moves away
             a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
 
@@ -143,6 +145,8 @@ namespace stupid.Constraints
             this.accumulatedFriction = newImpulse;
 
             var impulse = this.tangent * incrementalFriction;
+
+            //Actual actuation happens here
 
             a.velocity -= impulse * a.inverseMass; // A moves away
             a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
