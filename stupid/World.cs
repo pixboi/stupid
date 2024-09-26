@@ -13,7 +13,7 @@ namespace stupid
         public int SimulationFrame;
         public readonly WorldSettings WorldSettings;
         public readonly SortAndSweepBroadphase Broadphase;
-        public List<Collidable> Collidables;
+        public Collidable[] Collidables;
         int _indexCounter;
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
@@ -31,29 +31,29 @@ namespace stupid
 
         public event Action<ContactManifoldSlim> OnContact;
 
-        public World(WorldSettings worldSettings, int startSize = 1000)
+        public World(in WorldSettings worldSettings, int startSize = 1000)
         {
             WorldSettings = worldSettings;
-            Collidables = new List<Collidable>(startSize);
+            Collidables = new Collidable[startSize];
+            _boundsIndices = new BoundsIndex[startSize];
             Broadphase = new SortAndSweepBroadphase(startSize);
             SimulationFrame = 0;
 
             _indexCounter = 0;
             _contactCount = 0;
             _manifoldCount = 0;
-
-            _boundsIndices = new BoundsIndex[startSize * 2];
         }
 
         public Collidable AddCollidable(Collidable c)
         {
-            c.Register(_indexCounter++);
-            Collidables.Add(c);
+            Collidables[_indexCounter] = c;
+            c.Register(_indexCounter);
+            _indexCounter++;
             return c;
         }
 
         BoundsIndex[] _boundsIndices;
-        public void Simulate(f32 deltaTime)
+        public void Simulate(in f32 deltaTime)
         {
             //Update delta time
             if (deltaTime != DeltaTime)
@@ -65,29 +65,6 @@ namespace stupid
             }
 
             //Broadphase
-            UpdateCollidableTransforms();
-
-            Array.Clear(_boundsIndices, 0, _boundsIndices.Length);
-            int boundsLength = 0;
-            foreach (Collidable c in Collidables)
-            {
-                _boundsIndices[boundsLength++] = new BoundsIndex(c.bounds, c.index);
-            }
-
-            var pairs = Broadphase.ComputePairs(_boundsIndices, boundsLength);
-            //The pairs, the hash set, determinism?
-
-            //Prepare contacts
-            PrepareContacts(pairs);
-
-            //Solve contacts + iterate?
-            NarrowPhase();
-
-            SimulationFrame++;
-        }
-
-        private void UpdateCollidableTransforms()
-        {
             foreach (var c in Collidables)
             {
                 if (c.collider.NeedsRotationUpdate)
@@ -101,6 +78,21 @@ namespace stupid
                 if (c.isDynamic) c.tensor.UpdateInertiaTensor(c.transform);
 
             }
+
+            Array.Clear(_boundsIndices, 0, _boundsIndices.Length);
+            int boundsLength = 0;
+            foreach (Collidable c in Collidables) _boundsIndices[boundsLength++] = new BoundsIndex(c.bounds, c.index);
+
+            //The pairs, the hash set, determinism?
+            var pairs = Broadphase.ComputePairs(_boundsIndices, boundsLength);
+
+            //Prepare contacts
+            PrepareContacts(pairs);
+
+            //Solve contacts + iterate?
+            NarrowPhase();
+
+            SimulationFrame++;
         }
 
         //hash set determinism?
@@ -141,7 +133,7 @@ namespace stupid
                     //First, put the new ones in
                     for (int i = 0; i < count; i++)
                     {
-                        allContacts[_contactCount + i] = new ContactSlim(_contactCache[i]);
+                        allContacts[_contactCount + i] = new ContactSlim(a, b, _contactCache[i]);
                     }
 
                     //Then retain
@@ -178,28 +170,30 @@ namespace stupid
             }
         }
 
-        RigidbodyData[] _data = new RigidbodyData[1000];
+        RigidbodyData[] _data = new RigidbodyData[1];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateData()
         {
-            if (Collidables.Count > _data.Length)
+            if (Collidables.Length > _data.Length)
             {
-                _data = new RigidbodyData[Collidables.Count];
+                _data = new RigidbodyData[Collidables.Length];
             }
 
             foreach (var collidable in Collidables)
             {
-                _data[collidable.index] = new RigidbodyData(collidable);
+                if (collidable.isDynamic)
+                    _data[collidable.index] = new RigidbodyData(collidable);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ApplyData()
         {
-            foreach (var d in _data)
+            foreach (var collidable in Collidables)
             {
-                Collidables[d.index].Apply(d);
+                if (collidable.isDynamic)
+                    collidable.Apply(_data[collidable.index]);
             }
         }
 

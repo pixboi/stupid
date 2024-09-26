@@ -7,12 +7,13 @@ namespace stupid.Constraints
 {
     public struct ContactSlim
     {
-        public readonly int featureId; //4
-        public Vector3S point, tangent, ra, rb; // 4 * 24 = 96
+        public readonly Vector3S point, ra, rb;
+        public Vector3S tangent; // 4 * 24 = 96
         public f32 tangentMass, accumulatedFriction, normalMass, accumulatedImpulse; // 4 * 8 = 32
+        public readonly int featureId; //4
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ContactSlim(in ContactData data)
+        public ContactSlim(Collidable a, Collidable b, in ContactData data)
         {
             point = data.point;
             featureId = data.featureId;
@@ -21,8 +22,8 @@ namespace stupid.Constraints
             tangentMass = f32.zero;
             tangent = Vector3S.zero;
             accumulatedFriction = f32.zero;
-            ra = Vector3S.zero;
-            rb = Vector3S.zero;
+            ra = point - a.transform.position;
+            rb = point - b.transform.position;
         }
 
 
@@ -51,9 +52,6 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(in RigidbodyData a, in RigidbodyData b, in ContactManifoldSlim manifold)
         {
-            this.ra = this.point - a.position;
-            this.rb = b.isDynamic ? this.point - b.position : Vector3S.zero;
-
             Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, a.inertiaWorld * raCrossNormal);
             f32 effectiveMass = a.inverseMass + angularMassA;
