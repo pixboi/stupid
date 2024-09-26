@@ -102,8 +102,8 @@ namespace stupid
             // Apply angular drag, ensuring it doesn't invert the angular velocity direction.
             if (angularDrag > f32.zero) angularVelocity *= MathS.Clamp(f32.one - angularDrag * dt, f32.zero, f32.one);
 
-            // Clear the accumulated forces and torques after applying them.
-            ClearBuckets();
+            forceBucket = Vector3S.zero;
+            torqueBucket = Vector3S.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -122,11 +122,16 @@ namespace stupid
             //This seems to work pretty well, even without the > f32.zero 
             //In fact, it increased stack stability, wonder why...
             var halfAngle = angularVelocity * dt * f32.half;
+
             var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
             transform.rotation = (dq * transform.rotation).Normalize();
 
-            transform.UpdateRotationMatrix();
-            tensor.UpdateInertiaTensor(transform);
+            if (halfAngle.sqrMagnitude > f32.zero)
+            {
+                transform.UpdateRotationMatrix();
+                tensor.UpdateInertiaTensor(transform);
+            }
+
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -185,13 +190,6 @@ namespace stupid
                     angularVelocity += force;
                     break;
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ClearBuckets()
-        {
-            forceBucket = Vector3S.zero;
-            torqueBucket = Vector3S.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

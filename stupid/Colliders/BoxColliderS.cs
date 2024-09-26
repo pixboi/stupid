@@ -104,7 +104,7 @@ namespace stupid.Colliders
                 v.x *= this.halfSize.x;
                 v.y *= this.halfSize.y;
                 v.z *= this.halfSize.z;
-                vertices[i] = this.collidable.transform.ToWorldPoint(v);
+                vertices[i] = this.GetCollidable.transform.ToWorldPoint(v);
             }
         }
 
@@ -123,15 +123,15 @@ namespace stupid.Colliders
 
         public bool NeedsRotationUpdate => true;
 
-        public Collidable collidable => _collidable;
-        Collidable _collidable;
+        public Collidable GetCollidable => _collidable;
+        public Collidable _collidable;
         public void Attach(in Collidable collidable) => this._collidable = collidable;
 
         public void OnRotationUpdate()
         {
-            this.rightAxis = this.collidable.transform.rotationMatrix.GetColumn(0).Normalize();
-            this.upAxis = this.collidable.transform.rotationMatrix.GetColumn(1).Normalize();
-            this.forwardAxis = this.collidable.transform.rotationMatrix.GetColumn(2).Normalize();
+            this.rightAxis = this.GetCollidable.transform.rotationMatrix.GetColumn(0).Normalize();
+            this.upAxis = this.GetCollidable.transform.rotationMatrix.GetColumn(1).Normalize();
+            this.forwardAxis = this.GetCollidable.transform.rotationMatrix.GetColumn(2).Normalize();
 
             /*
             // Update vertex positions based on rotation and translation
@@ -145,7 +145,7 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ContainsPoint(in Vector3S worldPoint)
         {
-            var absLocal = Vector3S.Abs(collidable.transform.ToLocalPoint(worldPoint));
+            var absLocal = Vector3S.Abs(GetCollidable.transform.ToLocalPoint(worldPoint));
             var fat = f32.epsilon;
 
             return absLocal.x <= halfSize.x + fat &&
@@ -169,7 +169,6 @@ namespace stupid.Colliders
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         public int Intersects(Collidable other, ref ContactData[] contact)
         {
             if (other.collider is BoxColliderS otherBox)
@@ -185,8 +184,8 @@ namespace stupid.Colliders
             return 0;
         }
 
-
         static f32 boxConst = (f32)(1f / 12f);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S CalculateInertiaTensor(in f32 mass)
         {
             // Precompute constants and squares to minimize redundant calculations
@@ -212,8 +211,8 @@ namespace stupid.Colliders
         public bool RaycastBox(Vector3S rayOrigin, Vector3S rayDirection, out Vector3S intersectionPoint, out f32 tMin)
         {
             // Transform the ray to the local space of the box
-            Vector3S localOrigin = collidable.transform.ToLocalPoint(rayOrigin);
-            Vector3S localDirection = collidable.transform.InverseTransformDirection(rayDirection).Normalize();
+            Vector3S localOrigin = GetCollidable.transform.ToLocalPoint(rayOrigin);
+            Vector3S localDirection = GetCollidable.transform.InverseTransformDirection(rayDirection).Normalize();
 
 
             // Initialize intersection parameters
@@ -263,7 +262,7 @@ namespace stupid.Colliders
             intersectionPoint = localOrigin + localDirection * tMin;
 
             // Transform the intersection point back to world space
-            intersectionPoint = collidable.transform.ToWorldPoint(intersectionPoint);
+            intersectionPoint = GetCollidable.transform.ToWorldPoint(intersectionPoint);
             return true;
         }
 

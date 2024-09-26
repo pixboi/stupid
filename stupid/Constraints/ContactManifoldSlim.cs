@@ -87,6 +87,13 @@ namespace stupid.Constraints
             {
                 ref var c = ref contacts[i];
                 c.SolveImpulse(a, b, normal, bias);
+               // c.SolveFriction(a, b, friction);
+            }
+
+            // Resolve impulse for all contacts first
+            for (int i = startIndex; i < end; i++)
+            {
+                ref var c = ref contacts[i];
                 c.SolveFriction(a, b, friction);
             }
         }

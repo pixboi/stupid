@@ -5,7 +5,7 @@ namespace stupid.Colliders
 {
     public interface IShape
     {
-        public Collidable collidable { get; }
+        public Collidable GetCollidable { get; }
 
         public void Attach(in Collidable collidable);
         public BoundsS GetBounds(in TransformS t);

@@ -8,9 +8,10 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BoxVsBox(in BoxColliderS a, in BoxColliderS b, ref ContactData[] contacts)
         {
-            Vector3S relativePosition = b.collidable.transform.position - a.collidable.transform.position;
+            Vector3S relativePosition = b._collidable.transform.position - a._collidable.transform.position;
 
             f32 minPen = f32.maxValue;
             Vector3S minAxis = Vector3S.zero;

@@ -4,6 +4,7 @@ using stupid.Maths;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace stupid
 {
@@ -74,14 +75,13 @@ namespace stupid
             }
 
             var pairs = Broadphase.ComputePairs(_boundsIndices, boundsLength);
-
             //The pairs, the hash set, determinism?
 
             //Prepare contacts
             PrepareContacts(pairs);
 
             //Solve contacts + iterate?
-            NarrowPhase(pairs);
+            NarrowPhase();
 
             SimulationFrame++;
         }
@@ -108,6 +108,7 @@ namespace stupid
         {
             _removeCache.Clear();
             _contactCount = 0;
+            _manifoldCount = 0;
 
             //Go through pairs and test collisions, share data, etc.
             foreach (var pair in pairs)
@@ -157,6 +158,9 @@ namespace stupid
                     //Fire off and finish
                     ManifoldMap[pair] = manifold;
                     OnContact?.Invoke(manifold);
+
+                    //For fast iteration just leave the array as is
+                    _manifolds[_manifoldCount++] = manifold;
                 }
                 else
                 {
@@ -172,21 +176,29 @@ namespace stupid
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SortManifoldsByStartIndex(ContactManifoldSlim[] manifolds, int manifoldCount)
+        {
+            for (int i = 1; i < manifoldCount; i++)
+            {
+                var key = manifolds[i];
+                int j = i - 1;
+
+                // Sort by startIndex only
+                while (j >= 0 && manifolds[j].startIndex > key.startIndex)
+                {
+                    manifolds[j + 1] = manifolds[j];
+                    j--;
+                }
+                manifolds[j + 1] = key;
+            }
+        }
+
         //Remember that the pair are still like wrong way, A ,b 
-        private void NarrowPhase(HashSet<IntPair> pairs)
+        private void NarrowPhase()
         {
             var dt = DeltaTime;
             var inverseDt = InverseDeltaTime;
-
-            //For fast iteration just leave the array as is
-            _manifoldCount = 0;
-            foreach (var p in pairs)
-            {
-                if (ManifoldMap.TryGetValue(p, out var m))
-                {
-                    _manifolds[_manifoldCount++] = m;
-                }
-            }
 
             var manifoldSpan = new ReadOnlySpan<ContactManifoldSlim>(_manifolds, 0, _manifoldCount);
             var contactSpan = new Span<ContactSlim>(allContacts, 0, _contactCount);
@@ -227,7 +239,6 @@ namespace stupid
                     }
                 }
             }
-
 
             Array.Copy(allContacts, oldContacts, allContacts.Length);
             Array.Clear(allContacts, 0, allContacts.Length);

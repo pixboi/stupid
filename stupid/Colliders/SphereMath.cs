@@ -1,14 +1,17 @@
 ﻿using stupid.Constraints;
 using stupid.Maths;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
         //EVERYTHING HERE MUST FOLLOW THE convention: Point on A, NORMAL TOWARDS B
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int SphereVSphere(in SphereColliderS a, in SphereColliderS b, ref ContactData[] contacts)
         {
-            var bPos = a.collidable.transform.ToLocalPoint(b.collidable.transform.position);
+            var bPos = a.GetCollidable.transform.ToLocalPoint(b.GetCollidable.transform.position);
 
             var localNormal = bPos.NormalizeWithMagnitude(out var distance);
             var combinedRadius = a.radius + b.radius;
@@ -21,20 +24,20 @@ namespace stupid.Colliders
             var localPoint = localNormal * a.radius;
             f32 penetrationDepth = distance - combinedRadius;
 
-            var worldPoint = a.collidable.transform.ToWorldPoint(localPoint);
-            var worldNormal = a.collidable.transform.TransformDirection(localNormal);
+            var worldPoint = a.GetCollidable.transform.ToWorldPoint(localPoint);
+            var worldNormal = a.GetCollidable.transform.TransformDirection(localNormal);
 
             contacts[0] = new ContactData(worldPoint, worldNormal, penetrationDepth, 0);
             return 1;
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static int TestBoxVsSphere(in BoxColliderS box, in SphereColliderS sphere, out ContactData contact, bool flip = false)
         {
             contact = new ContactData();
 
-            var boxTrans = box.collidable.transform;
-            var sphereTrans = sphere.collidable.transform;
+            var boxTrans = box.GetCollidable.transform;
+            var sphereTrans = sphere.GetCollidable.transform;
 
             // Transform the sphere center into the box's local space
             var localSpherePos = boxTrans.ToLocalPoint(sphereTrans.position);
@@ -67,6 +70,7 @@ namespace stupid.Colliders
 
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BoxVsSphere(in BoxColliderS box, in SphereColliderS sphere, ref ContactData[] contacts)
         {
             var test = TestBoxVsSphere(box, sphere, out var contact, false);
@@ -79,6 +83,7 @@ namespace stupid.Colliders
             return 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int SphereVsBox(in SphereColliderS sphere, in BoxColliderS box, ref ContactData[] contacts)
         {
             var test = TestBoxVsSphere(box, sphere, out var contact, true);

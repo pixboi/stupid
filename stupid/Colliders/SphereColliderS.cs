@@ -1,5 +1,6 @@
 using stupid.Constraints;
 using stupid.Maths;
+using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
@@ -12,8 +13,8 @@ namespace stupid.Colliders
             throw new System.NotImplementedException();
         }
 
-        public Collidable collidable => _collidable;
-        Collidable _collidable;
+        public Collidable GetCollidable => _collidable;
+        public Collidable _collidable;
         public void Attach(in Collidable collidable) => this._collidable = collidable;
         public SphereColliderS(f32 radius)
         {
@@ -21,6 +22,7 @@ namespace stupid.Colliders
             this._collidable = null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BoundsS GetBounds(in TransformS t)
         {
             Vector3S size;
@@ -31,6 +33,7 @@ namespace stupid.Colliders
             return new BoundsS(t.position - size, t.position + size);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Intersects(Collidable other, ref ContactData[] contacts)
         {
             if (other.collider is SphereColliderS otherSphere)
@@ -47,6 +50,7 @@ namespace stupid.Colliders
         }
 
         static readonly f32 sphereInertia = (f32)(2f / 5f);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S CalculateInertiaTensor(in f32 mass)
         {
             // For a solid sphere: I = 2/5 * m * r^2
