@@ -38,36 +38,8 @@ namespace stupidtests
             Console.WriteLine(sw.Elapsed.ToString());
         }
 
+
         [TestMethod]
-        public void Vectorf32Test()
-        {
-            var list = new Vector3S[iterations];
-
-            for (int i = 0; i < iterations; i++)
-            {
-                list[i] = new Vector3S(i, i, i);
-            }
-
-            var span = list.AsSpan();
-
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-
-            var temp = Vector3S.zero;
-
-            foreach (var item in span)
-            {
-                temp += item;
-                temp -= item;
-                // temp *= item;
-                //temp /= item;
-            }
-
-            sw.Stop();
-            Console.WriteLine(sw.Elapsed.ToString());
-        }
-        [TestMethod]
-
         public void LongTest()
         {
             var list = new long[iterations];
@@ -95,7 +67,6 @@ namespace stupidtests
         }
 
         [TestMethod]
-
         public void IntTest()
         {
             var list = new int[iterations];

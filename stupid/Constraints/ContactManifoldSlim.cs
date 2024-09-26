@@ -65,7 +65,8 @@ namespace stupid.Constraints
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
-                contacts[i].WarmStart(a, b, this.normal);
+                ref var c = ref contacts[i];
+                c.WarmStart(a, b, this.normal);
             }
         }
 

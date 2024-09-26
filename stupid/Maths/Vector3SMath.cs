@@ -77,7 +77,11 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 AbsDot(in Vector3S a, in Vector3S b)
         {
-            return MathS.Abs(Dot(a, b));
+            f32 result;
+            result.rawValue = (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
+            long mask = result.rawValue >> 63;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
+            result.rawValue = (result.rawValue + mask) ^ mask; // Flip bits if negative
+            return result;
         }
 
         #endregion

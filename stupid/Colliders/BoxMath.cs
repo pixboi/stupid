@@ -50,8 +50,11 @@ namespace stupid.Colliders
             int count = 0;
             minPen = -minPen;
 
+            Span<Vector3S> aVertices = stackalloc Vector3S[8]; // Using stackalloc for fast allocation on the stack
+            a.GetWorldVertices(ref aVertices);
+
             //A vert on b
-            if (GetContactPoint(a, b))
+            if (GetContactPoint(ref aVertices, b))
             {
                 foreach (var p in pointCache)
                 {
@@ -63,9 +66,12 @@ namespace stupid.Colliders
                 }
             }
 
+            Span<Vector3S> bVertices = stackalloc Vector3S[8]; // Using stackalloc for fast allocation on the stack
+            b.GetWorldVertices(ref bVertices);
+
             if (count == 0)
             {
-                if (GetContactPoint(b, a))
+                if (GetContactPoint(ref bVertices, a))
                 {
                     foreach (var p in pointCache)
                     {
@@ -84,8 +90,8 @@ namespace stupid.Colliders
 
                 for (int i = 0; i < edges.Length; i++)
                 {
-                    var start = a.vertices[edges[i].a];
-                    var end = a.vertices[edges[i].b];
+                    var start = aVertices[edges[i].a];
+                    var end = aVertices[edges[i].b];
                     var dir = end - start;
 
                     // Create a base feature ID using the edge index (i)
@@ -113,14 +119,14 @@ namespace stupid.Colliders
 
         static List<(Vector3S, int)> pointCache = new List<(Vector3S, int)>();
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool GetContactPoint(in BoxColliderS a, in BoxColliderS b)
+        public static bool GetContactPoint(ref Span<Vector3S> vertices, in BoxColliderS b)
         {
             pointCache.Clear();
 
             //A vertex on B
             for (int i = 0; i < 8; i++)
             {
-                ref var v = ref a.vertices[i];
+                ref var v = ref vertices[i];
                 if (b.ContainsPoint(v)) pointCache.Add((v, i));
             }
 

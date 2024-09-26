@@ -45,7 +45,6 @@ namespace stupid.Maths
             return result;
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 operator -(in f32 a, in f32 b)
         {
