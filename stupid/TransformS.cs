@@ -6,38 +6,22 @@ namespace stupid
     public struct TransformS
     {
         // Transform properties
-        public Vector3S position, deltaPosition;
+        public Vector3S position;
         public QuaternionS rotation;
-        public Matrix3S rotationMatrix, rotationMatrixTranspose;
+        public Matrix3S rotationMatrix;
 
         // Constructor
         public TransformS(in Vector3S position, in QuaternionS rotation, in Vector3S localScale)
         {
             this.position = position;
-            this.deltaPosition = Vector3S.zero;
             this.rotation = rotation;
             this.rotationMatrix = Matrix3S.Rotate(rotation);
-            this.rotationMatrixTranspose = rotationMatrix.Transpose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateRotationMatrix()
         {
             rotationMatrix = Matrix3S.Rotate(rotation);
-            rotationMatrixTranspose = rotationMatrix.Transpose();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AddDelta(in Vector3S amount)
-        {
-            deltaPosition += amount;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ActuateDelta()
-        {
-            position += deltaPosition;
-            deltaPosition = Vector3S.zero;
         }
 
         // Updates rotation matrix
@@ -60,6 +44,8 @@ namespace stupid
             long dx = worldPoint.x.rawValue - position.x.rawValue;
             long dy = worldPoint.y.rawValue - position.y.rawValue;
             long dz = worldPoint.z.rawValue - position.z.rawValue;
+
+            var rotationMatrixTranspose = rotationMatrix.Transpose();
 
             long xRaw = rotationMatrixTranspose.m00.rawValue * dx + rotationMatrixTranspose.m01.rawValue * dy + rotationMatrixTranspose.m02.rawValue * dz >> f32.FractionalBits;
             long yRaw = rotationMatrixTranspose.m10.rawValue * dx + rotationMatrixTranspose.m11.rawValue * dy + rotationMatrixTranspose.m12.rawValue * dz >> f32.FractionalBits;
@@ -96,6 +82,9 @@ namespace stupid
         public Vector3S InverseTransformDirection(in Vector3S worldDirection)
         {
             Vector3S result;
+
+            var rotationMatrixTranspose = rotationMatrix.Transpose();
+
 
             long xRaw = rotationMatrixTranspose.m00.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m01.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m02.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
             long yRaw = rotationMatrixTranspose.m10.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m11.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m12.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;

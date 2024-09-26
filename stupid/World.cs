@@ -228,10 +228,6 @@ namespace stupid
                 }
             }
 
-            foreach (var c in Collidables)
-            {
-                c.FinalizePosition();
-            }
 
             Array.Copy(allContacts, oldContacts, allContacts.Length);
             Array.Clear(allContacts, 0, allContacts.Length);

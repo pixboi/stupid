@@ -113,7 +113,7 @@ namespace stupid
             if (isKinematic || !isDynamic) return;
 
             var delta = velocity * dt;
-            transform.AddDelta(delta);
+            transform.position += delta;
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
@@ -127,14 +127,6 @@ namespace stupid
 
             transform.UpdateRotationMatrix();
             tensor.UpdateInertiaTensor(transform);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void FinalizePosition()
-        {
-            if (!isDynamic) return;
-
-            transform.ActuateDelta();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

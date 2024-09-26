@@ -26,7 +26,7 @@ namespace stupid.Maths
             // Perform the final multiplication with the transpose of R
 
             //Make sure the ROTATION MATRIX IS UPDATED!!!
-            inertiaWorld = ri * t.rotationMatrixTranspose; //t.rotationMatrix.Transpose();
+            inertiaWorld = ri * t.rotationMatrix.Transpose(); //t.rotationMatrix.Transpose();
         }
 
     }
