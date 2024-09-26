@@ -134,7 +134,7 @@ namespace stupid
                 if (count > 0)
                 {
                     var firstContact = _contactCache[0];
-                    var manifold = new ContactManifoldSlim(a, b, firstContact.normal, firstContact.penetrationDepth, _contactCount, count);
+                    var manifold = new ContactManifoldSlim(a, b, firstContact.normal, firstContact.penetrationDepth, this.WorldSettings, InverseDeltaTime, _contactCount, count);
 
                     //First, put the new ones in
                     for (int i = 0; i < count; i++)
@@ -173,24 +173,6 @@ namespace stupid
             foreach (var key in _removeCache)
             {
                 pairs.Remove(key);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void SortManifoldsByStartIndex(ContactManifoldSlim[] manifolds, int manifoldCount)
-        {
-            for (int i = 1; i < manifoldCount; i++)
-            {
-                var key = manifolds[i];
-                int j = i - 1;
-
-                // Sort by startIndex only
-                while (j >= 0 && manifolds[j].startIndex > key.startIndex)
-                {
-                    manifolds[j + 1] = manifolds[j];
-                    j--;
-                }
-                manifolds[j + 1] = key;
             }
         }
 
