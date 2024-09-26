@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Colliders
 {
-    public class BoxColliderS : Shape
+    public struct BoxColliderS : IShape
     {
         public static readonly EdgeS[] BOX_EDGES = new EdgeS[]
 {
@@ -71,6 +71,10 @@ namespace stupid.Colliders
         public BoxColliderS(Vector3S size)
         {
             this.halfSize = size * f32.half;
+            this._collidable = null;
+            this.rightAxis = Vector3S.zero;
+            this.upAxis = Vector3S.zero;
+            this.forwardAxis = Vector3S.zero;
         }
 
         //Init
@@ -117,8 +121,13 @@ namespace stupid.Colliders
             throw new System.ArgumentOutOfRangeException(index.ToString());
         }
 
-        public override bool NeedsRotationUpdate => true;
-        public override void OnRotationUpdate()
+        public bool NeedsRotationUpdate => true;
+
+        public Collidable collidable => _collidable;
+        Collidable _collidable;
+        public void Attach(in Collidable collidable) => this._collidable = collidable;
+
+        public void OnRotationUpdate()
         {
             this.rightAxis = this.collidable.transform.rotationMatrix.GetColumn(0).Normalize();
             this.upAxis = this.collidable.transform.rotationMatrix.GetColumn(1).Normalize();
@@ -146,13 +155,14 @@ namespace stupid.Colliders
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
-        public override BoundsS GetBounds(TransformS t)
+        public BoundsS GetBounds(in TransformS t)
         {
-            Vector3S rotatedHalfSize = new Vector3S(
-    MathS.Abs(t.rotationMatrix.m00) * halfSize.x + MathS.Abs(t.rotationMatrix.m01) * halfSize.y + MathS.Abs(t.rotationMatrix.m02) * halfSize.z,
-    MathS.Abs(t.rotationMatrix.m10) * halfSize.x + MathS.Abs(t.rotationMatrix.m11) * halfSize.y + MathS.Abs(t.rotationMatrix.m12) * halfSize.z,
-    MathS.Abs(t.rotationMatrix.m20) * halfSize.x + MathS.Abs(t.rotationMatrix.m21) * halfSize.y + MathS.Abs(t.rotationMatrix.m22) * halfSize.z
-);
+            Vector3S rotatedHalfSize;
+
+            rotatedHalfSize.x = MathS.Abs(t.rotationMatrix.m00) * halfSize.x + MathS.Abs(t.rotationMatrix.m01) * halfSize.y + MathS.Abs(t.rotationMatrix.m02) * halfSize.z;
+            rotatedHalfSize.y = MathS.Abs(t.rotationMatrix.m10) * halfSize.x + MathS.Abs(t.rotationMatrix.m11) * halfSize.y + MathS.Abs(t.rotationMatrix.m12) * halfSize.z;
+            rotatedHalfSize.z = MathS.Abs(t.rotationMatrix.m20) * halfSize.x + MathS.Abs(t.rotationMatrix.m21) * halfSize.y + MathS.Abs(t.rotationMatrix.m22) * halfSize.z;
+
             var min = t.position - rotatedHalfSize;
             var max = t.position + rotatedHalfSize;
             return new BoundsS(min, max);
@@ -160,7 +170,7 @@ namespace stupid.Colliders
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
-        public override int Intersects(Collidable other, ref ContactData[] contact)
+        public int Intersects(Collidable other, ref ContactData[] contact)
         {
             if (other.collider is BoxColliderS otherBox)
             {
@@ -177,7 +187,7 @@ namespace stupid.Colliders
 
 
         static f32 boxConst = (f32)(1f / 12f);
-        public override Matrix3S CalculateInertiaTensor(in f32 mass)
+        public Matrix3S CalculateInertiaTensor(in f32 mass)
         {
             // Precompute constants and squares to minimize redundant calculations
             var massConst = boxConst * mass;

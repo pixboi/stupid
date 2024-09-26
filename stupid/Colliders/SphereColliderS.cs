@@ -3,28 +3,35 @@ using stupid.Maths;
 
 namespace stupid.Colliders
 {
-    public class SphereColliderS : Shape
+    public struct SphereColliderS : IShape
     {
         public readonly f32 radius;
-        public override bool NeedsRotationUpdate => false;
-
-        public override void OnRotationUpdate()
+        public bool NeedsRotationUpdate => false;
+        public void OnRotationUpdate()
         {
             throw new System.NotImplementedException();
         }
 
+        public Collidable collidable => _collidable;
+        Collidable _collidable;
+        public void Attach(in Collidable collidable) => this._collidable = collidable;
         public SphereColliderS(f32 radius)
         {
             this.radius = radius;
+            this._collidable = null;
         }
 
-        public override BoundsS GetBounds(TransformS transform)
+        public BoundsS GetBounds(in TransformS t)
         {
-            var size = new Vector3S(radius, radius, radius);
-            return new BoundsS(transform.position - size, transform.position + size);
+            Vector3S size;
+            size.x = radius;
+            size.y = radius;
+            size.z = radius;
+
+            return new BoundsS(t.position - size, t.position + size);
         }
 
-        public override int Intersects(Collidable other, ref ContactData[] contacts)
+        public int Intersects(Collidable other, ref ContactData[] contacts)
         {
             if (other.collider is SphereColliderS otherSphere)
             {
@@ -40,7 +47,7 @@ namespace stupid.Colliders
         }
 
         static readonly f32 sphereInertia = (f32)(2f / 5f);
-        public override Matrix3S CalculateInertiaTensor(in f32 mass)
+        public Matrix3S CalculateInertiaTensor(in f32 mass)
         {
             // For a solid sphere: I = 2/5 * m * r^2
             f32 inertia = sphereInertia * mass * radius * radius;

@@ -18,7 +18,7 @@ namespace stupid
     {
         public TransformS transform;           // 64+ bytes (assumed)
         public Tensor tensor;                  // 2 Matrices, big
-        public Shape collider;                 // 64+ bytes (assumed)
+        public IShape collider;                 // 64+ bytes (assumed)
         public BoundsS bounds;                 // 48 bytes
 
         // Reorder fields based on size (larger first to smaller)
@@ -41,7 +41,7 @@ namespace stupid
 
         public void Register(int index) => this.index = index;
 
-        public Collidable(int index, Shape collider, TransformS transform, bool isDynamic,
+        public Collidable(int index, IShape collider, TransformS transform, bool isDynamic,
             Vector3S velocity = default,
             Vector3S angularVelocity = default,
             f32 mass = default,

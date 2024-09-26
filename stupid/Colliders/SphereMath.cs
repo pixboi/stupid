@@ -29,7 +29,7 @@ namespace stupid.Colliders
         }
 
 
-        static int TestBoxVsSphere(in Collidable a, in Collidable b, in BoxColliderS box, in SphereColliderS sphere, out ContactData contact, bool flip = false)
+        static int TestBoxVsSphere(in BoxColliderS box, in SphereColliderS sphere, out ContactData contact, bool flip = false)
         {
             contact = new ContactData();
 
@@ -40,13 +40,10 @@ namespace stupid.Colliders
             var localSpherePos = boxTrans.ToLocalPoint(sphereTrans.position);
             var halfSize = box.halfSize;
 
-
-            // Find the closest point on the box to the sphere center (outside the box)
-            var pointOnBox = new Vector3S(
-                MathS.Clamp(localSpherePos.x, -halfSize.x, halfSize.x),
-                MathS.Clamp(localSpherePos.y, -halfSize.y, halfSize.y),
-                MathS.Clamp(localSpherePos.z, -halfSize.z, halfSize.z)
-            );
+            Vector3S pointOnBox;
+            pointOnBox.x = MathS.Clamp(localSpherePos.x, -halfSize.x, halfSize.x);
+            pointOnBox.y = MathS.Clamp(localSpherePos.y, -halfSize.y, halfSize.y);
+            pointOnBox.z = MathS.Clamp(localSpherePos.z, -halfSize.z, halfSize.z);
 
             // Calculate the vector from the closest point to the sphere center
             var localNormal = (localSpherePos - pointOnBox).NormalizeWithMagnitude(out var distance);
@@ -70,11 +67,9 @@ namespace stupid.Colliders
 
         }
 
-
-
         public static int BoxVsSphere(in BoxColliderS box, in SphereColliderS sphere, ref ContactData[] contacts)
         {
-            var test = TestBoxVsSphere(box.collidable, sphere.collidable, box, sphere, out var contact, false);
+            var test = TestBoxVsSphere(box, sphere, out var contact, false);
             if (test == 1)
             {
                 contacts[0] = contact;
@@ -86,7 +81,7 @@ namespace stupid.Colliders
 
         public static int SphereVsBox(in SphereColliderS sphere, in BoxColliderS box, ref ContactData[] contacts)
         {
-            var test = TestBoxVsSphere(sphere.collidable, box.collidable, box, sphere, out var contact, true);
+            var test = TestBoxVsSphere(box, sphere, out var contact, true);
             if (test == 1)
             {
                 contacts[0] = contact;

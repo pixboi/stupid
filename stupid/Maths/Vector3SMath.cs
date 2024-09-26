@@ -23,12 +23,11 @@ namespace stupid.Maths
             // Clamp the interpolation factor to the range [0, 1]
             t = MathS.Clamp(t, f32.zero, f32.one);
 
-            // Perform linear interpolation
-            return new Vector3S(
-                a.x + (b.x - a.x) * t,
-                a.y + (b.y - a.y) * t,
-                a.z + (b.z - a.z) * t
-            );
+            Vector3S result;
+            result.x = a.x + (b.x - a.x) * t;
+            result.y = a.y + (b.y - a.y) * t;
+            result.z = a.z + (b.z - a.z) * t;
+            return result;
         }
 
         #endregion

@@ -8,7 +8,6 @@ namespace stupid
         // Transform properties
         public Vector3S position, deltaPosition;
         public QuaternionS rotation;
-        public Vector3S localScale;
         public Matrix3S rotationMatrix, rotationMatrixTranspose;
 
         // Constructor
@@ -16,9 +15,7 @@ namespace stupid
         {
             this.position = position;
             this.deltaPosition = Vector3S.zero;
-
             this.rotation = rotation;
-            this.localScale = localScale;
             this.rotationMatrix = Matrix3S.Rotate(rotation);
             this.rotationMatrixTranspose = rotationMatrix.Transpose();
         }
