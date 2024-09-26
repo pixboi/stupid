@@ -52,6 +52,8 @@ namespace stupid.Constraints
             }
         }
 
+
+
         // Prestep calculations for all contacts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(in RigidbodyData a, in RigidbodyData b, ref ContactSlim[] contacts)
