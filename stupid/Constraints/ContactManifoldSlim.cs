@@ -1,10 +1,11 @@
 ﻿using stupid.Maths;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Constraints
 {
-    public readonly struct ContactManifoldSlim
+    public struct ContactManifoldSlim
     {
         public readonly int aIndex, bIndex;
         public readonly Vector3S normal; // 24 
@@ -54,7 +55,7 @@ namespace stupid.Constraints
 
         // Prestep calculations for all contacts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep(Collidable a, Collidable b, ref ContactSlim[] contacts)
+        public void CalculatePrestep(in RigidbodyData a, in RigidbodyData b, ref ContactSlim[] contacts)
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
@@ -65,17 +66,17 @@ namespace stupid.Constraints
 
         // Warmup for iterative solvers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup(Collidable a, Collidable b, ref Span<ContactSlim> contacts)
+        public void Warmup(ref RigidbodyData a, ref RigidbodyData b, ref Span<ContactSlim> contacts)
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
                 ref var c = ref contacts[i];
-                c.WarmStart(a, b, this.normal);
+                c.WarmStart(ref a, ref b, this.normal);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Resolve(Collidable a, Collidable b, ref Span<ContactSlim> contacts, in f32 inverseDt, in WorldSettings settings, in bool useBias)
+        public void Resolve(ref RigidbodyData aBody, ref RigidbodyData bBody, ref Span<ContactSlim> contacts, in bool useBias)
         {
             var end = startIndex + contactCount;
             var biassi = useBias ? this.bias : f32.zero;
@@ -84,8 +85,8 @@ namespace stupid.Constraints
             for (int i = startIndex; i < end; i++)
             {
                 ref var c = ref contacts[i];
-                c.SolveImpulse(a, b, normal, biassi);
-                c.SolveFriction(a, b, friction);
+                c.SolveImpulse(ref aBody, ref bBody, normal, biassi);
+                c.SolveFriction(ref aBody, ref bBody, friction);
             }
         }
     }

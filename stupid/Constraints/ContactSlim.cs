@@ -27,7 +27,7 @@ namespace stupid.Constraints
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S CalculateContactVelocity(Collidable a, Collidable b, in Vector3S ra, in Vector3S rb)
+        public static Vector3S CalculateContactVelocity(in RigidbodyData a, in RigidbodyData b, in Vector3S ra, in Vector3S rb)
         {
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
             var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
@@ -35,33 +35,33 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ApplyImpulse(Collidable a, Collidable b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
+        public static void ApplyImpulse(ref RigidbodyData a, ref RigidbodyData b, in Vector3S impulse, in Vector3S ra, in Vector3S rb)
         {
             a.velocity -= impulse * a.inverseMass; // A moves away
-            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+            a.angularVelocity -= a.inertiaWorld * Vector3S.Cross(ra, impulse);
 
             if (b.isDynamic)
             {
                 b.velocity += impulse * b.inverseMass; // B moves along normal
-                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+                b.angularVelocity += b.inertiaWorld * Vector3S.Cross(rb, impulse);
             }
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep(Collidable a, Collidable b, in ContactManifoldSlim manifold)
+        public void CalculatePrestep(in RigidbodyData a, in RigidbodyData b, in ContactManifoldSlim manifold)
         {
-            this.ra = this.point - a.transform.position;
-            this.rb = b.isDynamic ? this.point - b.transform.position : Vector3S.zero;
+            this.ra = this.point - a.position;
+            this.rb = b.isDynamic ? this.point - b.position : Vector3S.zero;
 
             Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
-            f32 angularMassA = Vector3S.Dot(raCrossNormal, a.tensor.inertiaWorld * raCrossNormal);
+            f32 angularMassA = Vector3S.Dot(raCrossNormal, a.inertiaWorld * raCrossNormal);
             f32 effectiveMass = a.inverseMass + angularMassA;
 
             if (b.isDynamic)
             {
                 Vector3S rbCrossNormal = Vector3S.Cross(rb, manifold.normal);
-                f32 angularMassB = Vector3S.Dot(rbCrossNormal, b.tensor.inertiaWorld * rbCrossNormal);
+                f32 angularMassB = Vector3S.Dot(rbCrossNormal, b.inertiaWorld * rbCrossNormal);
                 effectiveMass += b.inverseMass + angularMassB;
             }
 
@@ -81,27 +81,27 @@ namespace stupid.Constraints
 
             // Precompute cross products for mass calculation
             var raCrossTangent = Vector3S.Cross(ra, tangent);
-            var tMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.tensor.inertiaWorld * raCrossTangent, ra), tangent);
+            var tMass = a.inverseMass + Vector3S.Dot(Vector3S.Cross(a.inertiaWorld * raCrossTangent, ra), tangent);
 
             if (b.isDynamic)
             {
                 var rbCrossTangent = Vector3S.Cross(rb, tangent);
-                tMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.tensor.inertiaWorld * rbCrossTangent, rb), tangent);
+                tMass += b.inverseMass + Vector3S.Dot(Vector3S.Cross(b.inertiaWorld * rbCrossTangent, rb), tangent);
             }
 
             this.tangentMass = tMass > f32.zero ? f32.one / tMass : f32.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WarmStart(Collidable a, Collidable b, in Vector3S normal)
+        public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal)
         {
             Vector3S warmImpulse = normal * accumulatedImpulse + tangent * accumulatedFriction;
-            ApplyImpulse(a, b, warmImpulse, ra, rb);
+            ApplyImpulse(ref a, ref b, warmImpulse, ra, rb);
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveImpulse(Collidable a, Collidable b, in Vector3S normal, f32 bias)
+        public void SolveImpulse(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, f32 bias)
         {
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
             var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
@@ -117,17 +117,17 @@ namespace stupid.Constraints
             var impulse = normal * incremental;
 
             a.velocity -= impulse * a.inverseMass; // A moves away
-            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+            a.angularVelocity -= a.inertiaWorld * Vector3S.Cross(ra, impulse);
 
             if (b.isDynamic)
             {
                 b.velocity += impulse * b.inverseMass; // B moves along normal
-                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+                b.angularVelocity += b.inertiaWorld * Vector3S.Cross(rb, impulse);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveFriction(Collidable a, Collidable b, in f32 friction)
+        public void SolveFriction(ref RigidbodyData a, ref RigidbodyData b, in f32 friction)
         {
             var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
             var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
@@ -144,12 +144,12 @@ namespace stupid.Constraints
             var impulse = this.tangent * incrementalFriction;
 
             a.velocity -= impulse * a.inverseMass; // A moves away
-            a.angularVelocity -= a.tensor.inertiaWorld * Vector3S.Cross(ra, impulse);
+            a.angularVelocity -= a.inertiaWorld * Vector3S.Cross(ra, impulse);
 
             if (b.isDynamic)
             {
                 b.velocity += impulse * b.inverseMass; // B moves along normal
-                b.angularVelocity += b.tensor.inertiaWorld * Vector3S.Cross(rb, impulse);
+                b.angularVelocity += b.inertiaWorld * Vector3S.Cross(rb, impulse);
             }
         }
 

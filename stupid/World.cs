@@ -110,6 +110,8 @@ namespace stupid
             _contactCount = 0;
             _manifoldCount = 0;
 
+            UpdateData();
+
             //Go through pairs and test collisions, share data, etc.
             foreach (var pair in pairs)
             {
@@ -152,7 +154,7 @@ namespace stupid
                     }
 
                     //Calculate the thing
-                    manifold.CalculatePrestep(a, b, ref allContacts);
+                    manifold.CalculatePrestep(_data[manifold.aIndex], _data[manifold.bIndex], ref allContacts);
                     _contactCount += count;
 
                     //Fire off and finish
@@ -176,38 +178,68 @@ namespace stupid
             }
         }
 
-        //Remember that the pair are still like wrong way, A ,b 
+        RigidbodyData[] _data = new RigidbodyData[1000];
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UpdateData()
+        {
+            if (Collidables.Count > _data.Length)
+            {
+                _data = new RigidbodyData[Collidables.Count];
+            }
+
+            foreach (var collidable in Collidables)
+            {
+                _data[collidable.index] = new RigidbodyData(collidable);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ApplyData()
+        {
+            foreach (var d in _data)
+            {
+                Collidables[d.index].Apply(d);
+            }
+        }
+
         private void NarrowPhase()
         {
             var dt = DeltaTime;
-            var inverseDt = InverseDeltaTime;
 
             var manifoldSpan = new ReadOnlySpan<ContactManifoldSlim>(_manifolds, 0, _manifoldCount);
             var contactSpan = new Span<ContactSlim>(allContacts, 0, _contactCount);
 
             //Have some kind of centralized rigidbody data array here
-
-
             if (WorldSettings.Warmup)
             {
-                foreach (var manifold in manifoldSpan)
+                foreach (var m in manifoldSpan)
                 {
-                    manifold.Warmup(Collidables[manifold.aIndex], Collidables[manifold.bIndex], ref contactSpan);
+                    m.Warmup(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan);
                 }
             }
+
+            ApplyData();
 
             foreach (var c in Collidables)
             {
                 c.IntegrateForces(dt, WorldSettings);
             }
 
+            UpdateData();
+
+            //Now were operating on pure data
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
             {
-                foreach (var manifold in manifoldSpan)
+                for (int i = 0; i < _manifoldCount; i++)
                 {
-                    manifold.Resolve(Collidables[manifold.aIndex], Collidables[manifold.bIndex], ref contactSpan, inverseDt, WorldSettings, true);
+                    ref var m = ref _manifolds[i];
+                    m.Resolve(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan, true);
                 }
             }
+
+            //Apply the calcs from data
+            ApplyData();
 
             foreach (var c in Collidables)
             {
@@ -216,14 +248,20 @@ namespace stupid
 
             if (WorldSettings.Relaxation)
             {
+                UpdateData();
+
                 for (int relax = 0; relax < WorldSettings.DefaultSolverVelocityIterations; relax++)
                 {
-                    foreach (var manifold in manifoldSpan)
+                    for (int i = 0; i < _manifoldCount; i++)
                     {
-                        manifold.Resolve(Collidables[manifold.aIndex], Collidables[manifold.bIndex], ref contactSpan, inverseDt, WorldSettings, false);
+                        ref var m = ref _manifolds[i];
+                        m.Resolve(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan, false);
                     }
                 }
+
+                ApplyData();
             }
+
 
             Array.Copy(allContacts, oldContacts, allContacts.Length);
             Array.Clear(allContacts, 0, allContacts.Length);

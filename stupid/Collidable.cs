@@ -16,13 +16,16 @@ namespace stupid
 
     public struct RigidbodyData
     {
-        public Vector3S position, velocity, angularVelocity;
-        public f32 inverseMass;
-        public Matrix3S inertiaWorld;
-        public bool isDynamic;
+        public readonly int index;
+        public readonly Vector3S position;
+        public Vector3S velocity, angularVelocity;
+        public readonly f32 inverseMass;
+        public readonly Matrix3S inertiaWorld;
+        public readonly bool isDynamic;
 
         public RigidbodyData(Collidable collidable)
         {
+            this.index = collidable.index;
             this.position = collidable.transform.position;
             this.velocity = collidable.velocity;
             this.angularVelocity = collidable.angularVelocity;
@@ -34,12 +37,6 @@ namespace stupid
 
     public class Collidable : IEquatable<Collidable>
     {
-        public void Apply(RigidbodyData data)
-        {
-            this.velocity = data.velocity;
-            this.angularVelocity = data.angularVelocity;
-        }
-
         public TransformS transform;           // 64+ bytes (assumed)
         public Tensor tensor;                  // 2 Matrices, big
         public IShape collider;                 // 64+ bytes (assumed)
@@ -64,6 +61,13 @@ namespace stupid
         public int index;                      // 4 bytes
 
         public void Register(int index) => this.index = index;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Apply(in RigidbodyData data)
+        {
+            this.velocity = data.velocity;
+            this.angularVelocity = data.angularVelocity;
+        }
 
         public Collidable(int index, IShape collider, TransformS transform, bool isDynamic,
             Vector3S velocity = default,
@@ -146,16 +150,10 @@ namespace stupid
             //This seems to work pretty well, even without the > f32.zero 
             //In fact, it increased stack stability, wonder why...
             var halfAngle = angularVelocity * dt * f32.half;
-
             var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
             transform.rotation = (dq * transform.rotation).Normalize();
-
-            if (halfAngle.sqrMagnitude > f32.zero)
-            {
-                transform.UpdateRotationMatrix();
-                tensor.UpdateInertiaTensor(transform);
-            }
-
+            transform.UpdateRotationMatrix();
+            tensor.UpdateInertiaTensor(transform);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
