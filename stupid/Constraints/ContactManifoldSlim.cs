@@ -16,8 +16,8 @@ namespace stupid.Constraints
         public ContactManifoldSlim(Collidable a, Collidable b, in Vector3S normal, in f32 penetrationDepth, in WorldSettings settings, in f32 inverseDt, int startIndex = -1, int contactCount = -1)
         {
             if (contactCount < 1) throw new System.ArgumentException("ZERO CONTACTS?");
-            this.a = a;
-            this.b = b;
+            this.aIndex = a.index;
+            this.bIndex = b.index;
             this.normal = normal;
             this.penetrationDepth = penetrationDepth;
             this.startIndex = startIndex;
@@ -54,7 +54,7 @@ namespace stupid.Constraints
 
         // Prestep calculations for all contacts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CalculatePrestep(ref ContactSlim[] contacts)
+        public void CalculatePrestep(Collidable a, Collidable b, ref ContactSlim[] contacts)
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
@@ -65,7 +65,7 @@ namespace stupid.Constraints
 
         // Warmup for iterative solvers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup(ref Span<ContactSlim> contacts)
+        public void Warmup(Collidable a, Collidable b, ref Span<ContactSlim> contacts)
         {
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
@@ -75,10 +75,9 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Resolve(ref Span<ContactSlim> contacts, in f32 inverseDt, in WorldSettings settings, in bool useBias)
+        public void Resolve(Collidable a, Collidable b, ref Span<ContactSlim> contacts, in f32 inverseDt, in WorldSettings settings, in bool useBias)
         {
             var end = startIndex + contactCount;
-
             var biassi = useBias ? this.bias : f32.zero;
 
             // Resolve impulse for all contacts first

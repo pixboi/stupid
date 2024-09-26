@@ -14,8 +14,32 @@ namespace stupid
         VelocityChange
     }
 
+    public struct RigidbodyData
+    {
+        public Vector3S position, velocity, angularVelocity;
+        public f32 inverseMass;
+        public Matrix3S inertiaWorld;
+        public bool isDynamic;
+
+        public RigidbodyData(Collidable collidable)
+        {
+            this.position = collidable.transform.position;
+            this.velocity = collidable.velocity;
+            this.angularVelocity = collidable.angularVelocity;
+            this.inertiaWorld = collidable.tensor.inertiaWorld;
+            this.isDynamic = collidable.isDynamic;
+            this.inverseMass = collidable.inverseMass;
+        }
+    }
+
     public class Collidable : IEquatable<Collidable>
     {
+        public void Apply(RigidbodyData data)
+        {
+            this.velocity = data.velocity;
+            this.angularVelocity = data.angularVelocity;
+        }
+
         public TransformS transform;           // 64+ bytes (assumed)
         public Tensor tensor;                  // 2 Matrices, big
         public IShape collider;                 // 64+ bytes (assumed)

@@ -152,7 +152,7 @@ namespace stupid
                     }
 
                     //Calculate the thing
-                    manifold.CalculatePrestep(ref allContacts);
+                    manifold.CalculatePrestep(a, b, ref allContacts);
                     _contactCount += count;
 
                     //Fire off and finish
@@ -185,11 +185,14 @@ namespace stupid
             var manifoldSpan = new ReadOnlySpan<ContactManifoldSlim>(_manifolds, 0, _manifoldCount);
             var contactSpan = new Span<ContactSlim>(allContacts, 0, _contactCount);
 
+            //Have some kind of centralized rigidbody data array here
+
+
             if (WorldSettings.Warmup)
             {
                 foreach (var manifold in manifoldSpan)
                 {
-                    manifold.Warmup(ref contactSpan);
+                    manifold.Warmup(Collidables[manifold.aIndex], Collidables[manifold.bIndex], ref contactSpan);
                 }
             }
 
@@ -202,7 +205,7 @@ namespace stupid
             {
                 foreach (var manifold in manifoldSpan)
                 {
-                    manifold.Resolve(ref contactSpan, inverseDt, WorldSettings, true);
+                    manifold.Resolve(Collidables[manifold.aIndex], Collidables[manifold.bIndex], ref contactSpan, inverseDt, WorldSettings, true);
                 }
             }
 
@@ -217,7 +220,7 @@ namespace stupid
                 {
                     foreach (var manifold in manifoldSpan)
                     {
-                        manifold.Resolve(ref contactSpan, inverseDt, WorldSettings, false);
+                        manifold.Resolve(Collidables[manifold.aIndex], Collidables[manifold.bIndex], ref contactSpan, inverseDt, WorldSettings, false);
                     }
                 }
             }
