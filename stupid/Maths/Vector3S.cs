@@ -68,7 +68,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AddInPlace(in Vector3S b)
+        public void Add(in Vector3S b)
         {
             this.x.rawValue += b.x.rawValue;
             this.y.rawValue += b.y.rawValue;
@@ -89,7 +89,7 @@ namespace stupid.Maths
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SubtractInPlace(in Vector3S b)
+        public void Subtract(in Vector3S b)
         {
             this.x.rawValue -= b.x.rawValue;
             this.y.rawValue -= b.y.rawValue;

@@ -107,20 +107,16 @@ namespace stupid.Constraints
             Vector3S contactVelocity = bv - av;
 
             // -------------------- Impulse ---------------------
-            // Relative normal velocity
             var relativeNormalVelocity = Vector3S.Dot(contactVelocity, normal);
 
-            // Compute the new impulse directly and clamp it
             var imp = this.normalMass * (relativeNormalVelocity + bias);
             var oldAccumulatedImpulse = this.accumulatedImpulse;
             this.accumulatedImpulse = MathS.Max(oldAccumulatedImpulse + imp, f32.zero);
             imp = this.accumulatedImpulse - oldAccumulatedImpulse;
 
             // -------------------- Friction ---------------------
-            // Tangent velocity calculation
-            // var relativeTangentVelocity = Vector3S.Dot(contactVelocity, this.tangent);
-
             // Compute the frictional impulse and clamp it with the accumulated friction
+            // var relativeTangentVelocity = Vector3S.Dot(contactVelocity, this.tangent);
             //var fric = this.tangentMass * relativeTangentVelocity;
             var fric = Vector3S.DotMultiply(contactVelocity, this.tangent, this.tangentMass);
             var maxFric = this.accumulatedImpulse * friction;
@@ -133,71 +129,15 @@ namespace stupid.Constraints
             var totalImpulse = Vector3S.MultiplyAndAddBatch(normal, imp, this.tangent, fric);
 
             // Apply impulses to object A
-            a.velocity.SubtractInPlace(totalImpulse * a.inverseMass);
-            a.angularVelocity.SubtractInPlace(a.inertiaWorld * Vector3S.Cross(ra, totalImpulse));
+            a.velocity.Subtract(totalImpulse * a.inverseMass);
+            a.angularVelocity.Subtract(a.inertiaWorld * Vector3S.Cross(ra, totalImpulse));
 
             // Apply impulses to object B if dynamic
             if (b.isDynamic)
             {
-                b.velocity.AddInPlace(totalImpulse * b.inverseMass);
-                b.angularVelocity.AddInPlace(b.inertiaWorld * Vector3S.Cross(rb, totalImpulse));
+                b.velocity.Add(totalImpulse * b.inverseMass);
+                b.angularVelocity.Add(b.inertiaWorld * Vector3S.Cross(rb, totalImpulse));
             }
         }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveImpulse(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, in f32 bias)
-        {
-            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
-            var contactVelocity = bv - av;
-
-            var vn = Vector3S.Dot(contactVelocity, normal);
-
-            var incremental = -this.normalMass * (vn + bias);
-            var newImpulse = MathS.Max(incremental + this.accumulatedImpulse, f32.zero);
-            incremental = newImpulse - this.accumulatedImpulse;
-            this.accumulatedImpulse = newImpulse;
-
-            var impulse = normal * incremental;
-
-            a.velocity -= impulse * a.inverseMass; // A moves away
-            a.angularVelocity -= a.inertiaWorld * Vector3S.Cross(ra, impulse);
-
-            if (b.isDynamic)
-            {
-                b.velocity += impulse * b.inverseMass; // B moves along normal
-                b.angularVelocity += b.inertiaWorld * Vector3S.Cross(rb, impulse);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveFriction(ref RigidbodyData a, ref RigidbodyData b, in f32 friction)
-        {
-            var av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            var bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
-            var contactVelocity = bv - av;
-
-            var vt = Vector3S.Dot(contactVelocity, this.tangent);
-            var incrementalFriction = -this.tangentMass * vt;
-
-            var couloumbMax = this.accumulatedImpulse * friction;
-            var newImpulse = MathS.Clamp(this.accumulatedFriction + incrementalFriction, -couloumbMax, couloumbMax);
-            incrementalFriction = newImpulse - this.accumulatedFriction;
-            this.accumulatedFriction = newImpulse;
-
-            var impulse = this.tangent * incrementalFriction;
-
-            a.velocity -= impulse * a.inverseMass; // A moves away
-            a.angularVelocity -= a.inertiaWorld * Vector3S.Cross(ra, impulse);
-
-            if (b.isDynamic)
-            {
-                b.velocity += impulse * b.inverseMass; // B moves along normal
-                b.angularVelocity += b.inertiaWorld * Vector3S.Cross(rb, impulse);
-            }
-        }
-
-
     }
 }
