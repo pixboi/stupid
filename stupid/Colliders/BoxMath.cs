@@ -53,36 +53,24 @@ namespace stupid.Colliders
 
             Span<Vector3S> aVertices = stackalloc Vector3S[8]; // Using stackalloc for fast allocation on the stack
             a.GetWorldVertices(ref aVertices);
+            var testA = GetContactPoint(ref aVertices, b);
 
-            //A vert on b
-            if (GetContactPoint(ref aVertices, b))
+            for (int i = 0; i < testA; i++)
             {
-                foreach (var p in pointCache)
-                {
-                    var vertex = p.Item1;
-                    var feature = p.Item2;
-
-                    contacts[count++] = new ContactData(vertex, normalV, minPen, feature);
-                    if (count == contacts.Length) return count; // Early exit if max contacts reached
-                }
+                var p = pointCache[i];
+                contacts[count++] = new ContactData(p.point, normalV, minPen, p.featureId);
+                if (count == contacts.Length) return count; // Early exit if max contacts reached
             }
 
             Span<Vector3S> bVertices = stackalloc Vector3S[8]; // Using stackalloc for fast allocation on the stack
             b.GetWorldVertices(ref bVertices);
+            var testB = GetContactPoint(ref bVertices, a);
 
-            if (count == 0)
+            for (int i = 0; i < testB; i++)
             {
-                if (GetContactPoint(ref bVertices, a))
-                {
-                    foreach (var p in pointCache)
-                    {
-                        var vertex = p.Item1;
-                        var feature = p.Item2;
-
-                        contacts[count++] = new ContactData(vertex, normalV, minPen, feature + 8);
-                        if (count == contacts.Length) return count; // Early exit if max contacts reached
-                    }
-                }
+                var p = pointCache[i];
+                contacts[count++] = new ContactData(p.point, normalV, minPen, p.featureId + 8);
+                if (count == contacts.Length) return count; // Early exit if max contacts reached
             }
 
             if (count == 0)
@@ -91,22 +79,22 @@ namespace stupid.Colliders
 
                 for (int i = 0; i < edges.Length; i++)
                 {
-                    var start = aVertices[edges[i].a];
-                    var end = aVertices[edges[i].b];
+                    ref var start = ref aVertices[edges[i].a];
+                    ref var end = ref aVertices[edges[i].b];
                     var dir = end - start;
 
                     // Create a base feature ID using the edge index (i)
                     int baseFeatureID = 16 + (i * 2); // Each edge has 2 potential directions to check
 
                     // Check in the positive direction
-                    if (b.RaycastBox(start, dir, out var p1, out var m1))
+                    if (b.Raycast(start, dir, out var p1, out var m1))
                     {
                         contacts[count++] = new ContactData(p1, normalV, minPen, baseFeatureID);
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
                     }
 
                     // Check in the negative direction
-                    if (b.RaycastBox(start, -dir, out var p2, out var m2))
+                    if (b.Raycast(start, -dir, out var p2, out var m2))
                     {
                         contacts[count++] = new ContactData(p2, normalV, minPen, baseFeatureID + 1);
                         if (count == contacts.Length) return count; // Early exit if max contacts reached
@@ -118,22 +106,23 @@ namespace stupid.Colliders
         }
 
 
-        static List<(Vector3S, int)> pointCache = new List<(Vector3S, int)>();
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool GetContactPoint(ref Span<Vector3S> vertices, in BoxColliderS b)
-        {
-            pointCache.Clear();
+        static (Vector3S point, int featureId)[] pointCache = new (Vector3S, int)[8];
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetContactPoint(ref Span<Vector3S> vertices, in BoxColliderS b)
+        {
+            int count = 0;
             //A vertex on B
             for (int i = 0; i < 8; i++)
             {
                 ref var v = ref vertices[i];
-                if (b.ContainsPoint(v)) pointCache.Add((v, i));
+                if (b.ContainsPoint(v))
+                {
+                    pointCache[count++] = (v, i);
+                }
             }
 
-            if (pointCache.Count == 0) return false;
-
-            return true;
+            return count;
         }
 
 
@@ -145,8 +134,8 @@ namespace stupid.Colliders
             // Calculate projection and overlap using raw values
             var pA = ProjectBox(axis, a);
             var pB = ProjectBox(axis, b);
-
             var distance = Vector3S.AbsDot(relativePosition, axis);
+
             var penetration = (pA + pB) - distance;
 
             if (penetration < f32.zero) return false;
@@ -165,11 +154,12 @@ namespace stupid.Colliders
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static f32 ProjectBox(in Vector3S axis, in BoxColliderS box)
         {
-            var absDot0 = Vector3S.AbsDot(axis, box.rightAxis);
-            var absDot1 = Vector3S.AbsDot(axis, box.upAxis);
-            var absDot2 = Vector3S.AbsDot(axis, box.forwardAxis);
+            Vector3S result;
+            result.x.rawValue = Vector3S.AbsRawDot(axis, box.rightAxis);
+            result.y.rawValue = Vector3S.AbsRawDot(axis, box.upAxis);
+            result.z.rawValue = Vector3S.AbsRawDot(axis, box.forwardAxis);
 
-            return ((box.halfSize.x * absDot0) + (box.halfSize.y * absDot1) + (box.halfSize.z * absDot2));
+            return (box.halfSize * result).Sum();
         }
     }
 }

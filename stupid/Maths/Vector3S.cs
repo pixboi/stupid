@@ -67,6 +67,14 @@ namespace stupid.Maths
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public f32 Sum()
+        {
+            f32 result;
+            result.rawValue = this.x.rawValue + this.y.rawValue + this.z.rawValue;
+            return result;
+        }
+
         // Addition
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator +(in Vector3S a, in f32 b)
@@ -197,7 +205,7 @@ namespace stupid.Maths
 
         // Division
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3S operator /(in Vector3S a, f32 d)
+        public static Vector3S operator /(in Vector3S a, in f32 d)
         {
             if (d.rawValue == 0)
             {
@@ -209,6 +217,24 @@ namespace stupid.Maths
             result.x.rawValue = (a.x.rawValue << f32.FractionalBits) / d.rawValue;
             result.y.rawValue = (a.y.rawValue << f32.FractionalBits) / d.rawValue;
             result.z.rawValue = (a.z.rawValue << f32.FractionalBits) / d.rawValue;
+
+            return result;
+        }
+
+        // Division
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3S operator /(in Vector3S a, in Vector3S b)
+        {
+            if (b.x.rawValue == 0 || b.y.rawValue == 0 || b.z.rawValue == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero.");
+            }
+
+            Vector3S result;
+
+            result.x.rawValue = (a.x.rawValue << f32.FractionalBits) / b.x.rawValue;
+            result.y.rawValue = (a.y.rawValue << f32.FractionalBits) / b.y.rawValue;
+            result.z.rawValue = (a.z.rawValue << f32.FractionalBits) / b.z.rawValue;
 
             return result;
         }

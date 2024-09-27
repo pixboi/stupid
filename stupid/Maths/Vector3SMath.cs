@@ -62,7 +62,16 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long RawDot(in Vector3S a, in Vector3S b)
         {
-            return (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue);
+            return (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long AbsRawDot(in Vector3S a, in Vector3S b)
+        {
+            long result = (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
+            long mask = result >> 63;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
+            result = (result + mask) ^ mask; // Flip bits if negative
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

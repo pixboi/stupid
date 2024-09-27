@@ -193,12 +193,11 @@ namespace stupid.Colliders
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool RaycastBox(Vector3S rayOrigin, Vector3S rayDirection, out Vector3S intersectionPoint, out f32 tMin)
+        public bool Raycast(Vector3S rayOrigin, Vector3S rayDirection, out Vector3S intersectionPoint, out f32 tMin)
         {
             // Transform the ray to the local space of the box
-            Vector3S localOrigin = GetCollidable.transform.ToLocalPoint(rayOrigin);
-            Vector3S localDirection = GetCollidable.transform.InverseTransformDirection(rayDirection).Normalize();
-
+            Vector3S localOrigin = _collidable.transform.ToLocalPoint(rayOrigin);
+            Vector3S localDirection = _collidable.transform.InverseTransformDirection(rayDirection).Normalize();
 
             // Initialize intersection parameters
             tMin = f32.minValue;
