@@ -87,10 +87,7 @@ namespace stupid.Colliders
         {
             for (int i = 0; i < 8; i++)
             {
-                var v = UNIT_VERTICES[i];
-                v.x *= this.halfSize.x;
-                v.y *= this.halfSize.y;
-                v.z *= this.halfSize.z;
+                var v = UNIT_VERTICES[i] * this.halfSize;
                 vertices[i] = v;
             }
         }
@@ -100,10 +97,7 @@ namespace stupid.Colliders
         {
             for (int i = 0; i < 8; i++)
             {
-                var v = UNIT_VERTICES[i];
-                v.x *= this.halfSize.x;
-                v.y *= this.halfSize.y;
-                v.z *= this.halfSize.z;
+                var v = UNIT_VERTICES[i] * this.halfSize;
                 vertices[i] = this.GetCollidable.transform.ToWorldPoint(v);
             }
         }
@@ -132,25 +126,16 @@ namespace stupid.Colliders
             this.rightAxis = this.GetCollidable.transform.rotationMatrix.GetColumn(0).Normalize();
             this.upAxis = this.GetCollidable.transform.rotationMatrix.GetColumn(1).Normalize();
             this.forwardAxis = this.GetCollidable.transform.rotationMatrix.GetColumn(2).Normalize();
-
-            /*
-            // Update vertex positions based on rotation and translation
-            for (int i = 0; i < 8; i++)
-            {
-                vertices[i] = this.collidable.transform.ToWorldPoint(localVertices[i]);
-            }
-            */
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ContainsPoint(in Vector3S worldPoint)
         {
             var absLocal = Vector3S.Abs(GetCollidable.transform.ToLocalPoint(worldPoint));
-            var fat = f32.epsilon;
+            var fat = this.halfSize + f32.epsilon;
 
-            return absLocal.x <= halfSize.x + fat &&
-                   absLocal.y <= halfSize.y + fat &&
-                   absLocal.z <= halfSize.z + fat;
+            return absLocal <= fat;
+
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -67,6 +67,19 @@ namespace stupid.Maths
             return result;
         }
 
+        // Addition
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3S operator +(in Vector3S a, in f32 b)
+        {
+            Vector3S result;
+
+            result.x.rawValue = a.x.rawValue + b.rawValue;
+            result.y.rawValue = a.y.rawValue + b.rawValue;
+            result.z.rawValue = a.z.rawValue + b.rawValue;
+
+            return result;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(in Vector3S b)
         {
@@ -118,6 +131,19 @@ namespace stupid.Maths
             result.x.rawValue = (a.x.rawValue * d.rawValue) >> f32.FractionalBits;
             result.y.rawValue = (a.y.rawValue * d.rawValue) >> f32.FractionalBits;
             result.z.rawValue = (a.z.rawValue * d.rawValue) >> f32.FractionalBits;
+
+            return result;
+        }
+
+        // Multiplication
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3S operator *(in Vector3S a, in Vector3S b)
+        {
+            Vector3S result;
+
+            result.x.rawValue = (a.x.rawValue * b.x.rawValue) >> f32.FractionalBits;
+            result.y.rawValue = (a.y.rawValue * b.y.rawValue) >> f32.FractionalBits;
+            result.z.rawValue = (a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
 
             return result;
         }
@@ -204,6 +230,11 @@ namespace stupid.Maths
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(in Vector3S left, in Vector3S right) => !(left == right);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator <=(in Vector3S left, in Vector3S right) => left.x.rawValue <= right.x.rawValue && left.y.rawValue <= right.y.rawValue && left.z.rawValue <= right.z.rawValue;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator >=(in Vector3S left, in Vector3S right) => left.x.rawValue >= right.x.rawValue && left.y.rawValue >= right.y.rawValue && left.z.rawValue >= right.z.rawValue;
 
         // ToString
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
