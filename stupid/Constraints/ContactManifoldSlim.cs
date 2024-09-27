@@ -79,17 +79,48 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Resolve(ref RigidbodyData a, ref RigidbodyData b, ref Span<ContactSlim> contacts, in bool useBias)
         {
-            var end = startIndex + contactCount;
             var biassi = useBias ? this.bias : f32.zero;
 
-            // Resolve impulse for all contacts first
-            for (int i = startIndex; i < end; i++)
+            switch (contactCount)
             {
-                ref var c = ref contacts[i];
-                // c.SolveAll(ref a, ref b, normal, biassi, friction);
-                //c.SolveImpulse(ref a, ref b, normal, biassi);
-                //c.SolveFriction(ref a, ref b, friction);
+                case 1:
+                    ref var c1 = ref contacts[startIndex];
+                    c1.SolveAll(ref a, ref b, normal, biassi, friction);
+                    break;
+                case 2:
+                    ref var c2a = ref contacts[startIndex];
+                    ref var c2b = ref contacts[startIndex + 1];
+                    c2a.SolveAll(ref a, ref b, normal, biassi, friction);
+                    c2b.SolveAll(ref a, ref b, normal, biassi, friction);
+                    break;
+                case 3:
+                    ref var c3a = ref contacts[startIndex];
+                    ref var c3b = ref contacts[startIndex + 1];
+                    ref var c3c = ref contacts[startIndex + 2];
+                    c3a.SolveAll(ref a, ref b, normal, biassi, friction);
+                    c3b.SolveAll(ref a, ref b, normal, biassi, friction);
+                    c3c.SolveAll(ref a, ref b, normal, biassi, friction);
+                    break;
+                case 4:
+                    ref var c4a = ref contacts[startIndex];
+                    ref var c4b = ref contacts[startIndex + 1];
+                    ref var c4c = ref contacts[startIndex + 2];
+                    ref var c4d = ref contacts[startIndex + 3];
+                    c4a.SolveAll(ref a, ref b, normal, biassi, friction);
+                    c4b.SolveAll(ref a, ref b, normal, biassi, friction);
+                    c4c.SolveAll(ref a, ref b, normal, biassi, friction);
+                    c4d.SolveAll(ref a, ref b, normal, biassi, friction);
+                    break;
+                default:
+                    // Fallback for unexpected contact counts
+                    for (int i = startIndex; i < startIndex + contactCount; i++)
+                    {
+                        ref var c = ref contacts[i];
+                        c.SolveAll(ref a, ref b, normal, biassi, friction);
+                    }
+                    break;
             }
         }
+
     }
 }

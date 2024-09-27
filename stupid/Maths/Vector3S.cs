@@ -67,6 +67,14 @@ namespace stupid.Maths
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AddInPlace(in Vector3S b)
+        {
+            this.x.rawValue += b.x.rawValue;
+            this.y.rawValue += b.y.rawValue;
+            this.z.rawValue += b.z.rawValue;
+        }
+
         // Subtraction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator -(in Vector3S a, in Vector3S b)
@@ -79,6 +87,15 @@ namespace stupid.Maths
 
             return result;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SubtractInPlace(in Vector3S b)
+        {
+            this.x.rawValue -= b.x.rawValue;
+            this.y.rawValue -= b.y.rawValue;
+            this.z.rawValue -= b.z.rawValue;
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S operator -(in Vector3S a)
@@ -137,6 +154,20 @@ namespace stupid.Maths
             result.z.rawValue = parent.y.rawValue - ((a.z.rawValue * b.rawValue) >> f32.FractionalBits);
             return result;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3S MultiplyAndAddBatch(in Vector3S a, in f32 am, in Vector3S b, in f32 bm)
+        {
+            Vector3S result;
+
+            // Perform both multiplications and additions in a single step
+            result.x.rawValue = ((a.x.rawValue * am.rawValue) >> f32.FractionalBits) + ((b.x.rawValue * bm.rawValue) >> f32.FractionalBits);
+            result.y.rawValue = ((a.y.rawValue * am.rawValue) >> f32.FractionalBits) + ((b.y.rawValue * bm.rawValue) >> f32.FractionalBits);
+            result.z.rawValue = ((a.z.rawValue * am.rawValue) >> f32.FractionalBits) + ((b.z.rawValue * bm.rawValue) >> f32.FractionalBits);
+
+            return result;
+        }
+
 
         // Division
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

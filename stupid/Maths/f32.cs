@@ -4,48 +4,6 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public struct f32V
-    {
-        public Vector<long> rawValue;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public f32V(long value)
-        {
-            this.rawValue = new Vector<long>(value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static f32V operator +(in f32V a, in f32V b)
-        {
-            f32V result;
-            result.rawValue = a.rawValue + b.rawValue;
-            return result;
-        }
-    }
-
-    public struct V
-    {
-        public Vector<long> x, y, z;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public V(long x, long y, long z)
-        {
-            this.x = new Vector<long>(x);
-            this.y = new Vector<long>(y);
-            this.z = new Vector<long>(z);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static V operator +(in V a, in V b)
-        {
-            V result;
-            result.x = a.x + b.x;
-            result.y = a.y + b.y;
-            result.z = a.z + b.z;
-            return result;
-        }
-    }
-
     public struct f32 : IEquatable<f32>, IComparable<f32>
     {
         public long rawValue;

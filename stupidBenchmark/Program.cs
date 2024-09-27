@@ -53,7 +53,6 @@ public class VectorBenchmark
             ref var b = ref a2[i];
 
             a = b.x * a + b;
-            b = Vector3S.Cross(a, b) + a;
         }
     }
 
@@ -66,7 +65,6 @@ public class VectorBenchmark
             ref var b = ref a2[i];
 
             a = Vector3S.MultiplyAndAdd(a, b.x, b);
-            b = Vector3S.CrossAdd(a, b, a);
         }
     }
 

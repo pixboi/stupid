@@ -183,7 +183,7 @@ namespace stupid
             foreach (var collidable in Collidables)
             {
                 if (collidable.isDynamic)
-                    _data[collidable.index] = new RigidbodyData(collidable);
+                    _data[collidable.index] = RigidbodyData.Convert(collidable);
             }
         }
 
@@ -222,15 +222,24 @@ namespace stupid
 
             UpdateData();
 
-            //Now were operating on pure data
+            // Now we're operating on pure data
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
             {
-                for (int i = 0; i < _manifoldCount; i++)
+                for (int i = 0; i < _manifoldCount; i += 2)
                 {
-                    ref var m = ref _manifolds[i];
-                    m.Resolve(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan, true);
+                    // Resolve the first manifold
+                    ref var m1 = ref _manifolds[i];
+                    m1.Resolve(ref _data[m1.aIndex], ref _data[m1.bIndex], ref contactSpan, true);
+
+                    // Check if there is a second manifold to resolve
+                    if (i + 1 < _manifoldCount)
+                    {
+                        ref var m2 = ref _manifolds[i + 1];
+                        m2.Resolve(ref _data[m2.aIndex], ref _data[m2.bIndex], ref contactSpan, true);
+                    }
                 }
             }
+
 
             //Apply the calcs from data
             ApplyData();

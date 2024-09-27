@@ -16,22 +16,24 @@ namespace stupid
 
     public struct RigidbodyData
     {
-        public readonly int index;
-        public readonly Vector3S position;
+        public int index;
+        public Vector3S position;
         public Vector3S velocity, angularVelocity;
-        public readonly f32 inverseMass;
-        public readonly Matrix3S inertiaWorld;
-        public readonly bool isDynamic;
+        public f32 inverseMass;
+        public Matrix3S inertiaWorld;
+        public bool isDynamic;
 
-        public RigidbodyData(Collidable collidable)
+        public static RigidbodyData Convert(Collidable c)
         {
-            this.index = collidable.index;
-            this.position = collidable.transform.position;
-            this.velocity = collidable.velocity;
-            this.angularVelocity = collidable.angularVelocity;
-            this.inertiaWorld = collidable.tensor.inertiaWorld;
-            this.isDynamic = collidable.isDynamic;
-            this.inverseMass = collidable.inverseMass;
+            RigidbodyData data;
+            data.index = c.index;
+            data.position = c.transform.position;
+            data.velocity = c.velocity;
+            data.angularVelocity = c.angularVelocity;
+            data.inertiaWorld = c.tensor.inertiaWorld;
+            data.isDynamic = c.isDynamic;
+            data.inverseMass = c.inverseMass;
+            return data;
         }
     }
 
