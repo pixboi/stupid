@@ -29,6 +29,8 @@ namespace stupid
         int _manifoldCount;
         ContactManifoldSlim[] _manifolds = new ContactManifoldSlim[5000];
 
+        RigidbodyData[] _data;
+
         public event Action<ContactManifoldSlim> OnContact;
 
         public World(in WorldSettings worldSettings, int startSize = 1000)
@@ -37,6 +39,7 @@ namespace stupid
             Collidables = new Collidable[startSize];
             _boundsIndices = new BoundsIndex[startSize];
             Broadphase = new SortAndSweepBroadphase(startSize);
+            _data = new RigidbodyData[startSize];
             SimulationFrame = 0;
 
             _indexCounter = 0;
@@ -50,6 +53,32 @@ namespace stupid
             c.Register(_indexCounter);
             _indexCounter++;
             return c;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UpdateData()
+        {
+            if (Collidables.Length > _data.Length)
+            {
+                _data = new RigidbodyData[Collidables.Length];
+            }
+
+            foreach (var collidable in Collidables)
+            {
+                if (collidable.isDynamic)
+                    _data[collidable.index] = RigidbodyData.Convert(collidable);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ApplyData()
+        {
+            foreach (var collidable in Collidables)
+            {
+                if (collidable.isDynamic)
+                    collidable.Apply(_data[collidable.index]);
+            }
         }
 
         BoundsIndex[] _boundsIndices;
@@ -170,32 +199,7 @@ namespace stupid
             }
         }
 
-        RigidbodyData[] _data = new RigidbodyData[1];
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UpdateData()
-        {
-            if (Collidables.Length > _data.Length)
-            {
-                _data = new RigidbodyData[Collidables.Length];
-            }
-
-            foreach (var collidable in Collidables)
-            {
-                if (collidable.isDynamic)
-                    _data[collidable.index] = RigidbodyData.Convert(collidable);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ApplyData()
-        {
-            foreach (var collidable in Collidables)
-            {
-                if (collidable.isDynamic)
-                    collidable.Apply(_data[collidable.index]);
-            }
-        }
 
         private void NarrowPhase()
         {

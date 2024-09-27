@@ -139,5 +139,39 @@ namespace stupid.Constraints
                 b.angularVelocity.Add(b.inertiaWorld * Vector3S.Cross(rb, totalImpulse));
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SolveAllStatic(ref RigidbodyData a, in Vector3S normal, in f32 bias, in f32 friction)
+        {
+            // Precompute velocities
+            Vector3S contactVelocity = -Vector3S.CrossAdd(a.velocity, a.angularVelocity, ra);
+
+            // -------------------- Impulse ---------------------
+            var relativeNormalVelocity = Vector3S.Dot(contactVelocity, normal);
+
+            var imp = this.normalMass * (relativeNormalVelocity + bias);
+            var oldAccumulatedImpulse = this.accumulatedImpulse;
+            this.accumulatedImpulse = MathS.Max(oldAccumulatedImpulse + imp, f32.zero);
+            imp = this.accumulatedImpulse - oldAccumulatedImpulse;
+
+            // -------------------- Friction ---------------------
+            // Compute the frictional impulse and clamp it with the accumulated friction
+            // var relativeTangentVelocity = Vector3S.Dot(contactVelocity, this.tangent);
+            //var fric = this.tangentMass * relativeTangentVelocity;
+            var fric = Vector3S.DotMultiply(contactVelocity, this.tangent, this.tangentMass);
+            var maxFric = this.accumulatedImpulse * friction;
+            var oldAccumulatedFriction = this.accumulatedFriction;
+            this.accumulatedFriction = MathS.Clamp(oldAccumulatedFriction + fric, -maxFric, maxFric);
+            fric = this.accumulatedFriction - oldAccumulatedFriction;
+
+            // ------------------- Apply Impulses ------------------
+            // Total impulse
+            var totalImpulse = Vector3S.MultiplyAndAddBatch(normal, imp, this.tangent, fric);
+
+            // Apply impulses to object A
+            a.velocity.Subtract(totalImpulse * a.inverseMass);
+            a.angularVelocity.Subtract(a.inertiaWorld * Vector3S.Cross(ra, totalImpulse));
+        }
+
     }
 }
