@@ -1,55 +1,100 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System;
+using System.Numerics;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using stupid;
 using stupid.Maths;
-using System;
-using System.Runtime.InteropServices;
 
-public class MyBenchmarks
+public class VectorBenchmark
 {
-    // Define two structs: one with 256 bytes and another broken into two 128-byte structs
-    [StructLayout(LayoutKind.Sequential)]
-    public struct LargeStruct
-    {
-        public long A1, A2, A3, A4;
-        public long B1, B2, B3, B4;
-        public long C1, C2, C3, C4;
-        public long D1, D2, D3, D4;
-    }
+    private Vector3S[] a1;
+    private Vector3S[] a2;
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct HalfStruct
-    {
-        public long A1, A2, A3, A4;
-        public long B1, B2, B3, B4;
-    }
+    private f32[] b1;
+    private f32[] b2;
 
-    public Vector3S[] vectors;
-    public int iterations = 10000;
+    private long[] c1;
+    private long[] c2;
 
     [GlobalSetup]
     public void Setup()
     {
-        vectors = new Vector3S[iterations];
+        a1 = new Vector3S[10000];
+        a2 = new Vector3S[10000];
 
-        for (int i = 0; i < iterations; i++)
+        b1 = new f32[10000];
+        b2 = new f32[10000];
+
+        c1 = new long[10000];
+        c2 = new long[10000];
+
+        for (int i = 0; i < a1.Length; i++)
         {
-            vectors[i] = new Vector3S(i, i, i);
+            var v = i % 100;
+
+            a1[i] = new Vector3S(v, v, v);
+            a2[i] = new Vector3S(v, v, v);
+
+            b1[i] = new f32(v);
+            b2[i] = new f32(v);
+
+            c1[i] = v;
+            c2[i] = v;
+        }
+
+    }
+
+    [Benchmark]
+    public void VectorLoopOp()
+    {
+        for (int i = 0; i < a1.Length; i++)
+        {
+            ref var a = ref a1[i];
+            ref var b = ref a2[i];
+
+            a = b.x * a + b;
+            b = Vector3S.Cross(a, b) + a;
         }
     }
 
-    // Benchmark for processing half structs in two parts
     [Benchmark]
-    public void ProcessHalfStructs()
+    public void VectorLoopBatched()
     {
+        for (int i = 0; i < a1.Length; i++)
+        {
+            ref var a = ref a1[i];
+            ref var b = ref a2[i];
 
+            a = Vector3S.MultiplyAndAdd(a, b.x, b);
+            b = Vector3S.CrossAdd(a, b, a);
+        }
     }
+
+    /*
+    [Benchmark]
+    public void f32Loop()
+    {
+        for (int i = 0; i < b1.Length; i++)
+        {
+            b1[i] = b1[i] + b2[i];
+        }
+    }
+
+    [Benchmark]
+    public void LongLoop()
+    {
+        for (int i = 0; i < b1.Length; i++)
+        {
+            c1[i] = c1[i] + c2[i];
+        }
+    }
+    */
 }
 
-// Main program to run the benchmarks
 public class Program
 {
     public static void Main(string[] args)
     {
-        var summary = BenchmarkRunner.Run<MyBenchmarks>();
+        var summary = BenchmarkRunner.Run<VectorBenchmark>();
     }
 }

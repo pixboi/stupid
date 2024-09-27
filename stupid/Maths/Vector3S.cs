@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
+
+
     public partial struct Vector3S : IEquatable<Vector3S>
     {
         // Fields

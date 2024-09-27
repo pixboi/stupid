@@ -77,7 +77,7 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Resolve(ref RigidbodyData aBody, ref RigidbodyData bBody, ref Span<ContactSlim> contacts, in bool useBias)
+        public void Resolve(ref RigidbodyData a, ref RigidbodyData b, ref Span<ContactSlim> contacts, in bool useBias)
         {
             var end = startIndex + contactCount;
             var biassi = useBias ? this.bias : f32.zero;
@@ -86,8 +86,9 @@ namespace stupid.Constraints
             for (int i = startIndex; i < end; i++)
             {
                 ref var c = ref contacts[i];
-                c.SolveImpulse(ref aBody, ref bBody, normal, biassi);
-                c.SolveFriction(ref aBody, ref bBody, friction);
+                // c.SolveAll(ref a, ref b, normal, biassi, friction);
+                //c.SolveImpulse(ref a, ref b, normal, biassi);
+                //c.SolveFriction(ref a, ref b, friction);
             }
         }
     }
