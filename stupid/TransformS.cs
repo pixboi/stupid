@@ -15,14 +15,14 @@ namespace stupid
             this.position = position;
             this.rotation = rotation;
             this.rotationMatrix = Matrix3S.Rotate(rotation);
-           //this.rotationMatrixTranspose = this.rotationMatrix.Transpose();
+            //this.rotationMatrixTranspose = this.rotationMatrix.Transpose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateRotationMatrix()
         {
             this.rotationMatrix = Matrix3S.Rotate(rotation);
-           // this.rotationMatrixTranspose = this.rotationMatrix.Transpose();
+            // this.rotationMatrixTranspose = this.rotationMatrix.Transpose();
         }
 
         // Updates rotation matrix
@@ -42,15 +42,15 @@ namespace stupid
         {
             Vector3S result;
 
-            long dx = worldPoint.x.rawValue - position.x.rawValue;
-            long dy = worldPoint.y.rawValue - position.y.rawValue;
-            long dz = worldPoint.z.rawValue - position.z.rawValue;
+            var dx = worldPoint.x.rawValue - position.x.rawValue;
+            var dy = worldPoint.y.rawValue - position.y.rawValue;
+            var dz = worldPoint.z.rawValue - position.z.rawValue;
 
             var rotationMatrixTranspose = this.rotationMatrix.Transpose();
 
-            long xRaw = rotationMatrixTranspose.m00.rawValue * dx + rotationMatrixTranspose.m01.rawValue * dy + rotationMatrixTranspose.m02.rawValue * dz >> f32.FractionalBits;
-            long yRaw = rotationMatrixTranspose.m10.rawValue * dx + rotationMatrixTranspose.m11.rawValue * dy + rotationMatrixTranspose.m12.rawValue * dz >> f32.FractionalBits;
-            long zRaw = rotationMatrixTranspose.m20.rawValue * dx + rotationMatrixTranspose.m21.rawValue * dy + rotationMatrixTranspose.m22.rawValue * dz >> f32.FractionalBits;
+            var xRaw = rotationMatrixTranspose.m00.rawValue * dx + rotationMatrixTranspose.m01.rawValue * dy + rotationMatrixTranspose.m02.rawValue * dz >> f32.FractionalBits;
+            var yRaw = rotationMatrixTranspose.m10.rawValue * dx + rotationMatrixTranspose.m11.rawValue * dy + rotationMatrixTranspose.m12.rawValue * dz >> f32.FractionalBits;
+            var zRaw = rotationMatrixTranspose.m20.rawValue * dx + rotationMatrixTranspose.m21.rawValue * dy + rotationMatrixTranspose.m22.rawValue * dz >> f32.FractionalBits;
 
             result.x.rawValue = xRaw;
             result.y.rawValue = yRaw;
@@ -66,9 +66,9 @@ namespace stupid
         {
             Vector3S result;
 
-            long xRaw = (rotationMatrix.m00.rawValue * localPoint.x.rawValue + rotationMatrix.m01.rawValue * localPoint.y.rawValue + rotationMatrix.m02.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.x.rawValue;
-            long yRaw = (rotationMatrix.m10.rawValue * localPoint.x.rawValue + rotationMatrix.m11.rawValue * localPoint.y.rawValue + rotationMatrix.m12.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.y.rawValue;
-            long zRaw = (rotationMatrix.m20.rawValue * localPoint.x.rawValue + rotationMatrix.m21.rawValue * localPoint.y.rawValue + rotationMatrix.m22.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.z.rawValue;
+            var xRaw = (rotationMatrix.m00.rawValue * localPoint.x.rawValue + rotationMatrix.m01.rawValue * localPoint.y.rawValue + rotationMatrix.m02.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.x.rawValue;
+            var yRaw = (rotationMatrix.m10.rawValue * localPoint.x.rawValue + rotationMatrix.m11.rawValue * localPoint.y.rawValue + rotationMatrix.m12.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.y.rawValue;
+            var zRaw = (rotationMatrix.m20.rawValue * localPoint.x.rawValue + rotationMatrix.m21.rawValue * localPoint.y.rawValue + rotationMatrix.m22.rawValue * localPoint.z.rawValue >> f32.FractionalBits) + position.z.rawValue;
 
             result.x.rawValue = xRaw;
             result.y.rawValue = yRaw;
@@ -86,9 +86,9 @@ namespace stupid
 
             var rotationMatrixTranspose = this.rotationMatrix.Transpose();
 
-            long xRaw = rotationMatrixTranspose.m00.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m01.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m02.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
-            long yRaw = rotationMatrixTranspose.m10.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m11.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m12.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
-            long zRaw = rotationMatrixTranspose.m20.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m21.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m22.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
+            var xRaw = rotationMatrixTranspose.m00.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m01.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m02.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
+            var yRaw = rotationMatrixTranspose.m10.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m11.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m12.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
+            var zRaw = rotationMatrixTranspose.m20.rawValue * worldDirection.x.rawValue + rotationMatrixTranspose.m21.rawValue * worldDirection.y.rawValue + rotationMatrixTranspose.m22.rawValue * worldDirection.z.rawValue >> f32.FractionalBits;
 
             result.x.rawValue = xRaw;
             result.y.rawValue = yRaw;
@@ -104,9 +104,9 @@ namespace stupid
         {
 
             Vector3S result;
-            long xRaw = rotationMatrix.m00.rawValue * localDirection.x.rawValue + rotationMatrix.m01.rawValue * localDirection.y.rawValue + rotationMatrix.m02.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
-            long yRaw = rotationMatrix.m10.rawValue * localDirection.x.rawValue + rotationMatrix.m11.rawValue * localDirection.y.rawValue + rotationMatrix.m12.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
-            long zRaw = rotationMatrix.m20.rawValue * localDirection.x.rawValue + rotationMatrix.m21.rawValue * localDirection.y.rawValue + rotationMatrix.m22.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
+            var xRaw = rotationMatrix.m00.rawValue * localDirection.x.rawValue + rotationMatrix.m01.rawValue * localDirection.y.rawValue + rotationMatrix.m02.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
+            var yRaw = rotationMatrix.m10.rawValue * localDirection.x.rawValue + rotationMatrix.m11.rawValue * localDirection.y.rawValue + rotationMatrix.m12.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
+            var zRaw = rotationMatrix.m20.rawValue * localDirection.x.rawValue + rotationMatrix.m21.rawValue * localDirection.y.rawValue + rotationMatrix.m22.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
 
 
             result.x.rawValue = xRaw;

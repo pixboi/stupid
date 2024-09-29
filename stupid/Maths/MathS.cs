@@ -31,8 +31,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static f32 Floor(in f32 value)
         {
-            long raw = value.rawValue;
-            long fractionalPart = raw & ((1L << f32.FractionalBits) - 1);
+            var raw = value.rawValue;
+            var fractionalPart = raw & ((1 << f32.FractionalBits) - 1);
             return new f32(raw - fractionalPart);
         }
 
@@ -40,7 +40,7 @@ namespace stupid.Maths
         public static f32 Abs(in f32 value)
         {
             f32 result;
-            long mask = value.rawValue >> 63;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
+            var mask = value.rawValue >> f32.TotalBitsMinusOne;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
             result.rawValue = (value.rawValue + mask) ^ mask; // Flip bits if negative
             return result;
         }
@@ -55,13 +55,13 @@ namespace stupid.Maths
             f32 square = value * value;
 
             // Taylor series terms
-            term *= -square / new f32(6L << f32.FractionalBits);
+            term *= -square / new f32(6 << f32.FractionalBits);
             result += term;
-            term *= -square / new f32(20L << f32.FractionalBits);
+            term *= -square / new f32(20 << f32.FractionalBits);
             result += term;
-            term *= -square / new f32(42L << f32.FractionalBits);
+            term *= -square / new f32(42 << f32.FractionalBits);
             result += term;
-            term *= -square / new f32(72L << f32.FractionalBits);
+            term *= -square / new f32(72 << f32.FractionalBits);
             result += term;
 
             return result;
@@ -75,13 +75,13 @@ namespace stupid.Maths
             f32 square = value * value;
 
             // Taylor series terms
-            term *= -square / new f32(2L << f32.FractionalBits);
+            term *= -square / new f32(2 << f32.FractionalBits);
             result += term;
-            term *= -square / new f32(12L << f32.FractionalBits);
+            term *= -square / new f32(12 << f32.FractionalBits);
             result += term;
-            term *= -square / new f32(30L << f32.FractionalBits);
+            term *= -square / new f32(30 << f32.FractionalBits);
             result += term;
-            term *= -square / new f32(56L << f32.FractionalBits);
+            term *= -square / new f32(56 << f32.FractionalBits);
             result += term;
 
             return result;
@@ -98,13 +98,13 @@ namespace stupid.Maths
 
             f32 result;
 
-            long rawValue = value.rawValue;
-            long xRaw = rawValue > f32.One ? rawValue : f32.One; // Initial guess in raw form
+            var rawValue = value.rawValue;
+            var xRaw = rawValue > f32.One ? rawValue : f32.One; // Initial guess in raw form
             const int iterations = 8; // Number of iterations can be adjusted
 
             for (int i = 0; i < iterations; i++)
             {
-                long div = (rawValue << f32.FractionalBits) / xRaw; // Properly grouped division
+                var div = (rawValue << f32.FractionalBits) / xRaw; // Properly grouped division
                 xRaw = (xRaw + div) >> 1; // (x + value / x) / 2
             }
 

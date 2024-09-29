@@ -7,15 +7,17 @@ namespace stupid.Maths
     public struct f32 : IEquatable<f32>, IComparable<f32>
     {
         public long rawValue;
-        public const int FractionalBits = 24;
+        public const int FractionalBits = 16;
+        public const int TotalBitsMinusOne = 63;
+
         public const long One = 1L << FractionalBits;
         public const long Two = 2L << FractionalBits;
 
-        public static readonly f32 epsilon = new f32(1L);
+        public static readonly f32 epsilon = new f32(1);
         public static readonly f32 small = FromFloat(0.01f); //These are not guaranteed to be same on diff machines, Quantum uses string parsing, which is deterministic :O
         public static readonly f32 quarter = FromFloat(0.25f);
         public static readonly f32 half = new f32(One >> 1);
-        public static readonly f32 zero = new f32(0L);
+        public static readonly f32 zero = new f32(0);
         public static readonly f32 one = new f32(One);
         public static readonly f32 two = new f32(Two);
         public static readonly f32 negativeOne = new f32(-One);
@@ -68,7 +70,7 @@ namespace stupid.Maths
             if (b.rawValue == 0) throw new DivideByZeroException("Cannot divide by zero.");
 
             f32 result;
-            long dividend = (a.rawValue << FractionalBits);
+            var dividend = (a.rawValue << FractionalBits);
 
             result.rawValue = dividend / b.rawValue;
             return result;

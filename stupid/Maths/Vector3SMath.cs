@@ -68,8 +68,8 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AbsRawDot(in Vector3S a, in Vector3S b)
         {
-            long result = (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
-            long mask = result >> 63;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
+            var result = (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
+            var mask = result >> f32.TotalBitsMinusOne;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
             result = (result + mask) ^ mask; // Flip bits if negative
             return result;
         }
@@ -97,7 +97,7 @@ namespace stupid.Maths
         {
             f32 result;
             result.rawValue = (a.x.rawValue * b.x.rawValue + a.y.rawValue * b.y.rawValue + a.z.rawValue * b.z.rawValue) >> f32.FractionalBits;
-            long mask = result.rawValue >> 63;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
+            var mask = result.rawValue >> f32.TotalBitsMinusOne;  // Create mask: 0xFFFFFFFFFFFFFFFF if negative, 0x0000000000000000 if positive
             result.rawValue = (result.rawValue + mask) ^ mask; // Flip bits if negative
             return result;
         }

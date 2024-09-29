@@ -78,23 +78,23 @@ namespace stupid.Maths
         public static Vector3S operator *(in QuaternionS q, in Vector3S v)
         {
             // Precompute quaternion terms
-            long qx2 = q.x.rawValue + q.x.rawValue;
-            long qy2 = q.y.rawValue + q.y.rawValue;
-            long qz2 = q.z.rawValue + q.z.rawValue;
+            var qx2 = q.x.rawValue + q.x.rawValue;
+            var qy2 = q.y.rawValue + q.y.rawValue;
+            var qz2 = q.z.rawValue + q.z.rawValue;
 
             // Precompute terms for efficiency (avoid repeated multiplications)
-            long qwqx2 = (q.w.rawValue * qx2) >> f32.FractionalBits;
-            long qwqy2 = (q.w.rawValue * qy2) >> f32.FractionalBits;
-            long qwqz2 = (q.w.rawValue * qz2) >> f32.FractionalBits;
+            var qwqx2 = (q.w.rawValue * qx2) >> f32.FractionalBits;
+            var qwqy2 = (q.w.rawValue * qy2) >> f32.FractionalBits;
+            var qwqz2 = (q.w.rawValue * qz2) >> f32.FractionalBits;
 
-            long qxqx2 = (q.x.rawValue * qx2) >> f32.FractionalBits;
-            long qxqy2 = (q.x.rawValue * qy2) >> f32.FractionalBits;
-            long qxqz2 = (q.x.rawValue * qz2) >> f32.FractionalBits;
+            var qxqx2 = (q.x.rawValue * qx2) >> f32.FractionalBits;
+            var qxqy2 = (q.x.rawValue * qy2) >> f32.FractionalBits;
+            var qxqz2 = (q.x.rawValue * qz2) >> f32.FractionalBits;
 
-            long qyqy2 = (q.y.rawValue * qy2) >> f32.FractionalBits;
-            long qyqz2 = (q.y.rawValue * qz2) >> f32.FractionalBits;
+            var qyqy2 = (q.y.rawValue * qy2) >> f32.FractionalBits;
+            var qyqz2 = (q.y.rawValue * qz2) >> f32.FractionalBits;
 
-            long qzqz2 = (q.z.rawValue * qz2) >> f32.FractionalBits;
+            var qzqz2 = (q.z.rawValue * qz2) >> f32.FractionalBits;
 
             // Compute the rotated vector
             Vector3S result;

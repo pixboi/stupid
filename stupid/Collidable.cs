@@ -36,7 +36,7 @@ namespace stupid
 
         public int sleepFrames = 0;
         public bool isSleeping = false;
-        public f32 sleepThreshold = (f32)0.005;
+        public f32 sleepThreshold = (f32)0.01;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CheckSleep()
