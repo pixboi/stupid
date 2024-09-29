@@ -3,15 +3,15 @@ using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
-    public readonly struct Matrix3S
+    public struct Matrix3S
     {
-        public readonly f32 m00, m01, m02;
-        public readonly f32 m10, m11, m12;
-        public readonly f32 m20, m21, m22;
+        public f32 m00, m01, m02;
+        public f32 m10, m11, m12;
+        public f32 m20, m21, m22;
 
         // Constructor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Matrix3S(f32 m00, f32 m01, f32 m02, f32 m10, f32 m11, f32 m12, f32 m20, f32 m21, f32 m22)
+        public Matrix3S(in f32 m00, in f32 m01, in f32 m02, in f32 m10, in f32 m11, in f32 m12, in f32 m20, in f32 m21, in f32 m22)
         {
             this.m00 = m00;
             this.m01 = m01;
@@ -75,45 +75,58 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S operator *(in Matrix3S a, in Matrix3S b)
         {
-            long m00 = ((a.m00.rawValue * b.m00.rawValue) + (a.m01.rawValue * b.m10.rawValue) + (a.m02.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
-            long m01 = ((a.m00.rawValue * b.m01.rawValue) + (a.m01.rawValue * b.m11.rawValue) + (a.m02.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
-            long m02 = ((a.m00.rawValue * b.m02.rawValue) + (a.m01.rawValue * b.m12.rawValue) + (a.m02.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
+            Matrix3S result;
 
-            long m10 = ((a.m10.rawValue * b.m00.rawValue) + (a.m11.rawValue * b.m10.rawValue) + (a.m12.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
-            long m11 = ((a.m10.rawValue * b.m01.rawValue) + (a.m11.rawValue * b.m11.rawValue) + (a.m12.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
-            long m12 = ((a.m10.rawValue * b.m02.rawValue) + (a.m11.rawValue * b.m12.rawValue) + (a.m12.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
+            result.m00.rawValue = ((a.m00.rawValue * b.m00.rawValue) + (a.m01.rawValue * b.m10.rawValue) + (a.m02.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
+            result.m01.rawValue = ((a.m00.rawValue * b.m01.rawValue) + (a.m01.rawValue * b.m11.rawValue) + (a.m02.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
+            result.m02.rawValue = ((a.m00.rawValue * b.m02.rawValue) + (a.m01.rawValue * b.m12.rawValue) + (a.m02.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
 
-            long m20 = ((a.m20.rawValue * b.m00.rawValue) + (a.m21.rawValue * b.m10.rawValue) + (a.m22.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
-            long m21 = ((a.m20.rawValue * b.m01.rawValue) + (a.m21.rawValue * b.m11.rawValue) + (a.m22.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
-            long m22 = ((a.m20.rawValue * b.m02.rawValue) + (a.m21.rawValue * b.m12.rawValue) + (a.m22.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
+            result.m10.rawValue = ((a.m10.rawValue * b.m00.rawValue) + (a.m11.rawValue * b.m10.rawValue) + (a.m12.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
+            result.m11.rawValue = ((a.m10.rawValue * b.m01.rawValue) + (a.m11.rawValue * b.m11.rawValue) + (a.m12.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
+            result.m12.rawValue = ((a.m10.rawValue * b.m02.rawValue) + (a.m11.rawValue * b.m12.rawValue) + (a.m12.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
 
-            return new Matrix3S(
-                new f32(m00), new f32(m01), new f32(m02),
-                new f32(m10), new f32(m11), new f32(m12),
-                new f32(m20), new f32(m21), new f32(m22)
-            );
+            result.m20.rawValue = ((a.m20.rawValue * b.m00.rawValue) + (a.m21.rawValue * b.m10.rawValue) + (a.m22.rawValue * b.m20.rawValue)) >> f32.FractionalBits;
+            result.m21.rawValue = ((a.m20.rawValue * b.m01.rawValue) + (a.m21.rawValue * b.m11.rawValue) + (a.m22.rawValue * b.m21.rawValue)) >> f32.FractionalBits;
+            result.m22.rawValue = ((a.m20.rawValue * b.m02.rawValue) + (a.m21.rawValue * b.m12.rawValue) + (a.m22.rawValue * b.m22.rawValue)) >> f32.FractionalBits;
+
+            return result;
         }
 
         // Transpose matrix
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S Transpose()
         {
-            return new Matrix3S(
-                m00, m10, m20,
-                m01, m11, m21,
-                m02, m12, m22
-            );
+            Matrix3S result;
+
+            result.m00 = m00;
+            result.m01 = m10;
+            result.m02 = m20;
+            result.m10 = m01;
+            result.m11 = m11;
+            result.m12 = m21;
+            result.m20 = m02;
+            result.m21 = m12;
+            result.m22 = m22;
+
+            return result;
+
         }
 
         // Scale matrix
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S Scale(in Vector3S v)
         {
-            return new Matrix3S(
-                v.x, f32.zero, f32.zero,
-                f32.zero, v.y, f32.zero,
-                f32.zero, f32.zero, v.z
-            );
+            Matrix3S result = identity;
+
+            result.m00 = v.x;
+            result.m11 = v.y;
+            result.m22 = v.z;
+
+            return result;
+        }
+        public static Matrix3S CreateInertiaMatrix(in Vector3S inertiaVector)
+        {
+            return Scale(inertiaVector);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,25 +146,29 @@ namespace stupid.Maths
             f32 two = f32.two;
             f32 one = f32.one;
 
-            // Compute rotation matrix
-            return new Matrix3S(
-                one - two * (yy + zz), two * (xy - wz), two * (xz + wy),
-                two * (xy + wz), one - two * (xx + zz), two * (yz - wx),
-                two * (xz - wy), two * (yz + wx), one - two * (xx + yy)
-            );
+            // Compute rotation matrix using result pattern
+            Matrix3S result;
+
+            result.m00 = one - two * (yy + zz);
+            result.m01 = two * (xy - wz);
+            result.m02 = two * (xz + wy);
+
+            result.m10 = two * (xy + wz);
+            result.m11 = one - two * (xx + zz);
+            result.m12 = two * (yz - wx);
+
+            result.m20 = two * (xz - wy);
+            result.m21 = two * (yz + wx);
+            result.m22 = one - two * (xx + yy);
+
+            return result;
         }
 
-        public static Matrix3S CreateInertiaMatrix(in Vector3S inertiaVector)
-        {
-            return new Matrix3S
-                (inertiaVector.x, f32.zero, f32.zero,
-                f32.zero, inertiaVector.y, f32.zero,
-                f32.zero, f32.zero, inertiaVector.z);
-        }
 
+        //MOst of the problems here were caused by the to big boxcolldiers with big tensors?
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Matrix3S Inverse(Matrix3S matrix)
+        public static Matrix3S Inverse(in Matrix3S matrix)
         {
             // Calculate the determinant with safe scaling to prevent overflow
             f32 a = matrix.m00 * (matrix.m11 * matrix.m22 - matrix.m12 * matrix.m21);
@@ -169,25 +186,22 @@ namespace stupid.Maths
             // Inverse of the determinant, using a scaling technique to manage precision
             f32 invDet = f32.one / determinant;
 
-            // Calculate the inverse matrix elements
-            f32 invM00 = invDet * (matrix.m11 * matrix.m22 - matrix.m12 * matrix.m21);
-            f32 invM01 = invDet * (matrix.m02 * matrix.m21 - matrix.m01 * matrix.m22);
-            f32 invM02 = invDet * (matrix.m01 * matrix.m12 - matrix.m02 * matrix.m11);
+            // Create result matrix and calculate the inverse elements
+            Matrix3S result;
 
-            f32 invM10 = invDet * (matrix.m12 * matrix.m20 - matrix.m10 * matrix.m22);
-            f32 invM11 = invDet * (matrix.m00 * matrix.m22 - matrix.m02 * matrix.m20);
-            f32 invM12 = invDet * (matrix.m02 * matrix.m10 - matrix.m00 * matrix.m12);
+            result.m00 = invDet * (matrix.m11 * matrix.m22 - matrix.m12 * matrix.m21);
+            result.m01 = invDet * (matrix.m02 * matrix.m21 - matrix.m01 * matrix.m22);
+            result.m02 = invDet * (matrix.m01 * matrix.m12 - matrix.m02 * matrix.m11);
 
-            f32 invM20 = invDet * (matrix.m10 * matrix.m21 - matrix.m11 * matrix.m20);
-            f32 invM21 = invDet * (matrix.m01 * matrix.m20 - matrix.m00 * matrix.m21);
-            f32 invM22 = invDet * (matrix.m00 * matrix.m11 - matrix.m01 * matrix.m10);
+            result.m10 = invDet * (matrix.m12 * matrix.m20 - matrix.m10 * matrix.m22);
+            result.m11 = invDet * (matrix.m00 * matrix.m22 - matrix.m02 * matrix.m20);
+            result.m12 = invDet * (matrix.m02 * matrix.m10 - matrix.m00 * matrix.m12);
 
-            // Return the inverted matrix
-            return new Matrix3S(
-                invM00, invM01, invM02,
-                invM10, invM11, invM12,
-                invM20, invM21, invM22
-            );
+            result.m20 = invDet * (matrix.m10 * matrix.m21 - matrix.m11 * matrix.m20);
+            result.m21 = invDet * (matrix.m01 * matrix.m20 - matrix.m00 * matrix.m21);
+            result.m22 = invDet * (matrix.m00 * matrix.m11 - matrix.m01 * matrix.m10);
+
+            return result;
         }
 
 

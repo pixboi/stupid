@@ -108,7 +108,8 @@ namespace stupid
             if (this.mass <= f32.zero) this.mass = f32.one;
             inverseMass = f32.one / this.mass;
 
-            if (collider != null)
+            //HUge statics like 256x3 can easily get an problematic tensor that cant be inverted
+            if (collider != null && isDynamic)
             {
                 var inertia = collider.CalculateInertiaTensor(this.mass);
                 tensor = new Tensor(inertia, transform);
