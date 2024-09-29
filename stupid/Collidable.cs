@@ -11,9 +11,9 @@ namespace stupid
     {
         public const int SLEEP_TRESHOLD = 5;
 
+        public IShape collider;                 // 64+ bytes (assumed)
         public TransformS transform;           // 64+ bytes (assumed)
         public Tensor tensor;                  // 2 Matrices, big
-        public IShape collider;                 // 64+ bytes (assumed)
         public BoundsS bounds;                 // 48 bytes
 
         // Reorder fields based on size (larger first to smaller)
@@ -26,17 +26,19 @@ namespace stupid
         public f32 inverseMass = f32.one;      // 8 bytes
         public f32 drag = f32.zero;            // 8 bytes
         public f32 angularDrag = (f32)0.05;    // 8 bytes
+        public f32 sleepThreshold = (f32)0.01;
 
         public PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL; // Could be bigger, place in the middle
+
+        public int index;                      // 4 bytes
+        public int sleepFrames = 0;
 
         public bool isDynamic;                 // 1 byte (group booleans and smaller types)
         public bool useGravity = true;         // 1 byte
         public bool isKinematic = false;       // 1 byte
-        public int index;                      // 4 bytes
-
-        public int sleepFrames = 0;
         public bool isSleeping = false;
-        public f32 sleepThreshold = (f32)0.01;
+
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CheckSleep()

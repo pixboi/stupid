@@ -194,13 +194,22 @@ namespace stupid.Maths
         {
             Vector3S result;
 
-            // Perform both multiplications and additions in a single step
-            result.x.rawValue = ((a.x.rawValue * am.rawValue) >> f32.FractionalBits) + ((b.x.rawValue * bm.rawValue) >> f32.FractionalBits);
-            result.y.rawValue = ((a.y.rawValue * am.rawValue) >> f32.FractionalBits) + ((b.y.rawValue * bm.rawValue) >> f32.FractionalBits);
-            result.z.rawValue = ((a.z.rawValue * am.rawValue) >> f32.FractionalBits) + ((b.z.rawValue * bm.rawValue) >> f32.FractionalBits);
+            // Calculate inte rmediate multiplication results
+            var ax_am = a.x.rawValue * am.rawValue;
+            var bx_bm = b.x.rawValue * bm.rawValue;
+            var ay_am = a.y.rawValue * am.rawValue;
+            var by_bm = b.y.rawValue * bm.rawValue;
+            var az_am = a.z.rawValue * am.rawValue;
+            var bz_bm = b.z.rawValue * bm.rawValue;
+
+            // Perform bit shifting and addition for each component
+            result.x.rawValue = (ax_am + bx_bm) >> f32.FractionalBits;
+            result.y.rawValue = (ay_am + by_bm) >> f32.FractionalBits;
+            result.z.rawValue = (az_am + bz_bm) >> f32.FractionalBits;
 
             return result;
         }
+
 
 
         // Division

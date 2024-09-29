@@ -102,8 +102,8 @@ namespace stupid.Constraints
         public void SolveAll(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, in f32 bias, in f32 friction)
         {
             // Precompute velocities
-            Vector3S av = Vector3S.CrossAdd(a.velocity, a.angularVelocity, ra);
-            Vector3S bv = b.isDynamic ? Vector3S.CrossAdd(b.velocity, b.angularVelocity, rb) : Vector3S.zero;
+            Vector3S av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
+            Vector3S bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
             Vector3S contactVelocity = bv - av;
 
             // -------------------- Impulse ---------------------
@@ -118,7 +118,7 @@ namespace stupid.Constraints
             // Compute the frictional impulse and clamp it with the accumulated friction
             // var relativeTangentVelocity = Vector3S.Dot(contactVelocity, this.tangent);
             //var fric = this.tangentMass * relativeTangentVelocity;
-            var fric = Vector3S.DotMultiply(contactVelocity, this.tangent, this.tangentMass);
+            var fric = this.tangentMass * Vector3S.Dot(contactVelocity, this.tangent);
             var maxFric = this.accumulatedImpulse * friction;
             var oldAccumulatedFriction = this.accumulatedFriction;
             this.accumulatedFriction = MathS.Clamp(oldAccumulatedFriction + fric, -maxFric, maxFric);
@@ -129,14 +129,14 @@ namespace stupid.Constraints
             var totalImpulse = Vector3S.MultiplyAndAddBatch(normal, imp, this.tangent, fric);
 
             // Apply impulses to object A
-            a.velocity.Subtract(totalImpulse * a.inverseMass);
-            a.angularVelocity.Subtract(a.inertiaWorld * Vector3S.Cross(ra, totalImpulse));
+            a.velocity -= (totalImpulse * a.inverseMass);
+            a.angularVelocity -= (a.inertiaWorld * Vector3S.Cross(ra, totalImpulse));
 
             // Apply impulses to object B if dynamic
             if (b.isDynamic)
             {
-                b.velocity.Add(totalImpulse * b.inverseMass);
-                b.angularVelocity.Add(b.inertiaWorld * Vector3S.Cross(rb, totalImpulse));
+                b.velocity += (totalImpulse * b.inverseMass);
+                b.angularVelocity += (b.inertiaWorld * Vector3S.Cross(rb, totalImpulse));
             }
         }
     }
