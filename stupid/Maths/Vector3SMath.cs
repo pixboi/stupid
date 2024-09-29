@@ -37,9 +37,9 @@ namespace stupid.Maths
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public f32 Magnitude()
         {
-            // Use sqrMagnitude to avoid recomputing the squared magnitude
-            var sqrMag = sqrMagnitude;
-            return sqrMag > f32.zero ? MathS.Sqrt(sqrMag) : f32.zero;
+            f32 sqr;
+            sqr.rawValue = (x.rawValue * x.rawValue + y.rawValue * y.rawValue + z.rawValue * z.rawValue) >> f32.FractionalBits;
+            return sqr.rawValue > 0L ? MathS.Sqrt(sqr) : f32.zero;
         }
 
         // Squared magnitude, shifted for fractional bits

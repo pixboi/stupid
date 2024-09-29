@@ -28,8 +28,15 @@ namespace stupid.Broadphase
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(aIndex, bIndex);
+            unchecked // Allows overflow without throwing exceptions
+            {
+                int hash = 17;
+                hash = hash * 31 + aIndex; // 31 is a small prime number
+                hash = hash * 31 + bIndex;
+                return hash;
+            }
         }
+
     }
 
     public class IntPairComparer : IEqualityComparer<IntPair>

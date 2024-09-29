@@ -1,98 +1,157 @@
 ﻿using System;
-using System.Numerics;
-using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes; // Import BenchmarkDotNet for benchmarking
 using BenchmarkDotNet.Running;
-using stupid;
+using Perfolizer.Mathematics.Common;
+using stupid; // Assuming these are your namespaces for physics, math, and other utilities
+using stupid.Colliders;
 using stupid.Maths;
 
 public class VectorBenchmark
 {
-    private Vector3S[] a1;
-    private Vector3S[] a2;
-
-    private f32[] b1;
-    private f32[] b2;
-
-    private long[] c1;
-    private long[] c2;
+    public World world;
+    f32 delta;
 
     [GlobalSetup]
     public void Setup()
     {
-        a1 = new Vector3S[10000];
-        a2 = new Vector3S[10000];
+        var settings = WorldSettings.Default(); // Initialize world settings with default values
+        this.delta = (f32)0.01f; // Set a fixed delta time for the simulation using f32 custom constructor
 
-        b1 = new f32[10000];
-        b2 = new f32[10000];
+        var list = new List<Collidable>();
 
-        c1 = new long[10000];
-        c2 = new long[10000];
+        // Define the world boundary as a large static box
+        var boxCol = new BoxColliderS(new Vector3S(32, 2, 32));
+        var worldBox = new Collidable(
+            -1,
+            boxCol,
+            new TransformS(new Vector3S(16, -1, 16), QuaternionS.identity, Vector3S.one),
+            false // Static collidable (not dynamic)
+        );
 
-        for (int i = 0; i < a1.Length; i++)
+        list.Add(worldBox);
+        // Add the world boundary first to ensure it is registered before other collidables
+
+        // Define a sphere collider
+        var sphereCol = new SphereColliderS(f32.half);
+
+        // Create a 3D grid of spheres, with each sphere having a spacing of 1 unit apart
+        int gridSize = 8;  // Define the number of spheres along each axis
+        float spacing = 1f; // Spacing between spheres to avoid overlap
+
+        for (int x = 0; x < gridSize; x++)
         {
-            var v = i % 100;
+            for (int y = 0; y < gridSize; y++)
+            {
+                for (int z = 0; z < gridSize; z++)
+                {
+                    // Calculate the position in the 3D grid
+                    Vector3S position = new Vector3S(
+                     (x * spacing),
+                      (y * spacing + 3), // Start above the ground to avoid intersection with the world box
+                       (z * spacing)
+                    );
 
-            a1[i] = new Vector3S(v, v, v);
-            a2[i] = new Vector3S(v, v, v);
+                    // Create a dynamic sphere at the calculated position
+                    var sphere = new Collidable(
+                        -1,
+                        sphereCol,
+                        new TransformS(position, QuaternionS.identity, Vector3S.one),
+                        true, // Make it dynamic
+                        Vector3S.zero,
+                        Vector3S.zero,
+                        f32.one,  // Mass of 1
+                        true, // Use gravity
+                        false // Not kinematic
+                    );
 
-            b1[i] = new f32(v);
-            b2[i] = new f32(v);
-
-            c1[i] = v;
-            c2[i] = v;
+                    // Add the sphere to the world
+                    list.Add(sphere);
+                }
+            }
         }
 
+        this.world = new World(settings, list);
     }
 
+    // Benchmark the simulation loop
     [Benchmark]
-    public void VectorLoopOp()
+    public void SimulationLoop()
     {
-        for (int i = 0; i < a1.Length; i++)
+        for (int i = 0; i < 1000; i++) // Run the simulation for 1000 steps
         {
-            ref var a = ref a1[i];
-            ref var b = ref a2[i];
-
-            a = b.x * a + b;
+            this.world.Simulate(delta); // Simulate with the defined delta time
         }
     }
-
-    [Benchmark]
-    public void VectorLoopBatched()
-    {
-        for (int i = 0; i < a1.Length; i++)
-        {
-            ref var a = ref a1[i];
-            ref var b = ref a2[i];
-
-            a = Vector3S.MultiplyAndAdd(a, b.x, b);
-        }
-    }
-
-    /*
-    [Benchmark]
-    public void f32Loop()
-    {
-        for (int i = 0; i < b1.Length; i++)
-        {
-            b1[i] = b1[i] + b2[i];
-        }
-    }
-
-    [Benchmark]
-    public void LongLoop()
-    {
-        for (int i = 0; i < b1.Length; i++)
-        {
-            c1[i] = c1[i] + c2[i];
-        }
-    }
-    */
 }
 
 public class Program
 {
     public static void Main(string[] args)
     {
-        var summary = BenchmarkRunner.Run<VectorBenchmark>();
+        //  var summary = BenchmarkRunner.Run<VectorBenchmark>();
+        var settings = WorldSettings.Default(); // Initialize world settings with default values
+        var delta = (f32)0.01f; // Set a fixed delta time for the simulation using f32 custom constructor
+
+        var list = new List<Collidable>();
+
+        // Define the world boundary as a large static box
+        var boxCol = new BoxColliderS(new Vector3S(32, 2, 32));
+        var smallBox = new BoxColliderS(Vector3S.one);
+
+        var worldBox = new Collidable(
+            -1,
+            boxCol,
+            new TransformS(new Vector3S(16, -1, 16), QuaternionS.identity, Vector3S.one),
+            false // Static collidable (not dynamic)
+        );
+
+        list.Add(worldBox);
+        // Add the world boundary first to ensure it is registered before other collidables
+
+        // Define a sphere collider
+        var sphereCol = new SphereColliderS(f32.half);
+
+        // Create a 3D grid of spheres, with each sphere having a spacing of 1 unit apart
+        int gridSize = 8;  // Define the number of spheres along each axis
+        float spacing = 1f; // Spacing between spheres to avoid overlap
+
+        for (int x = 0; x < gridSize; x++)
+        {
+            for (int y = 0; y < gridSize; y++)
+            {
+                for (int z = 0; z < gridSize; z++)
+                {
+                    // Calculate the position in the 3D grid
+                    Vector3S position = new Vector3S(
+                     (x * spacing),
+                      (y * spacing + 3), // Start above the ground to avoid intersection with the world box
+                       (z * spacing)
+                    );
+
+                    // Create a dynamic sphere at the calculated position
+                    var sphere = new Collidable(
+                        -1,
+                        sphereCol,
+                        new TransformS(position, QuaternionS.identity, Vector3S.one),
+                        true, // Make it dynamic
+                        Vector3S.zero,
+                        Vector3S.zero,
+                        f32.one,  // Mass of 1
+                        true, // Use gravity
+                        false // Not kinematic
+                    );
+
+                    // Add the sphere to the world
+                    list.Add(sphere);
+                }
+            }
+        }
+
+        var world = new World(settings, list);
+
+        for (int i = 0; i < 1000; i++) // Run the simulation for 1000 steps
+        {
+            world.Simulate(delta); // Simulate with the defined delta time
+        }
     }
 }

@@ -8,6 +8,7 @@ namespace stupid.Colliders
 {
     public static partial class CollisionMath
     {
+        //We could  have some kind of variant that considers a,b if they were in contact last frame, the same checks in that order will probably be accurate
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BoxVsBox(in BoxColliderS a, in BoxColliderS b, ref ContactData[] contacts)
         {

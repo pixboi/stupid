@@ -78,7 +78,7 @@ namespace stupid.Colliders
         }
 
         //Init
-        public readonly Vector3S halfSize;
+        public Vector3S halfSize;
         public Vector3S size => halfSize * f32.two;
         public Vector3S rightAxis, upAxis, forwardAxis;
 

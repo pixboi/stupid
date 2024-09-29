@@ -30,14 +30,14 @@ namespace stupid
                 DefaultMaxDepenetrationVelocity = (f32)10,
                 SleepTreshold = (f32)0.005,
                 DefaultContactOffset = (f32)0.01,
-                DefaultSolverIterations = 6,
-                DefaultSolverVelocityIterations = 1,
-                WorldBounds = new BoundsS(new Vector3S(0, 0, 0), new Vector3S(32, 32, 32)),
+                DefaultSolverIterations = 8,
+                DefaultSolverVelocityIterations = 8,
+                WorldBounds = new BoundsS(new Vector3S(0, 0, 0), new Vector3S(320, 320, 320)),
                 DefaultMaxAngularSpeed = (f32)14,
                 Relaxation = true,
                 Warmup = true,
                 Baumgartner = (f32)0.2,
-                FastMotionThreshold = (f32)512,
+                FastMotionThreshold = (f32)1000,
             };
         }
     }

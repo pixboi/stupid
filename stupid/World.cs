@@ -1,10 +1,13 @@
-﻿using stupid.Broadphase;
+﻿using Newtonsoft.Json;
+using stupid.Broadphase;
 using stupid.Constraints;
 using stupid.Maths;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Xml;
 
 namespace stupid
 {
@@ -18,7 +21,7 @@ namespace stupid
 
         public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
 
-        Dictionary<IntPair, ContactManifoldSlim> ManifoldMap = new Dictionary<IntPair, ContactManifoldSlim>();
+        Dictionary<IntPair, ContactManifoldSlim> ManifoldMap;
         List<IntPair> _removeCache = new List<IntPair>();
 
         ContactData[] _contactCache = new ContactData[4];
@@ -27,7 +30,7 @@ namespace stupid
         int _contactCount;
 
         int _manifoldCount;
-        ContactManifoldSlim[] _manifolds = new ContactManifoldSlim[5000];
+        ContactManifoldSlim[] _manifolds;
 
         RigidbodyData[] _data;
 
@@ -40,7 +43,30 @@ namespace stupid
             _boundsIndices = new BoundsIndex[startSize];
             Broadphase = new SortAndSweepBroadphase(startSize);
             _data = new RigidbodyData[startSize];
+            ManifoldMap = new Dictionary<IntPair, ContactManifoldSlim>(startSize * startSize);
+            _manifolds = new ContactManifoldSlim[startSize * startSize];
             SimulationFrame = 0;
+
+            _indexCounter = 0;
+            _contactCount = 0;
+            _manifoldCount = 0;
+        }
+
+        public World(in WorldSettings settings,  List<Collidable> collidables)
+        {
+            var startSize = collidables.Count;
+
+            WorldSettings = settings;
+            this.Collidables = new Collidable[startSize];
+            foreach(var c in collidables) AddCollidable(c);
+
+            _boundsIndices = new BoundsIndex[startSize];
+            Broadphase = new SortAndSweepBroadphase(startSize);
+            ManifoldMap = new Dictionary<IntPair, ContactManifoldSlim>(startSize * startSize);
+            _manifolds = new ContactManifoldSlim[startSize * startSize];
+            _data = new RigidbodyData[startSize];
+            SimulationFrame = 0;
+
 
             _indexCounter = 0;
             _contactCount = 0;
@@ -67,7 +93,7 @@ namespace stupid
             foreach (var collidable in Collidables)
             {
                 if (collidable.isDynamic)
-                    _data[collidable.index] = RigidbodyData.Convert(collidable);
+                    _data[collidable.index] = new RigidbodyData(collidable);
             }
         }
 
@@ -105,7 +131,6 @@ namespace stupid
                 c.CalculateBounds();
 
                 if (c.isDynamic) c.tensor.UpdateInertiaTensor(c.transform);
-
             }
 
             Array.Clear(_boundsIndices, 0, _boundsIndices.Length);
@@ -120,6 +145,11 @@ namespace stupid
 
             //Solve contacts + iterate?
             NarrowPhase();
+
+            foreach (var c in Collidables)
+            {
+                c.CheckSleep();
+            }
 
             SimulationFrame++;
         }
@@ -152,12 +182,21 @@ namespace stupid
                     (a, b) = (b, a);
                 }
 
+                if (a.isSleeping && b.isSleeping)
+                {
+                    _removeCache.Add(pair);
+                    continue;
+                }
+
                 var count = a.collider.Intersects(b, ref _contactCache);
 
                 if (count > 0)
                 {
                     var firstContact = _contactCache[0];
                     var manifold = new ContactManifoldSlim(a, b, firstContact.normal, firstContact.penetrationDepth, this.WorldSettings, InverseDeltaTime, _contactCount, count);
+
+                    a.WakeUp();
+                    b.WakeUp();
 
                     //First, put the new ones in
                     for (int i = 0; i < count; i++)
@@ -187,7 +226,6 @@ namespace stupid
                 }
                 else
                 {
-                    ManifoldMap.Remove(pair);
                     _removeCache.Add(pair);
                 }
             }
@@ -195,6 +233,7 @@ namespace stupid
             //If there are current manifolds that are not in the new broadphase, remove
             foreach (var key in _removeCache)
             {
+                ManifoldMap.Remove(key);
                 pairs.Remove(key);
             }
         }
@@ -229,20 +268,19 @@ namespace stupid
             // Now we're operating on pure data
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
             {
-                for (int i = 0; i < _manifoldCount; i += 2)
+                for (int i = 0; i < _manifoldCount; i++)
                 {
-                    // Resolve the first manifold
                     ref var m1 = ref _manifolds[i];
-                    m1.Resolve(ref _data[m1.aIndex], ref _data[m1.bIndex], ref contactSpan, true);
 
-                    // Check if there is a second manifold to resolve
-                    if (i + 1 < _manifoldCount)
-                    {
-                        ref var m2 = ref _manifolds[i + 1];
-                        m2.Resolve(ref _data[m2.aIndex], ref _data[m2.bIndex], ref contactSpan, true);
-                    }
+                    // Cache the relevant RigidbodyData references for the current manifold
+                    ref var aData = ref _data[m1.aIndex];
+                    ref var bData = ref _data[m1.bIndex];
+
+                    // Use the cached references in the resolve function
+                    m1.Resolve(ref aData, ref bData, ref contactSpan, true);
                 }
             }
+
 
 
             //Apply the calcs from data
@@ -261,8 +299,14 @@ namespace stupid
                 {
                     for (int i = 0; i < _manifoldCount; i++)
                     {
-                        ref var m = ref _manifolds[i];
-                        m.Resolve(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan, false);
+                        ref var m1 = ref _manifolds[i];
+
+                        // Cache the relevant RigidbodyData references for the current manifold
+                        ref var aData = ref _data[m1.aIndex];
+                        ref var bData = ref _data[m1.bIndex];
+
+                        // Use the cached references in the resolve function
+                        m1.Resolve(ref aData, ref bData, ref contactSpan, true);
                     }
                 }
 
@@ -273,5 +317,45 @@ namespace stupid
             Array.Copy(allContacts, oldContacts, allContacts.Length);
             Array.Clear(allContacts, 0, allContacts.Length);
         }
+
+        public string SaveInitialStateToJson()
+        {
+            // Create a save data object with the initial state.
+            WorldSaveData saveData = new WorldSaveData(this);
+
+            // Using settings to handle complex types and formatting.
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                Formatting = Newtonsoft.Json.Formatting.Indented
+            };
+
+            return JsonConvert.SerializeObject(saveData, settings);
+        }
+
+        public void SaveInitialStateToJsonFile(string filePath)
+        {
+            string json = SaveInitialStateToJson();
+            File.WriteAllText(filePath, json);
+        }
+
     }
+
+    public class WorldSaveData
+    {
+        public WorldSettings WorldSettings { get; set; }
+        public List<Collidable> Collidables { get; set; }
+
+        public WorldSaveData(World world)
+        {
+            WorldSettings = world.WorldSettings;
+
+            // Filter out null entries in Collidables.
+            Collidables = world.Collidables
+                .Where(c => c != null)
+                .ToList();
+        }
+    }
+
 }

@@ -39,7 +39,7 @@ namespace stupid.Maths
         }
 
         // Identity matrix
-        public static Matrix3S identity => new Matrix3S(
+        public static readonly Matrix3S identity = new Matrix3S(
             new Vector3S(f32.one, f32.zero, f32.zero),
             new Vector3S(f32.zero, f32.one, f32.zero),
             new Vector3S(f32.zero, f32.zero, f32.one)
