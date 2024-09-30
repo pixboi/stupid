@@ -7,7 +7,7 @@ namespace stupid.Constraints
 {
     public struct ContactSlim
     {
-        public readonly Vector3S ra; // 1 * 24 = 24
+        public readonly Vector3S ra; // 2 * 24 = 24
         public Vector3S tangent; // 24
         public f32 tangentMass, accumulatedFriction, normalMass, accumulatedImpulse; // 4 * 8 = 32
         public readonly int featureId; //4
@@ -124,12 +124,6 @@ namespace stupid.Constraints
             // Compute the frictional impulse and clamp it with the accumulated friction
             // var relativeTangentVelocity = Vector3S.Dot(contactVelocity, this.tangent);
             //var fric = this.tangentMass * relativeTangentVelocity;
-
-            Vector3S normalVelocity = normal * Vector3S.Dot(contactVelocity, normal);
-            Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-            f32 tangentMag = tangentialVelocity.sqrMagnitude;
-            var tangent = tangentialVelocity.Normalize();
-
             var fric = this.tangentMass * Vector3S.Dot(contactVelocity, this.tangent);
             var maxFric = this.accumulatedImpulse * friction;
             var oldAccumulatedFriction = this.accumulatedFriction;
