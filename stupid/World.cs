@@ -52,13 +52,13 @@ namespace stupid
             _manifoldCount = 0;
         }
 
-        public World(in WorldSettings settings,  List<Collidable> collidables)
+        public World(in WorldSettings settings, List<Collidable> collidables)
         {
             var startSize = collidables.Count;
 
             WorldSettings = settings;
             this.Collidables = new Collidable[startSize];
-            foreach(var c in collidables) AddCollidable(c);
+            foreach (var c in collidables) AddCollidable(c);
 
             _boundsIndices = new BoundsIndex[startSize];
             Broadphase = new SortAndSweepBroadphase(startSize);
@@ -237,8 +237,6 @@ namespace stupid
                 pairs.Remove(key);
             }
         }
-
-
 
         private void NarrowPhase()
         {
