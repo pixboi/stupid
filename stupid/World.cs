@@ -19,8 +19,9 @@ namespace stupid
         public Collidable[] Collidables;
         int _indexCounter;
 
-        public static f32 DeltaTime, InverseDeltaTime, SubDelta, InverseSubDelta;
+        public static f32 DeltaTime, InverseDeltaTime;
 
+        BoundsIndex[] _boundsIndices;
         Dictionary<IntPair, ContactManifoldSlim> ManifoldMap;
         List<IntPair> _removeCache = new List<IntPair>();
 
@@ -107,16 +108,18 @@ namespace stupid
             }
         }
 
-        BoundsIndex[] _boundsIndices;
-        public void Simulate(in f32 deltaTime)
+
+        bool hasPreSim;
+        //Basically, anything that doesnt modify the world, can be simulated in front of the actual fixed thing
+        public void PreSimulate(in f32 deltaTime)
         {
+            if (hasPreSim) return;
+
             //Update delta time
             if (deltaTime != DeltaTime)
             {
                 DeltaTime = deltaTime;
                 InverseDeltaTime = f32.one / deltaTime;
-                SubDelta = deltaTime / (f32)WorldSettings.DefaultSolverIterations;
-                InverseSubDelta = InverseDeltaTime * (f32)WorldSettings.DefaultSolverIterations;
             }
 
             //Broadphase
@@ -143,6 +146,16 @@ namespace stupid
             //Prepare contacts
             PrepareContacts(pairs);
 
+            hasPreSim = true;
+        }
+
+        public void Simulate(in f32 deltaTime)
+        {
+            if (!hasPreSim)
+            {
+                PreSimulate(deltaTime);
+            }
+
             //Solve contacts + iterate?
             NarrowPhase();
 
@@ -152,6 +165,7 @@ namespace stupid
             }
 
             SimulationFrame++;
+            hasPreSim = false;
         }
 
         //hash set determinism?
@@ -245,6 +259,8 @@ namespace stupid
             var manifoldSpan = new ReadOnlySpan<ContactManifoldSlim>(_manifolds, 0, _manifoldCount);
             var contactSpan = new Span<ContactSlim>(allContacts, 0, _contactCount);
 
+            UpdateData();
+
             //Have some kind of centralized rigidbody data array here
             if (WorldSettings.Warmup)
             {
@@ -256,6 +272,9 @@ namespace stupid
 
             ApplyData();
 
+
+            //Basically, this is the only thing that players manipulate with input packets
+            //Here is also where we could jump (provided we saved like many frames of collision impulses whatever), for rollback + play
             foreach (var c in Collidables)
             {
                 c.IntegrateForces(dt, WorldSettings);
@@ -278,8 +297,6 @@ namespace stupid
                     m1.Resolve(ref aData, ref bData, ref contactSpan, true);
                 }
             }
-
-
 
             //Apply the calcs from data
             ApplyData();
@@ -314,45 +331,6 @@ namespace stupid
 
             Array.Copy(allContacts, oldContacts, allContacts.Length);
             Array.Clear(allContacts, 0, allContacts.Length);
-        }
-
-        public string SaveInitialStateToJson()
-        {
-            // Create a save data object with the initial state.
-            WorldSaveData saveData = new WorldSaveData(this);
-
-            // Using settings to handle complex types and formatting.
-            var settings = new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-                Formatting = Newtonsoft.Json.Formatting.Indented
-            };
-
-            return JsonConvert.SerializeObject(saveData, settings);
-        }
-
-        public void SaveInitialStateToJsonFile(string filePath)
-        {
-            string json = SaveInitialStateToJson();
-            File.WriteAllText(filePath, json);
-        }
-
-    }
-
-    public class WorldSaveData
-    {
-        public WorldSettings WorldSettings { get; set; }
-        public List<Collidable> Collidables { get; set; }
-
-        public WorldSaveData(World world)
-        {
-            WorldSettings = world.WorldSettings;
-
-            // Filter out null entries in Collidables.
-            Collidables = world.Collidables
-                .Where(c => c != null)
-                .ToList();
         }
     }
 

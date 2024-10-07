@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace stupid.Maths
 {
+    [Serializable]
     public struct f32 : IEquatable<f32>, IComparable<f32>
     {
         public long rawValue;
