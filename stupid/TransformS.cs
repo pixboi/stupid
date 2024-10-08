@@ -9,23 +9,20 @@ namespace stupid
         public Vector3S position;
         public QuaternionS rotation;
         public Matrix3S rotationMatrix;
+
         // Constructor
         public TransformS(in Vector3S position, in QuaternionS rotation, in Vector3S localScale)
         {
             this.position = position;
             this.rotation = rotation;
             this.rotationMatrix = Matrix3S.Rotate(rotation);
-            //this.rotationMatrixTranspose = this.rotationMatrix.Transpose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateRotationMatrix()
         {
             this.rotationMatrix = Matrix3S.Rotate(rotation);
-            // this.rotationMatrixTranspose = this.rotationMatrix.Transpose();
         }
-
-        // Updates rotation matrix
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Rotate(in QuaternionS delta)
