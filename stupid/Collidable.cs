@@ -11,7 +11,7 @@ namespace stupid
     {
         public const int SLEEP_TRESHOLD = 5;
 
-        public IShape collider;                 // 64+ bytes (assumed)
+        public readonly IShape collider;                 // 64+ bytes (assumed)
         public TransformS transform;           // 64+ bytes (assumed)
         public Tensor tensor;                  // 2 Matrices, big
         public BoundsS bounds;                 // 48 bytes
@@ -37,8 +37,6 @@ namespace stupid
         public bool useGravity = true;         // 1 byte
         public bool isKinematic = false;       // 1 byte
         public bool isSleeping = false;
-
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CheckSleep()
