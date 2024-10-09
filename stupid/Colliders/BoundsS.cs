@@ -1,4 +1,5 @@
 using stupid.Maths;
+using System.Numerics;
 
 namespace stupid.Colliders
 {
@@ -58,6 +59,68 @@ namespace stupid.Colliders
                    point.y >= min.y && point.y <= max.y &&
                    point.z >= min.z && point.z <= max.z;
         }
+
+        //Expect direction to be like, with the max length
+        public static BoundsS ConvertFromRay(in Vector3S origin, in Vector3S normalizedDirection, in f32 length)
+        {
+            Vector3S end = origin + normalizedDirection * length;
+
+            // Calculate the min and max bounds that fully enclose the ray's path
+            Vector3S min = Vector3S.Min(origin, end);
+            Vector3S max = Vector3S.Max(origin, end);
+
+            return new BoundsS(min, max);
+        }
+
+        public bool RayTest(in Vector3S rayOrigin, in Vector3S rayDirection)
+        {
+            f32 tmin = f32.minValue;
+            f32 tmax = f32.maxValue;
+
+            // Check X axis
+            if (MathS.Abs(rayDirection.x) > f32.epsilon)
+            {
+                var tx1 = (min.x - rayOrigin.x) / rayDirection.x;
+                var tx2 = (max.x - rayOrigin.x) / rayDirection.x;
+                tmin = MathS.Max(tmin, MathS.Min(tx1, tx2));
+                tmax = MathS.Min(tmax, MathS.Max(tx1, tx2));
+            }
+            else if (rayOrigin.x < min.x || rayOrigin.x > max.x)
+            {
+                return false; // Parallel to X-axis and outside bounds
+            }
+
+            // Check Y axis
+            if (MathS.Abs(rayDirection.y) > f32.epsilon)
+            {
+                var ty1 = (min.y - rayOrigin.y) / rayDirection.y;
+                var ty2 = (max.y - rayOrigin.y) / rayDirection.y;
+                tmin = MathS.Max(tmin, MathS.Min(ty1, ty2));
+                tmax = MathS.Min(tmax, MathS.Max(ty1, ty2));
+            }
+            else if (rayOrigin.y < min.y || rayOrigin.y > max.y)
+            {
+                return false; // Parallel to Y-axis and outside bounds
+            }
+
+            // Check Z axis
+            if (MathS.Abs(rayDirection.z) > f32.epsilon)
+            {
+                var tz1 = (min.z - rayOrigin.z) / rayDirection.z;
+                var tz2 = (max.z - rayOrigin.z) / rayDirection.z;
+                tmin = MathS.Max(tmin, MathS.Min(tz1, tz2));
+                tmax = MathS.Min(tmax, MathS.Max(tz1, tz2));
+            }
+            else if (rayOrigin.z < min.z || rayOrigin.z > max.z)
+            {
+                return false; // Parallel to Z-axis and outside bounds
+            }
+
+            // Check if the intersection exists in positive ray direction
+            return tmax >= MathS.Max(tmin, f32.zero);
+        }
+
+
 
         public bool Contains(in BoundsS other) => Contains(other.min) && Contains(other.max);
 

@@ -21,7 +21,6 @@ namespace stupid
 
         public readonly f32 mass = f32.one;             // 8 bytes
         public readonly f32 inverseMass = f32.one;      // 8 bytes
-        //DRAG WAS HERE
         public readonly f32 angularDrag = (f32)0.05;    // 8 bytes
         public readonly PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL; // 8 bytes, for now
 
@@ -70,8 +69,6 @@ namespace stupid
 
             this.velocity = velocity;
             this.angularVelocity = angularVelocity;
-
-
             this.useGravity = useGravity;
             this.isKinematic = isKinematic;
         }

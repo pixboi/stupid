@@ -6,7 +6,6 @@ namespace stupid.Colliders
     public interface IShape
     {
         public Collidable GetCollidable { get; }
-
         public void Attach(in Collidable collidable);
         public BoundsS GetBounds(in TransformS t);
         public abstract int Intersects(Collidable other, ref ContactData[] contacts);
