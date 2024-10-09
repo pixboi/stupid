@@ -10,7 +10,6 @@ namespace stupid
         public QuaternionS rotation;
         public Matrix3S rotationMatrix;
 
-        // Constructor
         public TransformS(in Vector3S position, in QuaternionS rotation, in Vector3S localScale)
         {
             this.position = position;

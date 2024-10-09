@@ -60,6 +60,7 @@ public class VectorBenchmark
                         Vector3S.zero,
                         Vector3S.zero,
                         f32.one,  // Mass of 1
+                        (f32)0.05,
                         true, // Use gravity
                         false // Not kinematic
                     );
@@ -137,6 +138,7 @@ public class Program
                         Vector3S.zero,
                         Vector3S.zero,
                         f32.one,  // Mass of 1
+                           (f32)0.05,
                         true, // Use gravity
                         false // Not kinematic
                     );

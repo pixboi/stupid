@@ -14,7 +14,7 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactManifoldSlim(Collidable a, Collidable b, in Vector3S normal, in f32 penetrationDepth, in WorldSettings settings, in f32 inverseDt, int startIndex = -1, int contactCount = -1)
         {
-            if (contactCount < 1) throw new System.ArgumentException("ZERO CONTACTS?");
+            if (contactCount < 1) throw new ArgumentException("ZERO CONTACTS?");
 
             this.aIndex = a.index;
             this.bIndex = b.index;

@@ -80,6 +80,7 @@ namespace stupid.Colliders
         //Init
         public Vector3S halfSize;
         public Vector3S size => halfSize * f32.two;
+
         public Vector3S rightAxis, upAxis, forwardAxis;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,9 +134,7 @@ namespace stupid.Colliders
         {
             var absLocal = Vector3S.Abs(GetCollidable.transform.ToLocalPoint(worldPoint));
             var fat = this.halfSize + f32.epsilon;
-
             return absLocal <= fat;
-
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

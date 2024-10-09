@@ -159,11 +159,6 @@ namespace stupid
             //Solve contacts + iterate?
             NarrowPhase();
 
-            foreach (var c in Collidables)
-            {
-                c.CheckSleep();
-            }
-
             SimulationFrame++;
             hasPreSim = false;
         }
@@ -196,21 +191,12 @@ namespace stupid
                     (a, b) = (b, a);
                 }
 
-                if (a.isSleeping && b.isSleeping)
-                {
-                    _removeCache.Add(pair);
-                    continue;
-                }
-
                 var count = a.collider.Intersects(b, ref _contactCache);
 
                 if (count > 0)
                 {
                     var firstContact = _contactCache[0];
                     var manifold = new ContactManifoldSlim(a, b, firstContact.normal, firstContact.penetrationDepth, this.WorldSettings, InverseDeltaTime, _contactCount, count);
-
-                    a.WakeUp();
-                    b.WakeUp();
 
                     //First, put the new ones in
                     for (int i = 0; i < count; i++)
@@ -271,7 +257,6 @@ namespace stupid
             }
 
             ApplyData();
-
 
             //Basically, this is the only thing that players manipulate with input packets
             //Here is also where we could jump (provided we saved like many frames of collision impulses whatever), for rollback + play

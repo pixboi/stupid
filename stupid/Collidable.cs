@@ -6,14 +6,11 @@ using System.Runtime.CompilerServices;
 
 namespace stupid
 {
-
     public class Collidable : IEquatable<Collidable>
     {
-        public const int SLEEP_TRESHOLD = 5;
-
-        public readonly IShape collider;                 // 64+ bytes (assumed)
+        public readonly IShape collider;       // 64+ bytes (assumed)
         public TransformS transform;           // 64+ bytes (assumed)
-        public Tensor tensor;                  // 2 Matrices, big
+        public readonly Tensor tensor;                  // 2 Matrices, big
         public BoundsS bounds;                 // 48 bytes
 
         // Reorder fields based on size (larger first to smaller)
@@ -22,57 +19,16 @@ namespace stupid
         public Vector3S forceBucket;           // 24 bytes
         public Vector3S torqueBucket;          // 24 bytes
 
-        public f32 mass = f32.one;             // 8 bytes
-        public f32 inverseMass = f32.one;      // 8 bytes
-        public f32 drag = f32.zero;            // 8 bytes
-        public f32 angularDrag = (f32)0.05;    // 8 bytes
-        public f32 sleepThreshold = (f32)0.01;
-
-        public PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL; // Could be bigger, place in the middle
+        public readonly f32 mass = f32.one;             // 8 bytes
+        public readonly f32 inverseMass = f32.one;      // 8 bytes
+        //DRAG WAS HERE
+        public readonly f32 angularDrag = (f32)0.05;    // 8 bytes
+        public readonly PhysicsMaterialS material = PhysicsMaterialS.DEFAULT_MATERIAL; // 8 bytes, for now
 
         public int index;                      // 4 bytes
-        public int sleepFrames = 0;
-
-        public bool isDynamic;                 // 1 byte (group booleans and smaller types)
-        public bool useGravity = true;         // 1 byte
-        public bool isKinematic = false;       // 1 byte
-        public bool isSleeping = false;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CheckSleep()
-        {
-            if (isSleeping) return; // Already sleeping, no need to proceed
-
-            if (this.velocity.sqrMagnitude < sleepThreshold)
-            {
-                sleepFrames++;
-                if (sleepFrames >= SLEEP_TRESHOLD)
-                {
-                    isSleeping = true; // Put the object to sleep
-                }
-            }
-            else
-            {
-                if (sleepFrames > 0)
-                {
-                    // Reset the counter if object starts moving again
-                    sleepFrames--;
-                }
-
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WakeUp()
-        {
-            if (!isDynamic) return;
-
-            if (isSleeping)
-            {
-                sleepFrames = 0;
-                isSleeping = false;
-            }
-        }
+        public readonly bool isDynamic;                 // 1 byte (group booleans and smaller types)
+        public readonly bool useGravity = true;         // 1 byte
+        public readonly bool isKinematic = false;       // 1 byte
 
         public void Register(int index) => this.index = index;
 
@@ -87,6 +43,7 @@ namespace stupid
             Vector3S velocity = default,
             Vector3S angularVelocity = default,
             f32 mass = default,
+            f32 angularDrag = default,
             bool useGravity = true,
             bool isKinematic = false)
         {
@@ -95,18 +52,14 @@ namespace stupid
             this.transform = transform;
             this.isDynamic = isDynamic;
 
-            if (!isDynamic)
-            {
-                isSleeping = true;
-                sleepFrames = SLEEP_TRESHOLD;
-            }
-
             collider?.Attach(this);
             material = PhysicsMaterialS.DEFAULT_MATERIAL;
 
             this.mass = mass;
             if (this.mass <= f32.zero) this.mass = f32.one;
-            inverseMass = f32.one / this.mass;
+            this.inverseMass = f32.one / this.mass;
+
+            this.angularDrag = angularDrag;
 
             //HUge statics like 256x3 can easily get an problematic tensor that cant be inverted
             if (collider != null && isDynamic)
@@ -117,6 +70,7 @@ namespace stupid
 
             this.velocity = velocity;
             this.angularVelocity = angularVelocity;
+
 
             this.useGravity = useGravity;
             this.isKinematic = isKinematic;
@@ -134,7 +88,7 @@ namespace stupid
         public void IntegrateForces(in f32 dt, in WorldSettings settings)
         {
             // Exit early if the object is kinematic, as no integration is needed.
-            if (isKinematic || !isDynamic || isSleeping) return;
+            if (isKinematic || !isDynamic) return;
 
             // Apply gravity to the velocity if gravity is enabled.
             if (useGravity) velocity += settings.Gravity * dt;
@@ -143,7 +97,7 @@ namespace stupid
             if (forceBucket != Vector3S.zero) velocity += forceBucket / mass * dt;
 
             // Apply linear drag, ensuring it doesn't invert the velocity direction.
-            if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - drag * dt, f32.zero, f32.one);
+            // if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - drag * dt, f32.zero, f32.one);
 
             // Apply accumulated torques to the angular velocity.
             if (torqueBucket != Vector3S.zero) angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * dt;
@@ -158,7 +112,7 @@ namespace stupid
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void IntegrateVelocity(in f32 dt, in WorldSettings settings)
         {
-            if (isKinematic || !isDynamic || isSleeping) return;
+            if (isKinematic || !isDynamic) return;
 
             var delta = velocity * dt;
             transform.position += delta;
@@ -180,8 +134,6 @@ namespace stupid
         public void AddForce(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {
             if (!isDynamic) return;
-
-            WakeUp();
 
             switch (mode)
             {
@@ -211,8 +163,6 @@ namespace stupid
         public void AddTorque(Vector3S force, ForceModeS mode = ForceModeS.Force)
         {
             if (!isDynamic) return;
-
-            WakeUp();
 
             switch (mode)
             {

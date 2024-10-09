@@ -136,7 +136,6 @@ namespace stupid.Colliders
             var pA = ProjectBox(axis, a);
             var pB = ProjectBox(axis, b);
             var distance = Vector3S.AbsDot(relativePosition, axis);
-
             var penetration = (pA + pB) - distance;
 
             if (penetration < f32.zero) return false;

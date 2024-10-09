@@ -22,9 +22,7 @@ namespace stupid.Constraints
             tangent = Vector3S.zero;
             accumulatedFriction = f32.zero;
             ra = data.point - a.transform.position;
-            //rb = data.point - b.transform.position;
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3S CalculateContactVelocity(in RigidbodyData a, in RigidbodyData b, in Vector3S ra, in Vector3S rb)
@@ -46,7 +44,6 @@ namespace stupid.Constraints
                 b.angularVelocity += b.inertiaWorld * Vector3S.Cross(rb, impulse);
             }
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(in RigidbodyData a, in RigidbodyData b, in ContactManifoldSlim manifold)
@@ -97,7 +94,6 @@ namespace stupid.Constraints
         public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal)
         {
             var rb = (a.position + this.ra) - b.position;
-
             Vector3S warmImpulse = normal * accumulatedImpulse + tangent * accumulatedFriction;
             ApplyImpulse(ref a, ref b, warmImpulse, ra, rb);
         }
@@ -122,8 +118,6 @@ namespace stupid.Constraints
 
             // -------------------- Friction ---------------------
             // Compute the frictional impulse and clamp it with the accumulated friction
-            // var relativeTangentVelocity = Vector3S.Dot(contactVelocity, this.tangent);
-            //var fric = this.tangentMass * relativeTangentVelocity;
             var fric = this.tangentMass * Vector3S.Dot(contactVelocity, this.tangent);
             var maxFric = this.accumulatedImpulse * friction;
             var oldAccumulatedFriction = this.accumulatedFriction;
