@@ -9,7 +9,7 @@ namespace stupid.Constraints
     {
         public readonly Vector3S normal; // 24 
         public readonly f32 penetrationDepth, friction, bias; // 24
-        public readonly int aIndex, bIndex, startIndex, contactCount; // 16
+        public readonly int aIndex, bIndex, startIndex, contactCount; // 4*4
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactManifoldSlim(Collidable a, Collidable b, in Vector3S normal, in f32 penetrationDepth, in WorldSettings settings, in f32 inverseDt, int startIndex = -1, int contactCount = -1)
@@ -25,7 +25,7 @@ namespace stupid.Constraints
             this.friction = MathS.Sqrt(a.material.staticFriction * b.material.staticFriction);
 
             var separation = MathS.Min(f32.zero, this.penetrationDepth + settings.DefaultContactOffset);
-            this.bias = MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity);
+            this.bias = settings.Baumgartner > f32.zero ? MathS.Max(settings.Baumgartner * separation * inverseDt, -settings.DefaultMaxDepenetrationVelocity) : f32.zero;
         }
 
         // Retain impulse data from the old manifold
@@ -34,19 +34,21 @@ namespace stupid.Constraints
         {
             for (int i = this.startIndex; i < this.startIndex + this.contactCount; i++)
             {
-                ref var c = ref contacts[i];
+                ref var newContact = ref contacts[i];
 
                 // Reduce loop nesting and optimize featureID checks
                 for (int j = old.startIndex; j < old.startIndex + old.contactCount; j++)
                 {
-                    ref var o = ref oldContacts[j];
+                    ref var oldContact = ref oldContacts[j];
 
-                    if (c.featureId == o.featureId)
+                    if (newContact.featureId == oldContact.featureId)
                     {
-                        c.accumulatedImpulse = o.accumulatedImpulse;
-                        c.accumulatedFriction = o.accumulatedFriction;
-                        c.tangent = o.tangent;
-                        break; // Once the match is found, stop iterating.
+                        newContact.accumulatedImpulse = oldContact.accumulatedImpulse;
+                        newContact.accumulatedFriction = oldContact.accumulatedFriction;
+                        newContact.tangent = oldContact.tangent;
+                        
+                        //Break the outer loop when we find
+                        break;
                     }
                 }
             }
@@ -75,15 +77,20 @@ namespace stupid.Constraints
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Resolve(ref RigidbodyData a, ref RigidbodyData b, ref Span<ContactSlim> contacts, in bool useBias)
+        public void Resolve(ref RigidbodyData a, ref RigidbodyData b, ref Span<ContactSlim> contacts, in bool useBias = true)
         {
             var biassi = useBias ? this.bias : f32.zero;
 
-            // Fallback for unexpected contact counts
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
                 ref var c = ref contacts[i];
-                c.SolveAll(ref a, ref b, normal, biassi, friction);
+                c.SolveImpulse(ref a, ref b, normal, biassi, friction);
+            }
+
+            for (int i = startIndex; i < startIndex + contactCount; i++)
+            {
+                ref var c = ref contacts[i];
+                c.SolveFriction(ref a, ref b, normal, biassi, friction);
             }
         }
     }

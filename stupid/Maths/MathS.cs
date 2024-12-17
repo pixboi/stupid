@@ -45,8 +45,6 @@ namespace stupid.Maths
             return result;
         }
 
-
-
         // Fixed-point sine approximation using Taylor series expansion
         public static f32 Sin(in f32 value)
         {

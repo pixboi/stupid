@@ -93,48 +93,38 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal)
         {
-            Vector3S warmImpulse = normal * accumulatedImpulse + tangent * accumulatedFriction;
+            Vector3S warmImpulse = (normal * accumulatedImpulse) + (tangent * accumulatedFriction);
             ApplyImpulse(ref a, ref b, warmImpulse, ra, rb);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SolveAll(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, in f32 bias, in f32 friction)
+        public void SolveImpulse(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, in f32 bias, in f32 friction)
         {
             // Precompute velocities
-            Vector3S av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
-            Vector3S bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;
-            Vector3S contactVelocity = bv - av;
-
-            // -------------------- Impulse ---------------------
+            var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             var relativeNormalVelocity = Vector3S.Dot(contactVelocity, normal);
 
-            var imp = this.normalMass * (relativeNormalVelocity + bias);
+            var normalImpulse = this.normalMass * (relativeNormalVelocity + bias);
             var oldAccumulatedImpulse = this.accumulatedImpulse;
-            this.accumulatedImpulse = MathS.Max(oldAccumulatedImpulse + imp, f32.zero);
-            imp = this.accumulatedImpulse - oldAccumulatedImpulse;
+            this.accumulatedImpulse = MathS.Max(oldAccumulatedImpulse + normalImpulse, f32.zero);
+            normalImpulse = this.accumulatedImpulse - oldAccumulatedImpulse;
 
-            // -------------------- Friction ---------------------
-            // Compute the frictional impulse and clamp it with the accumulated friction
+            var totalImpulse = (normal * normalImpulse);
+            ApplyImpulse(ref a, ref b, totalImpulse, ra, rb);
+        }
+
+        public void SolveFriction(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, in f32 bias, in f32 friction)
+        {
+            var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
+
             var fric = this.tangentMass * Vector3S.Dot(contactVelocity, this.tangent);
             var maxFric = this.accumulatedImpulse * friction;
             var oldAccumulatedFriction = this.accumulatedFriction;
             this.accumulatedFriction = MathS.Clamp(oldAccumulatedFriction + fric, -maxFric, maxFric);
             fric = this.accumulatedFriction - oldAccumulatedFriction;
 
-            // ------------------- Apply Impulses ------------------
-            // Total impulse
-            var totalImpulse = Vector3S.MultiplyAndAddBatch(normal, imp, this.tangent, fric);
-
-            // Apply impulses to object A
-            a.velocity -= (totalImpulse * a.inverseMass);
-            a.angularVelocity -= (a.inertiaWorld * Vector3S.Cross(ra, totalImpulse));
-
-            // Apply impulses to object B if dynamic
-            if (b.isDynamic)
-            {
-                b.velocity += (totalImpulse * b.inverseMass);
-                b.angularVelocity += (b.inertiaWorld * Vector3S.Cross(rb, totalImpulse));
-            }
+            var totalImpulse = (this.tangent * fric);
+            ApplyImpulse(ref a, ref b, totalImpulse, ra, rb);
         }
     }
 }

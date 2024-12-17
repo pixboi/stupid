@@ -8,7 +8,6 @@ namespace stupid.Maths
         // Only the inverse of the local inertia tensor is stored
         public readonly Matrix3S inertiaLocal;
         public Matrix3S inertiaWorld;
-
         public Tensor(in Matrix3S inertia, in TransformS t)
         {
             // Precompute the inverse of the local inertia tensor

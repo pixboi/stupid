@@ -61,6 +61,7 @@ namespace stupid
             this.angularDrag = angularDrag;
 
             //HUge statics like 256x3 can easily get an problematic tensor that cant be inverted
+            //HUOM HUOM
             if (collider != null && isDynamic)
             {
                 var inertia = collider.CalculateInertiaTensor(this.mass);
@@ -94,7 +95,7 @@ namespace stupid
             if (forceBucket != Vector3S.zero) velocity += forceBucket / mass * dt;
 
             // Apply linear drag, ensuring it doesn't invert the velocity direction.
-            // if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - drag * dt, f32.zero, f32.one);
+            //if (drag > f32.zero) velocity *= MathS.Clamp(f32.one - drag * dt, f32.zero, f32.one);
 
             // Apply accumulated torques to the angular velocity.
             if (torqueBucket != Vector3S.zero) angularVelocity += tensor.inertiaWorld * (torqueBucket / mass) * dt;
@@ -111,8 +112,7 @@ namespace stupid
         {
             if (isKinematic || !isDynamic) return;
 
-            var delta = velocity * dt;
-            transform.position += delta;
+            transform.AddDelta(velocity * dt);
 
             // Clamp the angular velocity to avoid excessive rotational speeds.
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
@@ -120,11 +120,23 @@ namespace stupid
 
             //This seems to work pretty well, even without the > f32.zero 
             //In fact, it increased stack stability, wonder why...
-            var halfAngle = angularVelocity * dt * f32.half;
-            var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
-            transform.rotation = (dq * transform.rotation).Normalize();
-            transform.UpdateRotationMatrix();
-            tensor.UpdateInertiaTensor(transform);
+
+            if (angularVelocity.Magnitude() > f32.zero)
+            {
+                var halfAngle = angularVelocity * dt * f32.half;
+                var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
+                transform.rotation = (dq * transform.rotation).Normalize();
+                transform.UpdateRotationMatrix();
+                tensor.UpdateInertiaTensor(transform);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void FinalizePosition()
+        {
+            if (isKinematic || !isDynamic) return;
+
+            transform.FinalizePosition();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

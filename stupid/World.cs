@@ -32,7 +32,6 @@ namespace stupid
 
         int _manifoldCount;
         ContactManifoldSlim[] _manifolds;
-
         RigidbodyData[] _data;
 
         public event Action<ContactManifoldSlim> OnContact;
@@ -68,7 +67,6 @@ namespace stupid
             _data = new RigidbodyData[startSize];
             SimulationFrame = 0;
 
-
             _indexCounter = 0;
             _contactCount = 0;
             _manifoldCount = 0;
@@ -82,22 +80,6 @@ namespace stupid
             return c;
         }
 
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UpdateData()
-        {
-            if (Collidables.Length > _data.Length)
-            {
-                _data = new RigidbodyData[Collidables.Length];
-            }
-
-            foreach (var collidable in Collidables)
-            {
-                if (collidable.isDynamic)
-                    _data[collidable.index] = new RigidbodyData(collidable);
-            }
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ApplyData()
         {
@@ -108,69 +90,12 @@ namespace stupid
             }
         }
 
-
-        bool hasPreSim;
-        //Basically, anything that doesnt modify the world, can be simulated in front of the actual fixed thing
-        public void PreSimulate(in f32 deltaTime)
-        {
-            if (hasPreSim) return;
-
-            //Update delta time
-            if (deltaTime != DeltaTime)
-            {
-                DeltaTime = deltaTime;
-                InverseDeltaTime = f32.one / deltaTime;
-            }
-
-            //Broadphase
-            foreach (var c in Collidables)
-            {
-                if (c.collider.NeedsRotationUpdate)
-                {
-                    c.transform.UpdateRotationMatrix();
-                    c.collider.OnRotationUpdate();
-                }
-
-                c.CalculateBounds();
-
-                if (c.isDynamic) c.tensor.UpdateInertiaTensor(c.transform);
-            }
-
-            Array.Clear(_boundsIndices, 0, _boundsIndices.Length);
-            int boundsLength = 0;
-            foreach (Collidable c in Collidables) _boundsIndices[boundsLength++] = new BoundsIndex(c.bounds, c.index);
-
-            //The pairs, the hash set, determinism?
-            var pairs = Broadphase.ComputePairs(_boundsIndices, boundsLength);
-
-            //Prepare contacts
-            PrepareContacts(pairs);
-
-            hasPreSim = true;
-        }
-
-        public void Simulate(in f32 deltaTime)
-        {
-            if (!hasPreSim)
-            {
-                PreSimulate(deltaTime);
-            }
-
-            //Solve contacts + iterate?
-            NarrowPhase();
-
-            SimulationFrame++;
-            hasPreSim = false;
-        }
-
         //hash set determinism?
         void PrepareContacts(HashSet<IntPair> pairs)
         {
             _removeCache.Clear();
             _contactCount = 0;
             _manifoldCount = 0;
-
-            UpdateData();
 
             //Go through pairs and test collisions, share data, etc.
             foreach (var pair in pairs)
@@ -238,85 +163,99 @@ namespace stupid
             }
         }
 
-        private void NarrowPhase()
-        {
-            var dt = DeltaTime;
 
+        public void Simulate(in f32 dt)
+        {
+            #region broadphase
+            if (dt != DeltaTime)
+            {
+                DeltaTime = dt;
+                InverseDeltaTime = f32.one / dt;
+            }
+
+            //Broadphase
+            foreach (var c in Collidables)
+            {
+                if (c.collider.NeedsRotationUpdate)
+                {
+                    c.transform.UpdateRotationMatrix();
+                    c.collider.OnRotationUpdate();
+                }
+
+                c.CalculateBounds();
+
+                if (c.isDynamic)
+                    c.tensor.UpdateInertiaTensor(c.transform);
+            }
+
+            Array.Clear(_boundsIndices, 0, _boundsIndices.Length);
+            int boundsLength = 0;
+            foreach (Collidable c in Collidables) _boundsIndices[boundsLength++] = new BoundsIndex(c.bounds, c.index);
+            //The pairs, the hash set, determinism?
+            var broadPhasePairs = Broadphase.ComputePairs(_boundsIndices, boundsLength);
+            #endregion
+
+            #region narrowphase
+            //Integrate Forces
+            foreach (var c in Collidables)
+            {
+                if (c.isDynamic)
+                {
+                    c.IntegrateForces(dt, WorldSettings);
+                    _data[c.index] = new RigidbodyData(c);
+                }
+            }
+
+            //Preare contacts
+            PrepareContacts(broadPhasePairs);
             var manifoldSpan = new ReadOnlySpan<ContactManifoldSlim>(_manifolds, 0, _manifoldCount);
             var contactSpan = new Span<ContactSlim>(allContacts, 0, _contactCount);
 
-            UpdateData();
-
-            //Have some kind of centralized rigidbody data array here
+            //Warmstart
             if (WorldSettings.Warmup)
             {
                 foreach (var m in manifoldSpan)
-                {
                     m.Warmup(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan);
-                }
             }
 
-            ApplyData();
-
-            //Basically, this is the only thing that players manipulate with input packets
-            //Here is also where we could jump (provided we saved like many frames of collision impulses whatever), for rollback + play
-            foreach (var c in Collidables)
-            {
-                c.IntegrateForces(dt, WorldSettings);
-            }
-
-            UpdateData();
-
-            // Now we're operating on pure data
+            //Solve
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)
             {
-                for (int i = 0; i < _manifoldCount; i++)
-                {
-                    ref var m1 = ref _manifolds[i];
-
-                    // Cache the relevant RigidbodyData references for the current manifold
-                    ref var aData = ref _data[m1.aIndex];
-                    ref var bData = ref _data[m1.bIndex];
-
-                    // Use the cached references in the resolve function
-                    m1.Resolve(ref aData, ref bData, ref contactSpan, true);
-                }
+                foreach (var m in manifoldSpan) m.Resolve(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan);
             }
 
-            //Apply the calcs from data
             ApplyData();
 
+            //Apply the changes and integrate
             foreach (var c in Collidables)
             {
-                c.IntegrateVelocity(dt, WorldSettings);
+                if (c.isDynamic)
+                {
+                    c.IntegrateVelocity(dt, WorldSettings);
+                    _data[c.index] = new RigidbodyData(c);
+                }
             }
 
             if (WorldSettings.Relaxation)
             {
-                UpdateData();
-
                 for (int relax = 0; relax < WorldSettings.DefaultSolverVelocityIterations; relax++)
                 {
-                    for (int i = 0; i < _manifoldCount; i++)
-                    {
-                        ref var m1 = ref _manifolds[i];
-
-                        // Cache the relevant RigidbodyData references for the current manifold
-                        ref var aData = ref _data[m1.aIndex];
-                        ref var bData = ref _data[m1.bIndex];
-
-                        // Use the cached references in the resolve function
-                        m1.Resolve(ref aData, ref bData, ref contactSpan, true);
-                    }
+                    foreach (var m in manifoldSpan) m.Resolve(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan, false);
                 }
 
                 ApplyData();
             }
 
+            //Finalize
+            foreach (var c in Collidables)
+                c.FinalizePosition();
 
             Array.Copy(allContacts, oldContacts, allContacts.Length);
             Array.Clear(allContacts, 0, allContacts.Length);
-        }
-    }
+            SimulationFrame++;
 
+            #endregion
+        }
+
+    }
 }

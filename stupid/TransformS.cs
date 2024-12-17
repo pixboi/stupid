@@ -7,14 +7,15 @@ namespace stupid
     {
         // Transform properties
         public Vector3S position;
+        public Vector3S delta;
         public QuaternionS rotation;
         public Matrix3S rotationMatrix;
-
         public TransformS(in Vector3S position, in QuaternionS rotation, in Vector3S localScale)
         {
             this.position = position;
             this.rotation = rotation;
             this.rotationMatrix = Matrix3S.Rotate(rotation);
+            this.delta = Vector3S.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -28,6 +29,18 @@ namespace stupid
         {
             rotation = (delta * rotation).Normalize();
             UpdateRotationMatrix();
+        }
+
+        public void AddDelta(Vector3S amount)
+        {
+            this.delta += amount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void FinalizePosition()
+        {
+            position += delta;
+            delta = Vector3S.zero;
         }
 
         // Converts world point to local point
@@ -98,12 +111,11 @@ namespace stupid
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3S TransformDirection(in Vector3S localDirection)
         {
-
             Vector3S result;
+
             var xRaw = rotationMatrix.m00.rawValue * localDirection.x.rawValue + rotationMatrix.m01.rawValue * localDirection.y.rawValue + rotationMatrix.m02.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
             var yRaw = rotationMatrix.m10.rawValue * localDirection.x.rawValue + rotationMatrix.m11.rawValue * localDirection.y.rawValue + rotationMatrix.m12.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
             var zRaw = rotationMatrix.m20.rawValue * localDirection.x.rawValue + rotationMatrix.m21.rawValue * localDirection.y.rawValue + rotationMatrix.m22.rawValue * localDirection.z.rawValue >> f32.FractionalBits;
-
 
             result.x.rawValue = xRaw;
             result.y.rawValue = yRaw;
