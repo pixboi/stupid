@@ -4,7 +4,6 @@
     {
         public readonly int a;
         public readonly int b;
-
         public EdgeS(int a, int b)
         {
             this.a = a;

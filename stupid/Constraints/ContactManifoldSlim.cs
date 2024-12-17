@@ -79,46 +79,12 @@ namespace stupid.Constraints
         {
             var biassi = useBias ? this.bias : f32.zero;
 
-            switch (contactCount)
+            // Fallback for unexpected contact counts
+            for (int i = startIndex; i < startIndex + contactCount; i++)
             {
-                case 1:
-                    ref var c1 = ref contacts[startIndex];
-                    c1.SolveAll(ref a, ref b, normal, biassi, friction);
-                    break;
-                case 2:
-                    ref var c2a = ref contacts[startIndex];
-                    ref var c2b = ref contacts[startIndex + 1];
-                    c2a.SolveAll(ref a, ref b, normal, biassi, friction);
-                    c2b.SolveAll(ref a, ref b, normal, biassi, friction);
-                    break;
-                case 3:
-                    ref var c3a = ref contacts[startIndex];
-                    ref var c3b = ref contacts[startIndex + 1];
-                    ref var c3c = ref contacts[startIndex + 2];
-                    c3a.SolveAll(ref a, ref b, normal, biassi, friction);
-                    c3b.SolveAll(ref a, ref b, normal, biassi, friction);
-                    c3c.SolveAll(ref a, ref b, normal, biassi, friction);
-                    break;
-                case 4:
-                    ref var c4a = ref contacts[startIndex];
-                    ref var c4b = ref contacts[startIndex + 1];
-                    ref var c4c = ref contacts[startIndex + 2];
-                    ref var c4d = ref contacts[startIndex + 3];
-                    c4a.SolveAll(ref a, ref b, normal, biassi, friction);
-                    c4b.SolveAll(ref a, ref b, normal, biassi, friction);
-                    c4c.SolveAll(ref a, ref b, normal, biassi, friction);
-                    c4d.SolveAll(ref a, ref b, normal, biassi, friction);
-                    break;
-                default:
-                    // Fallback for unexpected contact counts
-                    for (int i = startIndex; i < startIndex + contactCount; i++)
-                    {
-                        ref var c = ref contacts[i];
-                        c.SolveAll(ref a, ref b, normal, biassi, friction);
-                    }
-                    break;
+                ref var c = ref contacts[i];
+                c.SolveAll(ref a, ref b, normal, biassi, friction);
             }
         }
-
     }
 }

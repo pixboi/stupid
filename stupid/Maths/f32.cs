@@ -9,7 +9,6 @@ namespace stupid.Maths
         public long rawValue;
         public const int FractionalBits = 16;
         public const int TotalBitsMinusOne = 63;
-
         public const long One = 1L << FractionalBits;
         public const long Two = 2L << FractionalBits;
 

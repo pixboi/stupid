@@ -7,7 +7,8 @@ namespace stupid.Constraints
 {
     public struct ContactSlim
     {
-        public readonly Vector3S ra; // 2 * 24 = 24
+        public readonly Vector3S ra;
+        public readonly Vector3S rb;
         public Vector3S tangent; // 24
         public f32 tangentMass, accumulatedFriction, normalMass, accumulatedImpulse; // 4 * 8 = 32
         public readonly int featureId; //4
@@ -22,6 +23,7 @@ namespace stupid.Constraints
             tangent = Vector3S.zero;
             accumulatedFriction = f32.zero;
             ra = data.point - a.transform.position;
+            rb = data.point - b.transform.position;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -48,8 +50,6 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(in RigidbodyData a, in RigidbodyData b, in ContactManifoldSlim manifold)
         {
-            var rb = (a.position + this.ra) - b.position;
-
             Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, a.inertiaWorld * raCrossNormal);
             f32 effectiveMass = a.inverseMass + angularMassA;
@@ -93,7 +93,6 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal)
         {
-            var rb = (a.position + this.ra) - b.position;
             Vector3S warmImpulse = normal * accumulatedImpulse + tangent * accumulatedFriction;
             ApplyImpulse(ref a, ref b, warmImpulse, ra, rb);
         }
@@ -101,8 +100,6 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SolveAll(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, in f32 bias, in f32 friction)
         {
-            var rb = (a.position + this.ra) - b.position;
-
             // Precompute velocities
             Vector3S av = a.velocity + Vector3S.Cross(a.angularVelocity, ra);
             Vector3S bv = b.isDynamic ? b.velocity + Vector3S.Cross(b.angularVelocity, rb) : Vector3S.zero;

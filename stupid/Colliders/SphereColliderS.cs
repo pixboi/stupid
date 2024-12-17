@@ -6,7 +6,7 @@ namespace stupid.Colliders
 {
     public struct SphereColliderS : IShape
     {
-        public readonly f32 radius;
+        public f32 radius;
         public bool NeedsRotationUpdate => false;
         public void OnRotationUpdate()
         {
@@ -50,6 +50,7 @@ namespace stupid.Colliders
         }
 
         static readonly f32 sphereInertia = (f32)(2f / 5f);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S CalculateInertiaTensor(in f32 mass)
         {

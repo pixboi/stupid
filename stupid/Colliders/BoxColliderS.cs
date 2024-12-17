@@ -40,6 +40,19 @@ namespace stupid.Colliders
             //Aligned on Z
             new Vector3S(-1,-1,0).Normalize(), new Vector3S(-1,1,0).Normalize(),new Vector3S(1,1,0).Normalize(), new Vector3S(1,-1,0).Normalize(),
 };
+        public static readonly Vector3S[] UNIT_VERTICES = new Vector3S[]
+{
+            new Vector3S(1,1,1),
+            new Vector3S(1,1,-1),
+            new Vector3S(1,-1,1),
+            new Vector3S(1,-1,-1),
+            new Vector3S(-1,1,1),
+            new Vector3S(-1,1,-1),
+            new Vector3S(-1,-1,1),
+            new Vector3S(-1,-1,-1),
+};
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static EdgeS[] GetEdges(int axis)
         {
             if (axis == 0)
@@ -56,17 +69,6 @@ namespace stupid.Colliders
             }
         }
 
-        public static readonly Vector3S[] UNIT_VERTICES = new Vector3S[]
-        {
-            new Vector3S(1,1,1),
-            new Vector3S(1,1,-1),
-            new Vector3S(1,-1,1),
-            new Vector3S(1,-1,-1),
-            new Vector3S(-1,1,1),
-            new Vector3S(-1,1,-1),
-            new Vector3S(-1,-1,1),
-            new Vector3S(-1,-1,-1),
-        };
 
         public BoxColliderS(Vector3S size)
         {
