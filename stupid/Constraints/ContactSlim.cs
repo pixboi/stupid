@@ -70,11 +70,16 @@ namespace stupid.Constraints
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
             f32 tangentMag = tangentialVelocity.sqrMagnitude;
 
+            //However, now that we apply a gravity each time in the correct order (first), previuosly after contacst, we shoudl always have a proper tangent
             //In retain, the previous tangent is stored IN THIS.TANGENT!
+            /*
             var oldTangent = this.tangent;
             var newTangent = tangentialVelocity.Normalize();
             var blend = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;
             this.tangent = Vector3S.Lerp(oldTangent, newTangent, blend).Normalize();
+            */
+
+            this.tangent = tangentialVelocity.Normalize();
 
             // Precompute cross products for mass calculation
             var raCrossTangent = Vector3S.Cross(ra, tangent);
