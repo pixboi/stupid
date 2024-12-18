@@ -50,6 +50,8 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(in RigidbodyData a, in RigidbodyData b, in ContactManifoldSlim manifold)
         {
+
+            //I think this is fine, since normal or inertia doesnt change between frames
             Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
             f32 angularMassA = Vector3S.Dot(raCrossNormal, a.inertiaWorld * raCrossNormal);
             f32 effectiveMass = a.inverseMass + angularMassA;
@@ -61,8 +63,7 @@ namespace stupid.Constraints
                 effectiveMass += b.inverseMass + angularMassB;
             }
 
-            this.normalMass = effectiveMass > f32.zero ? f32.one / effectiveMass : f32.zero;
-            this.normalMass = -this.normalMass;
+            this.normalMass = effectiveMass > f32.zero ? -(f32.one / effectiveMass) : f32.zero;
 
             // Calculate relative velocity at the contact point
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
