@@ -68,11 +68,11 @@ namespace stupid.Constraints
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             Vector3S normalVelocity = manifold.normal * Vector3S.Dot(contactVelocity, manifold.normal);
             Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-            f32 tangentMag = tangentialVelocity.sqrMagnitude;
 
             //However, now that we apply a gravity each time in the correct order (first), previuosly after contacst, we shoudl always have a proper tangent
             //In retain, the previous tangent is stored IN THIS.TANGENT!
             /*
+             *           f32 tangentMag = tangentialVelocity.sqrMagnitude;
             var oldTangent = this.tangent;
             var newTangent = tangentialVelocity.Normalize();
             var blend = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;

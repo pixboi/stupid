@@ -7,8 +7,8 @@ namespace stupid
     {
         public readonly Matrix3S inertiaWorld;
         public readonly Vector3S position;
-        public Vector3S velocity, angularVelocity;
-        public readonly f32 inverseMass;
+        public Vector3S velocity, angularVelocity; //8*3*2
+        public readonly f32 inverseMass; // 8
         public readonly int index;
         public readonly bool isDynamic;
 
