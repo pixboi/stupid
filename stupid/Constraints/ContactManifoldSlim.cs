@@ -8,20 +8,20 @@ namespace stupid.Constraints
     public readonly struct ContactManifoldSlim
     {
         public readonly Vector3S normal; // 24 
-        public readonly f32 penetrationDepth, friction, bias; // 24
-        public readonly int aIndex, bIndex, startIndex, contactCount; // 4*4
+        public readonly f32 penetrationDepth, friction, bias; // 8 * 3 = 24
+        public readonly ushort aIndex, bIndex, startIndex, contactCount; // 4*2 = 8
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactManifoldSlim(Collidable a, Collidable b, in Vector3S normal, in f32 penetrationDepth, in WorldSettings settings, in f32 inverseDt, int startIndex = -1, int contactCount = -1)
         {
             if (contactCount < 1) throw new ArgumentException("ZERO CONTACTS?");
 
-            this.aIndex = a.index;
-            this.bIndex = b.index;
+            this.aIndex = (ushort)a.index;
+            this.bIndex = (ushort)b.index;
             this.normal = normal;
             this.penetrationDepth = penetrationDepth;
-            this.startIndex = startIndex;
-            this.contactCount = contactCount;
+            this.startIndex = (ushort)startIndex;
+            this.contactCount = (ushort)contactCount;
             this.friction = MathS.Sqrt(a.material.staticFriction * b.material.staticFriction);
 
             var separation = MathS.Min(f32.zero, this.penetrationDepth + settings.DefaultContactOffset);
@@ -46,7 +46,7 @@ namespace stupid.Constraints
                         newContact.accumulatedImpulse = oldContact.accumulatedImpulse;
                         newContact.accumulatedFriction = oldContact.accumulatedFriction;
                         newContact.tangent = oldContact.tangent;
-                        
+
                         //Break the outer loop when we find
                         break;
                     }

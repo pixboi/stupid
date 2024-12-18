@@ -126,8 +126,10 @@ namespace stupid
                 var halfAngle = angularVelocity * dt * f32.half;
                 var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
                 transform.rotation = (dq * transform.rotation).Normalize();
+                /*
                 transform.UpdateRotationMatrix();
                 tensor.UpdateInertiaTensor(transform);
+                */
             }
         }
 

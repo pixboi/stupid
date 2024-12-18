@@ -5,12 +5,13 @@ namespace stupid
 {
     public struct RigidbodyData
     {
-        public readonly Matrix3S inertiaWorld;
-        public readonly Vector3S position;
-        public Vector3S velocity, angularVelocity; //8*3*2
+        //Quat = 32, vector 24 = 56
+        public readonly Matrix3S inertiaWorld; // 8*9
+        public readonly Vector3S position; // 24
+        public Vector3S velocity, angularVelocity; //48
         public readonly f32 inverseMass; // 8
-        public readonly int index;
-        public readonly bool isDynamic;
+        public readonly int index; //4
+        public readonly bool isDynamic; //1
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RigidbodyData(Collidable c)

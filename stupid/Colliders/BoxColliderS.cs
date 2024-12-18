@@ -170,7 +170,7 @@ namespace stupid.Colliders
             return 0;
         }
 
-        static f32 boxConst = (f32)(1f / 12f);
+        public static readonly f32 boxConst = (f32)(1f / 12f);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3S CalculateInertiaTensor(in f32 mass)
         {
@@ -186,11 +186,8 @@ namespace stupid.Colliders
             var inertiaY = massConst * (h2 + w2);
             var inertiaZ = massConst * (h2 + d2);
 
-            return new Matrix3S(
-                new Vector3S(inertiaX, f32.zero, f32.zero),
-                new Vector3S(f32.zero, inertiaY, f32.zero),
-                new Vector3S(f32.zero, f32.zero, inertiaZ)
-            );
+            Vector3S inertiaVector = new Vector3S(inertiaX, inertiaY, inertiaZ);
+            return Matrix3S.CreateInertiaMatrix(inertiaVector);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

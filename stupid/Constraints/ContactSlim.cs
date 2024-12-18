@@ -7,23 +7,22 @@ namespace stupid.Constraints
 {
     public struct ContactSlim
     {
-        public readonly Vector3S ra;
-        public readonly Vector3S rb;
+        public readonly Vector3S point; //24
         public Vector3S tangent; // 24
-        public f32 tangentMass, accumulatedFriction, normalMass, accumulatedImpulse; // 4 * 8 = 32
-        public readonly int featureId; //4
+        public f32 normalMass, accumulatedImpulse; // 16
+        public f32 tangentMass, accumulatedFriction;// 16
+        public readonly sbyte featureId; //1
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContactSlim(Collidable a, Collidable b, in ContactData data)
         {
-            featureId = data.featureId;
+            featureId = (sbyte)data.featureId;
             accumulatedImpulse = f32.zero;
             normalMass = f32.zero;
             tangentMass = f32.zero;
             tangent = Vector3S.zero;
             accumulatedFriction = f32.zero;
-            ra = data.point - a.transform.position;
-            rb = data.point - b.transform.position;
+            point = data.point;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -50,6 +49,8 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CalculatePrestep(in RigidbodyData a, in RigidbodyData b, in ContactManifoldSlim manifold)
         {
+            var ra = this.point - a.position;
+            var rb = this.point - b.position;
 
             //I think this is fine, since normal or inertia doesnt change between frames
             Vector3S raCrossNormal = Vector3S.Cross(ra, manifold.normal);
@@ -65,21 +66,20 @@ namespace stupid.Constraints
 
             this.normalMass = effectiveMass > f32.zero ? -(f32.one / effectiveMass) : f32.zero;
 
-            // Calculate relative velocity at the contact point
-            var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
-            Vector3S normalVelocity = manifold.normal * Vector3S.Dot(contactVelocity, manifold.normal);
-            Vector3S tangentialVelocity = contactVelocity - normalVelocity;
-
-            //However, now that we apply a gravity each time in the correct order (first), previuosly after contacst, we shoudl always have a proper tangent
-            //In retain, the previous tangent is stored IN THIS.TANGENT!
             /*
-             *           f32 tangentMag = tangentialVelocity.sqrMagnitude;
+             *             //However, now that we apply a gravity each time in the correct order (first), previuosly after contacst, we shoudl always have a proper tangent
+            //In retain, the previous tangent is stored IN THIS.TANGENT!
+            f32 tangentMag = tangentialVelocity.sqrMagnitude;
             var oldTangent = this.tangent;
             var newTangent = tangentialVelocity.Normalize();
             var blend = MathS.Clamp(tangentMag, f32.zero, f32.small) / f32.small;
             this.tangent = Vector3S.Lerp(oldTangent, newTangent, blend).Normalize();
             */
 
+            // Calculate relative velocity at the contact point
+            var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
+            Vector3S normalVelocity = manifold.normal * Vector3S.Dot(contactVelocity, manifold.normal);
+            Vector3S tangentialVelocity = contactVelocity - normalVelocity;
             this.tangent = tangentialVelocity.Normalize();
 
             // Precompute cross products for mass calculation
@@ -99,6 +99,8 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal)
         {
+            var ra = this.point - a.position;
+            var rb = this.point - b.position;
             Vector3S warmImpulse = (normal * accumulatedImpulse) + (tangent * accumulatedFriction);
             ApplyImpulse(ref a, ref b, warmImpulse, ra, rb);
         }
@@ -106,6 +108,9 @@ namespace stupid.Constraints
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SolveImpulse(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, in f32 bias, in f32 friction)
         {
+            var ra = this.point - a.position;
+            var rb = this.point - b.position;
+
             // Precompute velocities
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             var relativeNormalVelocity = Vector3S.Dot(contactVelocity, normal);
@@ -121,6 +126,9 @@ namespace stupid.Constraints
 
         public void SolveFriction(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal, in f32 bias, in f32 friction)
         {
+            var ra = this.point - a.position;
+            var rb = this.point - b.position;
+
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
 
             var fric = this.tangentMass * Vector3S.Dot(contactVelocity, this.tangent);

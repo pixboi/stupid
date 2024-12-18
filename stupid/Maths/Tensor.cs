@@ -22,10 +22,18 @@ namespace stupid.Maths
             // Use the transform's rotation matrix to calculate the world space inertia tensor
             // Perform R * I (rotation matrix multiplied by local inertia tensor)
             var ri = t.rotationMatrix * inertiaLocal;
-            // Perform the final multiplication with the transpose of R
 
             //Make sure the ROTATION MATRIX IS UPDATED!!!
-            inertiaWorld = ri * t.rotationMatrix.Transpose(); //t.rotationMatrix.Transpose();
+            inertiaWorld = ri * t.rotationMatrix.Transpose();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Matrix3S CalculateWorldInertia(in QuaternionS rot, in Vector3S diagonal)
+        {
+            var rotMat = Matrix3S.Rotate(rot);
+            var local = Matrix3S.CreateInertiaMatrix(diagonal);
+            var ri = rotMat * local;
+            return ri * rotMat.Transpose();
         }
 
     }

@@ -56,12 +56,9 @@ namespace stupid.Colliders
         {
             // For a solid sphere: I = 2/5 * m * r^2
             f32 inertia = sphereInertia * mass * radius * radius;
+            Vector3S inertiaVector = new Vector3S(inertia);
 
-            return new Matrix3S(
-                new Vector3S(inertia, f32.zero, f32.zero),
-                new Vector3S(f32.zero, inertia, f32.zero),
-                new Vector3S(f32.zero, f32.zero, inertia)
-            );
+            return Matrix3S.CreateInertiaMatrix(inertiaVector);
         }
 
 

@@ -124,6 +124,8 @@ namespace stupid.Maths
 
             return result;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3S CreateInertiaMatrix(in Vector3S inertiaVector)
         {
             return Scale(inertiaVector);
