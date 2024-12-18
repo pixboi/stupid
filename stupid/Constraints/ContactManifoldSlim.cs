@@ -46,7 +46,6 @@ namespace stupid.Constraints
                         newContact.accumulatedImpulse = oldContact.accumulatedImpulse;
                         newContact.accumulatedFriction = oldContact.accumulatedFriction;
                         newContact.tangent = oldContact.tangent;
-
                         //Break the outer loop when we find
                         break;
                     }
@@ -72,7 +71,7 @@ namespace stupid.Constraints
             for (int i = startIndex; i < startIndex + contactCount; i++)
             {
                 ref var c = ref contacts[i];
-                c.WarmStart(ref a, ref b, this.normal);
+                c.WarmStart(ref a, ref b, this.normal, c.tangent);
             }
         }
 

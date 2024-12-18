@@ -102,13 +102,15 @@ namespace stupid.Constraints
         }
 
 
+        //WArm start with old data?
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal)
+        public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S oldNormal, in Vector3S oldTangent)
         {
             var ra = this.point - a.position;
             var rb = this.point - b.position;
 
-            Vector3S warmImpulse = (normal * accumulatedImpulse) + (tangent * accumulatedFriction);
+            Vector3S warmImpulse = (oldNormal * accumulatedImpulse) + (oldTangent * accumulatedFriction);
             ApplyImpulse(ref a, ref b, warmImpulse, ra, rb);
         }
 
