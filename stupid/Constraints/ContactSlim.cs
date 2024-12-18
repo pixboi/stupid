@@ -95,7 +95,6 @@ namespace stupid.Constraints
             var rb = this.point - b.position;
 
             this.normalMass = CalculateNormalMass(a, b, ra, rb, manifold.normal);
-
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             this.tangent = CalculateTangent(manifold.normal, contactVelocity);
             this.tangentMass = CalculateTangentMass(a, b, ra, rb, this.tangent);

@@ -75,9 +75,7 @@ namespace stupid.Colliders
                     contacts[count++] = new ContactData(p.point, normalV, minPen, p.featureId + 8);
                     if (count == contacts.Length) return count; // Early exit if max contacts reached
                 }
-
             }
-
 
             if (count == 0)
             {

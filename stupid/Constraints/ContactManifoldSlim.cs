@@ -45,6 +45,7 @@ namespace stupid.Constraints
                     {
                         newContact.accumulatedImpulse = oldContact.accumulatedImpulse;
                         newContact.accumulatedFriction = oldContact.accumulatedFriction;
+                        newContact.tangent = oldContact.tangent;
                         break;
                     }
                 }
