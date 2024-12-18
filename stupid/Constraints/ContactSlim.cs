@@ -98,19 +98,16 @@ namespace stupid.Constraints
 
             var contactVelocity = CalculateContactVelocity(a, b, ra, rb);
             this.tangent = CalculateTangent(manifold.normal, contactVelocity);
-            this.tangentMass = CalculateTangentMass(a, b, ra, rb, tangent);
+            this.tangentMass = CalculateTangentMass(a, b, ra, rb, this.tangent);
         }
 
-
-        //WArm start with old data?
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S oldNormal, in Vector3S oldTangent)
+        public void WarmStart(ref RigidbodyData a, ref RigidbodyData b, in Vector3S normal)
         {
             var ra = this.point - a.position;
             var rb = this.point - b.position;
 
-            Vector3S warmImpulse = (oldNormal * accumulatedImpulse) + (oldTangent * accumulatedFriction);
+            Vector3S warmImpulse = (normal * accumulatedImpulse) + (this.tangent * accumulatedFriction);
             ApplyImpulse(ref a, ref b, warmImpulse, ra, rb);
         }
 
@@ -140,12 +137,12 @@ namespace stupid.Constraints
 
             var couloumbMax = this.accumulatedImpulse * friction;
 
-            var impulse = tangentMass * Vector3S.Dot(contactVelocity, tangent);
+            var impulse = this.tangentMass * Vector3S.Dot(contactVelocity, this.tangent);
             var oldImpulse = this.accumulatedFriction;
             this.accumulatedFriction = MathS.Clamp(oldImpulse + impulse, -couloumbMax, couloumbMax);
             impulse = this.accumulatedFriction - oldImpulse;
 
-            var added = (tangent * impulse);
+            var added = (this.tangent * impulse);
             ApplyImpulse(ref a, ref b, added, ra, rb);
         }
     }

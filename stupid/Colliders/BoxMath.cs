@@ -63,25 +63,28 @@ namespace stupid.Colliders
                 if (count == contacts.Length) return count; // Early exit if max contacts reached
             }
 
-            Span<Vector3S> bVertices = stackalloc Vector3S[8]; // Using stackalloc for fast allocation on the stack
-            b.GetWorldVertices(ref bVertices);
-            var testB = GetContactPoint(ref bVertices, a);
-
-            for (int i = 0; i < testB; i++)
+            if (count == 0)
             {
-                var p = pointCache[i];
-                contacts[count++] = new ContactData(p.point, normalV, minPen, p.featureId + 8);
-                if (count == contacts.Length) return count; // Early exit if max contacts reached
+                Span<Vector3S> bVertices = stackalloc Vector3S[8]; // Using stackalloc for fast allocation on the stack
+                b.GetWorldVertices(ref bVertices);
+                var testB = GetContactPoint(ref bVertices, a);
+
+                for (int i = 0; i < testB; i++)
+                {
+                    var p = pointCache[i];
+                    contacts[count++] = new ContactData(p.point, normalV, minPen, p.featureId + 8);
+                    if (count == contacts.Length) return count; // Early exit if max contacts reached
+                }
+
             }
+
 
             if (count == 0)
             {
-                var edges = BoxColliderS.BOX_EDGES;
-
-                for (int i = 0; i < edges.Length; i++)
+                for (int i = 0; i < BoxColliderS.BOX_EDGES.Length; i++)
                 {
-                    ref var start = ref aVertices[edges[i].a];
-                    ref var end = ref aVertices[edges[i].b];
+                    ref var start = ref aVertices[BoxColliderS.BOX_EDGES[i].a];
+                    ref var end = ref aVertices[BoxColliderS.BOX_EDGES[i].b];
                     var dir = end - start;
 
                     // Create a base feature ID using the edge index (i)

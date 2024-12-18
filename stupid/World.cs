@@ -25,7 +25,7 @@ namespace stupid
         Dictionary<IntPair, ContactManifoldSlim> ManifoldMap;
         List<IntPair> _removeCache = new List<IntPair>();
 
-        ContactData[] _contactCache = new ContactData[8];
+        ContactData[] _contactCache = new ContactData[32];
         public ContactSlim[] allContacts = new ContactSlim[5000];
         public ContactSlim[] oldContacts = new ContactSlim[5000];
         int _contactCount;
@@ -132,10 +132,7 @@ namespace stupid
                     //Then retain
                     if (WorldSettings.Warmup)
                     {
-                        if (ManifoldMap.TryGetValue(pair, out var oldManifold))
-                        {
-                            manifold.RetainData(ref allContacts, oldContacts, oldManifold);
-                        }
+                        if (ManifoldMap.TryGetValue(pair, out var oldManifold)) manifold.RetainData(ref allContacts, oldContacts, oldManifold);
                     }
 
                     //Calculate the thing
@@ -217,8 +214,6 @@ namespace stupid
                 foreach (var m in manifoldSpan)
                     m.Warmup(ref _data[m.aIndex], ref _data[m.bIndex], ref contactSpan);
             }
-
-            //The prestep sohuld be calced after the warmup
 
             //Solve
             for (int iterations = 0; iterations < WorldSettings.DefaultSolverIterations; iterations++)

@@ -39,7 +39,9 @@ namespace stupid
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FinalizePosition()
         {
+            // if (delta.sqrMagnitude > f32.epsilon)
             position += delta;
+
             delta = Vector3S.zero;
         }
 

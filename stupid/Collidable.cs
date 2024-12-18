@@ -118,19 +118,10 @@ namespace stupid
             if (angularVelocity.Magnitude() > settings.DefaultMaxAngularSpeed)
                 angularVelocity = Vector3S.ClampMagnitude(angularVelocity, -settings.DefaultMaxAngularSpeed, settings.DefaultMaxAngularSpeed);
 
-            //This seems to work pretty well, even without the > f32.zero 
-            //In fact, it increased stack stability, wonder why...
+            var halfAngle = angularVelocity * dt * f32.half;
+            var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
+            transform.rotation = (dq * transform.rotation).Normalize();
 
-            if (angularVelocity.Magnitude() > f32.zero)
-            {
-                var halfAngle = angularVelocity * dt * f32.half;
-                var dq = new QuaternionS(halfAngle.x, halfAngle.y, halfAngle.z, f32.one);
-                transform.rotation = (dq * transform.rotation).Normalize();
-                /*
-                transform.UpdateRotationMatrix();
-                tensor.UpdateInertiaTensor(transform);
-                */
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
