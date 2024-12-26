@@ -70,8 +70,8 @@ namespace stupid.Maths
 
             f32 result;
             var dividend = (a.rawValue << FractionalBits);
-
             result.rawValue = dividend / b.rawValue;
+
             return result;
         }
 
