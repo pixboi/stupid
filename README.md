@@ -7,9 +7,9 @@
 * api design and naming so that its easy to put into unity UNITY_THING+"S"
 * easily build world through script or by converting from unity types (might add the current integration later)
 
-# todo'ish
+# what would be nice
 * better box v box, now its kinda messy
-* redesign the constraints and collections so that they fit the 64 bit cache line, now most structs are way over 64
+* redesign the constraints and collections so that they fit the 64 bit cache line, now most structs are way over 64 (matrices are huge)
 * more tests
 * more shapes
 
