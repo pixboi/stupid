@@ -4,7 +4,7 @@
 * pretty good broadphase (sort and sweep on xyz)
 * supports warm starting and relaxing (for stable resting contacts, somewhat)
 * OOBB and sphere shapes
-* api design and naming so that its easy to put into unity UNITY_THING+"S"
+* api design and naming that mimics PhysX and its Unity integration
 * easily build world through script or by converting from unity types (might add the current integration later)
 
 # what would be nice
