@@ -12,3 +12,6 @@
 * redesign the constraints and collections so that they fit the 64 bit cache line, now most structs are way over 64
 * more tests
 * more shapes
+
+# thanks
+https://box2d.org/posts/2024/02/solver2d/
