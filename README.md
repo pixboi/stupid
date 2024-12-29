@@ -1,4 +1,4 @@
-# stupid
+# stupid (and lets keep it so)
 
 * uses a 48/16 fixed point type for deterministic maths
 * pretty good broadphase (sort and sweep on xyz)
@@ -11,3 +11,4 @@
 * better box v box, now its kinda messy
 * redesign the constraints and collections so that they fit the 64 bit cache line, now most structs are way over 64
 * more tests
+* more shapes
