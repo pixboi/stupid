@@ -15,3 +15,4 @@
 
 # thanks
 https://box2d.org/posts/2024/02/solver2d/
+https://leanrada.com/notes/sweep-and-prune/
